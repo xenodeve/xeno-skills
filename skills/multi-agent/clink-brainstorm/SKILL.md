@@ -21,14 +21,16 @@ None of this is required to use the skill — two or three agents from any mix o
 
 ## Available agents (example roster — adjust to your setup)
 
-| Call | Backend model | Mechanism | Typical latency |
-|---|---|---|---|
-| `mcp__pal__clink(cli_name="antigravity")` | Gemini (via Google's `agy` CLI) | ConPTY-driven subprocess (see fork) | ~20-25s |
-| `mcp__pal__clink(cli_name="codex")` | OpenAI Codex | subprocess, `--json` | ~10-15s |
-| `mcp__pal__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
-| `mcp__pal__chat(model=<your-provider-model>, ...)` | same model as above, direct PAL route — no clink | PAL's own provider call | usually faster, no CLI bootstrap overhead |
-| `mcp__pal__clink(cli_name="claude")` | Anthropic Claude | subprocess | upstream default preset |
-| `mcp__pal__clink(cli_name="gemini")` | — | **dead as of mid-2026** — Gemini CLI binary was retired in favor of `agy`/Antigravity | n/a |
+| Call | Backend model | Cognitive lens | Mechanism | Typical latency |
+|---|---|---|---|---|
+| `mcp__pal__clink(cli_name="antigravity")` | Gemini (via Google's `agy` CLI) | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
+| `mcp__pal__clink(cli_name="codex")` | OpenAI Codex | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s |
+| `mcp__pal__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | **Logic-centric** — reasoning soundness, efficiency, logical consistency | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
+| `mcp__pal__chat(model=<your-provider-model>, ...)` | same model as above, direct PAL route — no clink | **Conceptual-centric** — broad ideas, theory, alternative approaches (non-agentic) | PAL's own provider call | usually faster, no CLI bootstrap overhead |
+| `mcp__pal__clink(cli_name="claude")` | Anthropic Claude | general | subprocess | upstream default preset |
+| `mcp__pal__clink(cli_name="gemini")` | — | — | **dead as of mid-2026** — Gemini CLI binary was retired in favor of `agy`/Antigravity | n/a |
+
+The **cognitive lens** column matters most during adversarial rounds (see below) — when you need to challenge a consensus, tailor each agent's probe to its natural strength rather than sending the same generic "find flaws" prompt to everyone.
 
 If a clink agent and `chat` hit the **same underlying model**, they are NOT interchangeable — `chat` has no file/tool access at all (a single-shot text completion via PAL's provider routing), while a `clink` CLI agent is a full agent loop that can genuinely read real files (verified: a real repo file was correctly read and quoted back, with `num_turns: 2` in the response confirming an actual Read-tool round-trip, not a guess). **This changes which one belongs in a brainstorm round:**
 - **Question is about the actual codebase** (review an implementation, verify a claim against real code, anything where "read this file" would help) → use the agentic `clink` agent, not `chat`. `chat` literally cannot check anything against the real repo — asking it a codebase question makes it guess from whatever text you pasted, with no verification.
@@ -73,6 +75,34 @@ A single round (independent parallel answers) is the default. For a genuinely co
    - **Surface what the OTHER agents caught that this agent didn't mention**, and ask them to react to it specifically.
 4. **You synthesize again** — check whether round 2 produced genuinely new information (positions moved, reasoning sharpened) or was dry (just repeated round 1). Real convergence looks like: agents narrowing from "3-way disagreement" to "agree on the bookends, one narrow wrinkle left" — that's a sign the loop is working, not stalling.
 5. **Default cap: 2 rounds of challenge (3 rounds total including round 1).** This is not a cost-driven limit if your backends are flat-rate subscriptions — it's there because **dry rounds are the actual stop signal, and a cap is just the safety valve for when a loop fails to self-terminate.** Stop *before* the cap whenever either hits: (a) positions have converged enough that you're confident making the final call, or (b) a round comes back dry (no new reasoning, just restated positions). If a round is still producing real movement, it's fine to go a round further; raise the cap explicitly with the user rather than silently looping past it. Looping past *dry* is the actual waste, not looping past some fixed round count.
+
+## When agents converge — forced adversarial round
+
+**Convergence is not automatically a validation signal.** Agents trained on similar data, given the same prompt framing, or that are inherently agreeable can all arrive at the same answer for the wrong reasons. When round 1 shows all or most agents agreeing, run one **forced adversarial round** before treating it as confirmed — the goal is to find out if the consensus survives targeted pressure, not just to generate dissent for its own sake.
+
+### How to run it
+
+1. **Detect convergence** — round 1 responses all agree on the same core recommendation (or all agree "this is fine, no issues"). Note: partial convergence (2 of 3 agree, 1 diverges) should go to the challenge loop instead; the adversarial round is for when disagreement didn't surface naturally at all.
+
+2. **Send one adversarial probe per agent via their `continuation_id`** — each agent already has the question context, so you only need to add the adversarial task. **Tailor the probe to each agent's cognitive lens:**
+
+   - **Codex (Code-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Find implementation-level flaws: syntax traps, missed edge cases, off-by-one errors, race conditions, anything the code would actually do wrong at runtime that the consensus didn't address."*
+   - **Antigravity (System-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Find system integration problems: dependency conflicts, cross-file side effects, infrastructure assumptions that don't hold, or directory/import issues that only show up in a real deployment context."*
+   - **Claude-9arm (Logic-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Find logical inconsistencies: places where the reasoning doesn't hold, efficiency problems, hidden assumptions that break under pressure, or scenarios where the approach fails even if the code is syntactically correct."*
+   - **Qwen via chat (Conceptual-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Propose the strongest alternative approach that the consensus didn't consider — a different conceptual frame, a competing design, or a fundamentally different way to solve the problem that might be better."*
+
+   Fire all four in parallel (same as round 1 — independent calls, separate `continuation_id`s, one message).
+
+3. **Read for real dissent vs. surface dissent** — after an adversarial prompt, every agent *will* find something to say. The question is whether it's a real flaw or a manufactured one:
+   - **Real dissent:** concrete, specific (names a line, a scenario, a condition), and would actually matter if the consensus were acted on
+   - **Surface dissent:** vague ("there might be edge cases"), hedged ("could potentially have issues"), or generic ("always consider testing") — this is agents being compliant with the "find flaws" instruction, not genuinely surfacing a problem
+   - A dry adversarial round (all surface dissent, nothing concrete) confirms the consensus. A round with at least one concrete flaw feeds into the challenge loop as new disagreement to resolve.
+
+4. **Stop condition:** if the adversarial round comes back dry (all surface dissent), accept the consensus and say so explicitly. If it finds real dissent, run one normal challenge loop round (step 3 of the challenge loop above) to resolve it — the adversarial round is one pass, not a new loop of its own.
+
+### Why this matters
+
+The cognitive diversity of the agents means their *blind spots are also different* — Codex that agreed on an architecture might have missed the system integration problem that Antigravity would have caught, but didn't catch because it was also going through the same prompt lens as the others in round 1. The adversarial round exploits this by forcing each agent to search specifically in its own strongest domain, rather than a generic "find problems" sweep that any agent might answer generically.
 
 ## Latency is usually the real constraint, not cost
 
