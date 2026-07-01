@@ -5,6 +5,8 @@ description: Fan out a question to multiple independent AI agents (Gemini/Antigr
 
 # clink-brainstorm
 
+> **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected as an MCP server, with its `clink` tool configured for at least two independent CLI agents. This skill is a prompting/orchestration layer on top of `clink` — it does nothing standalone without PAL installed and reachable. See Prerequisites below.
+
 Drive 3+ independent AI agents on the **same well-specified question**, then synthesize the answers yourself into one recommendation. This is "manual consensus" — PAL's native `consensus` tool cannot mix clink CLI agents with its own model provider roster, so the orchestration is done by hand, here.
 
 ## Prerequisites
