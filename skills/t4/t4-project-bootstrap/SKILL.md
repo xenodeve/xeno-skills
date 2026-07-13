@@ -11,8 +11,9 @@ The T4 team (T4 Labs / `Slow-Inc`) runs several repos — MangaDock, T4-Fastwork
 
 **Core principle:** the standard is agent infrastructure, not team paperwork. You are installing the files a future agent will read at session start to know *what the words mean, why the code is the way it is, what's still open, and how to ship*. Copy the structure and rules; fill `<PLACEHOLDER>` tokens with this project's specifics; never carry another project's domain content across.
 
-This skill owns the **domain + product layer** and orchestrates the install. The ongoing-use disciplines are three sibling skills — install their files here, but read them for the how:
+This skill owns the **domain + product layer** and orchestrates the install. The ongoing-use disciplines are sibling skills — install their files here, but read them for the how:
 
+- **`using-t4`** — the entry-point map routing a task to the right skill below. The repo's `CLAUDE.md` should point a fresh agent here first.
 - **`t4-agent-memory`** — durable working memory (open-work ledger, ship log, survey-manifest, memory vault, Serena). The retrieval-first backbone of an agent-primary repo.
 - **`t4-engineering-records`** — ADRs, post-mortems, the impact register, the bug-case catalog.
 - **`t4-dev-workflow`** — the grill→PRD→issues→TDD pipeline, bilingual tracker rules, triage labels, auto-triggered skills.
@@ -40,7 +41,7 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 
 1. **Read the target repo first.** `git remote -v` (get `<ORG>/<REPO>`), the existing `CLAUDE.md`/`AGENTS.md`, `package.json` (package manager, pinned framework versions), any `docs/` present. Never overwrite a governed doc — reconcile.
 2. **Pick a tier** with the user; memory layer is in from the Seed tier.
-3. **Write the `CLAUDE.md` wiring** — engineering north-star, repo layout, commands, the **session-start read protocol** (point it at `docs/OPEN-WORK-LEDGER.md` + the memory vault `Home.md` — see `t4-agent-memory`), the dev-notification protocol, the bilingual writing-conventions block, and pointers to `docs/agents/*`.
+3. **Write the `CLAUDE.md` wiring** — engineering north-star, repo layout, commands, a pointer to **`using-t4`** as the entry map, the **session-start read protocol** (point it at `docs/OPEN-WORK-LEDGER.md` + the memory vault `Home.md` — see `t4-agent-memory`), the dev-notification protocol, the bilingual writing-conventions block, and pointers to `docs/agents/*`.
 4. **Install the memory layer** from `t4-agent-memory` (ledger, ship log, vault `Home.md` + note format). This is what makes the repo agent-durable.
 5. **Install the workflow layer** from `t4-dev-workflow` (`docs/agents/{workflow,issue-tracker,triage-labels}.md`) — replace `<ORG>/<REPO>`, the E2E/verify command, the label vocabulary.
 6. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).

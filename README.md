@@ -13,7 +13,7 @@ The architecture is documented in [`docs/agentic-workflow-presentation.md`](./do
 Skills live under `skills/`:
 
 - `multi-agent/` — orchestrating multiple AI CLIs together
-- `t4/` — the T4 team's agent-primary operating standard (bootstrap, memory, records, workflow)
+- `t4/` — the T4 team's agent-primary operating standard (entry map, bootstrap, memory, records, workflow)
 
 Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
 
@@ -39,8 +39,9 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 
 ### T4 team (agent-primary operating standard)
 
-A family of skills distilled project-agnostic from the T4 team's mature repos (MangaDock, T4-Fastwork), for repos where **the coding agent is the primary developer**. Built retrieval-first so an agent keeps context across sessions and compaction. Each is independently discoverable by its own trigger; `t4-project-bootstrap` installs the files, the other three own the ongoing disciplines.
+A family of skills distilled project-agnostic from the T4 team's mature repos (MangaDock, T4-Fastwork), for repos where **the coding agent is the primary developer**. Built retrieval-first so an agent keeps context across sessions and compaction. Each is independently discoverable by its own trigger; `using-t4` is the entry map, `t4-project-bootstrap` installs the files, and the other three own the ongoing disciplines.
 
+- **[using-t4](./skills/t4/using-t4/SKILL.md)** — The entry-point map for the family (like `using-superpowers`). At the start of any task in a T4 repo it routes you to the right skill — session-start memory, repo setup, feature pipeline, or engineering record — and carries the non-negotiable team rules. A repo's `CLAUDE.md` points a fresh agent here first.
 - **[t4-project-bootstrap](./skills/t4/t4-project-bootstrap/SKILL.md)** — Scaffold a new (or under-documented) T4 repo with the operating layer in one pass: the domain/product docs (`CONTEXT.md`, `UBIQUITOUS_LANGUAGE.md`, `PRODUCT.md`, `DESIGN.md`, `docs/agents/domain.md`), the status-indexed knowledge dirs, and the `CLAUDE.md` wiring — orchestrating the three sibling skills below. Tiered by agent-context-load (memory layer is default-on), plus an optional 7-phase Software-Engineering deliverable set.
 - **[t4-agent-memory](./skills/t4/t4-agent-memory/SKILL.md)** — The durable working memory an agent-primary repo runs on: the team memory vault (`Home.md` Map-of-Content → linked notes), the open-work ledger, the ship log, the survey-provenance cache, and Serena code memories — with the session-start read protocol and the retrieval-first rules (index-then-open, single-source, bounded logs, freshness over authority).
 - **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — Which record to write when something notable happens (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) and how to write it so it stays a reliable index (`file:line`, commit SHAs, validated-only, blameless). Templates included.

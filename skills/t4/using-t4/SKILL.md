@@ -1,0 +1,46 @@
+---
+name: using-t4
+description: Use at the start of any task in a T4-team repo (T4 Labs / Slow-Inc) to decide which T4 skill applies — setting up the repo, session-start memory and open-work, planning or shipping a feature, or recording a bug/decision/change. The entry-point map for the t4-* skill family; consult it before acting when you're unsure which T4 discipline a task needs. Triggers include working in a repo whose CLAUDE.md points here, "how do we work in this repo", "which T4 skill", and starting a session in a Slow-Inc repo (MangaDock, T4-Fastwork).
+---
+
+# Using T4
+
+## Overview
+
+The T4 team runs its repos **agent-primary** — the coding agent is the main developer, so the repo's docs are the agent's operating manual, not team paperwork. The `t4-*` skills encode that operating standard. This skill is the **map**: it tells you which one to invoke for the situation in front of you.
+
+**Core rule:** in a T4 repo, when a task matches one of the skills below, **invoke that skill before acting** — don't work from memory of what it says. Skills evolve; load the current one. (User instructions — this repo's `CLAUDE.md` / direct requests — always win over any skill.)
+
+## The map — route by what you're doing
+
+| You are… | Invoke |
+|---|---|
+| **Starting a session** — need to know where work left off, what's still open, what past sessions decided | **`t4-agent-memory`** (read `Home.md` → open-work ledger → the relevant issue) |
+| **Setting up a new repo**, or retrofitting one missing the operating layer | **`t4-project-bootstrap`** |
+| **Planning or building a feature** — an idea to ship, filing an issue/PRD, writing a bilingual issue/PR body, opening a PR | **`t4-dev-workflow`** |
+| **Something notable just happened** — fixed & validated a bug, made a hard-to-reverse decision, shipped a system-affecting change | **`t4-engineering-records`** |
+| **Recording or recalling durable memory** — persisting a convention/decision/feedback, or finding where open work lives | **`t4-agent-memory`** |
+
+The pipeline inside `t4-dev-workflow` also auto-triggers the wider ecosystem skills (`/debug-mantra` on a bug, `/tdd` when implementing, `/post-mortem` after a fix, `/code-review` + `/scrutinize` before merge, `/security-review` on a boundary, `/verify` after implementation). Those live outside this family — this map hands off to them.
+
+## Session-start protocol
+
+At the start of any session in a T4 repo, before picking up work:
+
+1. **`t4-agent-memory`** — read the memory vault index and the open-work ledger (this is what survives a context reset). Then read the specific GitHub issue you're picking up.
+2. Route the task through the map above.
+
+## The non-negotiable rules (all skills carry these)
+
+- **Memory is first-class** — record what you ship; the next agent inherits only what you wrote (`t4-agent-memory`).
+- **PRD → issues → PR** — never a PR without a referenced issue; issues are the source of truth (`t4-dev-workflow`).
+- **Bilingual is tracker-only, Thai mirrors English exactly** — issue/PRD/PR bodies; not chat/reports; identifiers stay English (`t4-dev-workflow`).
+- **TDD is mandatory**; **verify every frontend change end-to-end** (unit tests can't see real layout/hydration).
+- **Non-standard framework version → read the vendored docs first**, not prior knowledge.
+- **Bun** is the package manager — commit `bun.lock`, use `bunx`.
+- **Records stay a reliable index** — `file:line`, commit SHAs, validated-only, blameless (`t4-engineering-records`).
+- **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
+
+## When NOT to use
+
+A non-T4 project (the bilingual rule, label vocabulary, and memory layout are team-specific). A throwaway prototype with no issues/memory. For those, use the general skills directly.
