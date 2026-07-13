@@ -20,6 +20,7 @@ The T4 team runs its repos **agent-primary** — the coding agent is the main de
 | **Planning or building a feature** — an idea to ship, filing an issue/PRD, writing a bilingual issue/PR body, opening a PR | **`t4-dev-workflow`** |
 | **Something notable just happened** — fixed & validated a bug, made a hard-to-reverse decision, shipped a system-affecting change | **`t4-engineering-records`** |
 | **Recording or recalling durable memory** — persisting a convention/decision/feedback, or finding where open work lives | **`t4-agent-memory`** |
+| **Going AFK** — the developer hands you a bounded batch to run unattended and steps away ("handle it", "clear the queue", "keep going without me") | **`t4-afk`** |
 
 ## Companion ecosystems — use them alongside T4
 
