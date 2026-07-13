@@ -1,6 +1,6 @@
 ---
 name: using-t4
-description: Use at the start of any task in a T4-team repo (T4 Labs / Slow-Inc) to decide which T4 skill applies — setting up the repo, session-start memory and open-work, planning or shipping a feature, or recording a bug/decision/change. The entry-point map for the t4-* skill family; consult it before acting when you're unsure which T4 discipline a task needs. Triggers include working in a repo whose CLAUDE.md points here, "how do we work in this repo", "which T4 skill", and starting a session in a Slow-Inc repo (MangaDock, T4-Fastwork).
+description: Use at the start of any task in a T4-team repo (T4 Labs / Slow-Inc) to decide which T4 skill applies — setting up the repo, session-start memory and open-work, planning or shipping a feature, or recording a bug/decision/change — and to hand off to the companion skill ecosystems the team runs alongside (superpowers, matt pocock, 9arm). The entry-point map for the t4-* skill family; consult it before acting when you're unsure which T4 discipline or which external skill a task needs. Triggers include working in a repo whose CLAUDE.md points here, "how do we work in this repo", "which T4 skill", and starting a session in a Slow-Inc repo (MangaDock, T4-Fastwork).
 ---
 
 # Using T4
@@ -21,7 +21,17 @@ The T4 team runs its repos **agent-primary** — the coding agent is the main de
 | **Something notable just happened** — fixed & validated a bug, made a hard-to-reverse decision, shipped a system-affecting change | **`t4-engineering-records`** |
 | **Recording or recalling durable memory** — persisting a convention/decision/feedback, or finding where open work lives | **`t4-agent-memory`** |
 
-The pipeline inside `t4-dev-workflow` also auto-triggers the wider ecosystem skills (`/debug-mantra` on a bug, `/tdd` when implementing, `/post-mortem` after a fix, `/code-review` + `/scrutinize` before merge, `/security-review` on a boundary, `/verify` after implementation). Those live outside this family — this map hands off to them.
+## Companion ecosystems — use them alongside T4
+
+The `t4-*` skills are a thin, team-specific layer **on top of** three general skill ecosystems the team runs. They are not alternatives — the T4 workflow is literally built from them, and you should invoke them by their own triggers whenever a task fits. When a T4 skill names a slash-command (`/grill-me`, `/to-prd`, `/to-issues`, `/tdd`, `/debug-mantra`, `/post-mortem`, `/scrutinize`), that command lives in one of these — this is where it comes from.
+
+| Ecosystem | Reach it via | Use it for | Representative skills |
+|---|---|---|---|
+| **superpowers** | its own map — invoke **`superpowers:using-superpowers`** first | general process discipline (defer to it for *how to work*) | `brainstorming`, `test-driven-development`, `systematic-debugging`, `writing-plans`, `writing-skills`, `verification-before-completion`, `dispatching-parallel-agents` |
+| **matt pocock** (`mattpocock/skills`) | `/setup-matt-pocock-skills` to install + configure the tracker/labels/domain layout | **the flow the T4 pipeline is built on** — the grill→spec→tickets loop and the issue-tracker / triage-label / domain-doc conventions T4 reuses | `grilling` (`/grill-me`), `to-prd`/`to-spec`, `to-issues`/`to-tickets`, `domain-modeling`, `code-review` |
+| **9arm** (`thananon/9arm-skills`) | `npx skills add thananon/9arm-skills` | debugging + adversarial review discipline + cheap delegation | `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent`, `qwenchance`, `management-talk` |
+
+**Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the bilingual/tracker rules); they **hand off the general technique** to the ecosystem skill. E.g. `t4-engineering-records` decides a bug needs a post-mortem, then invokes `/post-mortem` (9arm) to write it; `t4-dev-workflow` sequences the pipeline, then invokes `grilling` / `to-prd` / `/tdd` for each step. For anything about *how to work* that isn't T4-specific, prefer `superpowers:using-superpowers` and the skill it points to.
 
 ## Session-start protocol
 

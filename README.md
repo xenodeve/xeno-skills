@@ -49,8 +49,15 @@ A family of skills distilled project-agnostic from the T4 team's mature repos (M
 
 ## Related
 
+**Companion skill ecosystems** — the `t4-*` family is a thin team-specific layer on top of these; `using-t4` routes to them and they're meant to be installed alongside:
+
+- **[superpowers](https://github.com/obra/superpowers)** — general process discipline (brainstorming, TDD, systematic-debugging, writing-plans/skills, verification-before-completion). Its own entry map is `superpowers:using-superpowers`; T4 defers to it for *how to work*.
+- **[mattpocock/skills](https://github.com/mattpocock/skills)** — "Skills for Real Engineers." The flow the T4 pipeline is built on: the grill→spec→tickets loop plus the issue-tracker / triage-label / domain-doc conventions T4 reuses. Install/configure via `/setup-matt-pocock-skills`.
+- **[thananon/9arm-skills](https://github.com/thananon/9arm-skills)** — `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent` (delegate to a cheap Qwen-backed subagent via `claude-9arm`), `qwenchance`, `management-talk`.
+
+**Tooling:**
+
 - **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — Fork of PAL that adds the `antigravity` clink agent (Google's Gemini successor, `agy`, via ConPTY on Windows) and a `claude-9arm.json.example` template for pointing `claude` at an alternate model gateway. Prerequisite for using `clink-brainstorm` with Antigravity or a custom gateway.
-- **[thananon/9arm-skills](https://github.com/thananon/9arm-skills)** — Skills that complement this repo: `qwen-agent` (delegate tasks to a cheap Qwen-backed subagent via `claude-9arm`), `debug-mantra`, `scrutinize`, `post-mortem`, and others.
 
 ## License
 
