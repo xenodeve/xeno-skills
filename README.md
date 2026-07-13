@@ -13,7 +13,7 @@ The architecture is documented in [`docs/agentic-workflow-presentation.md`](./do
 Skills live under `skills/`:
 
 - `multi-agent/` — orchestrating multiple AI CLIs together
-- `project-setup/` — bootstrapping a repo with team conventions
+- `t4/` — the T4 team's agent-primary operating standard (bootstrap, memory, records, workflow)
 
 Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
 
@@ -37,9 +37,14 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — Fan a question out to multiple independent AI CLI agents (Gemini/Antigravity, Codex, Claude, etc.) through [PAL](https://github.com/BeehiveInnovations/pal-mcp-server)'s `clink` tool, then synthesize one recommendation. Each agent has a distinct cognitive lens (Code-centric, System-centric, Logic-centric, Conceptual-centric) that determines how to tailor challenge prompts. Includes a judge-led challenge loop for when agents disagree and a lens-targeted adversarial round for when they converge (convergence without pressure ≠ validation). **Requires PAL MCP server** connected to your agent with at least two `clink` CLI agents configured.
 
-### Project setup
+### T4 team (agent-primary operating standard)
 
-- **[t4-project-bootstrap](./skills/project-setup/t4-project-bootstrap/SKILL.md)** — Scaffold a new (or under-documented) T4-team repo with the team's shared standard: the domain layer (`CONTEXT.md` + `UBIQUITOUS_LANGUAGE.md`), product/design split (`PRODUCT.md` / `DESIGN.md`), ADR + reports + research + plans indexes, the agent operating layer (`docs/agents/{workflow,domain,issue-tracker,triage-labels}.md`, Serena memory conventions), and drop-in templates (post-mortem, system-impact register, bug-case catalog, PRD, design-spec, implementation-plan, survey-manifest) — plus an optional 7-phase Software-Engineering deliverable set. Distilled project-agnostic from the team's mature repos so a new project gets the whole governance layer in one pass instead of hand-porting docs. Tiered by repo maturity so small repos aren't over-scaffolded.
+A family of skills distilled project-agnostic from the T4 team's mature repos (MangaDock, T4-Fastwork), for repos where **the coding agent is the primary developer**. Built retrieval-first so an agent keeps context across sessions and compaction. Each is independently discoverable by its own trigger; `t4-project-bootstrap` installs the files, the other three own the ongoing disciplines.
+
+- **[t4-project-bootstrap](./skills/t4/t4-project-bootstrap/SKILL.md)** — Scaffold a new (or under-documented) T4 repo with the operating layer in one pass: the domain/product docs (`CONTEXT.md`, `UBIQUITOUS_LANGUAGE.md`, `PRODUCT.md`, `DESIGN.md`, `docs/agents/domain.md`), the status-indexed knowledge dirs, and the `CLAUDE.md` wiring — orchestrating the three sibling skills below. Tiered by agent-context-load (memory layer is default-on), plus an optional 7-phase Software-Engineering deliverable set.
+- **[t4-agent-memory](./skills/t4/t4-agent-memory/SKILL.md)** — The durable working memory an agent-primary repo runs on: the team memory vault (`Home.md` Map-of-Content → linked notes), the open-work ledger, the ship log, the survey-provenance cache, and Serena code memories — with the session-start read protocol and the retrieval-first rules (index-then-open, single-source, bounded logs, freshness over authority).
+- **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — Which record to write when something notable happens (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) and how to write it so it stays a reliable index (`file:line`, commit SHAs, validated-only, blameless). Templates included.
+- **[t4-dev-workflow](./skills/t4/t4-dev-workflow/SKILL.md)** — The feature pipeline (grill→PRD→issues→TDD), the PRD→issues→PR gate, the auto-triggered skill map, triage labels, the issue lifecycle, and the bilingual (Thai-mirrors-English) tracker rule. `docs/agents/*` + PRD/spec/plan templates included.
 
 ## Related
 
