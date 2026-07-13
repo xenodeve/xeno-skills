@@ -1,65 +1,67 @@
+**🇹🇭 ภาษาไทย** · [🇬🇧 English](./README.en.md)
+
 # xeno-skills
 
-Agent skills loaded by Claude Code.
+Agent skills สำหรับโหลดเข้า Claude Code
 
-## Background
+## ความเป็นมา
 
-This repo grew out of a project to replace the human-in-the-middle bottleneck of AI brainstorming — instead of a developer sitting at a terminal answering each model's questions one by one, a master agent fans the problem out to a panel of independent CLI agents that debate automatically, then surfaces only the final synthesised result for human approval.
+repo นี้เติบโตมาจากโปรเจกต์ที่ต้องการกำจัดคอขวด "คนกลาง" ของการ brainstorm ด้วย AI — แทนที่จะให้ developer นั่งหน้า terminal คอยตอบคำถามของแต่ละโมเดลทีละข้อ ให้ master agent กระจายปัญหาออกไปยังคณะของ CLI agent อิสระที่ถกกันเองโดยอัตโนมัติ แล้วค่อยสรุปเฉพาะผลลัพธ์สุดท้ายที่สังเคราะห์แล้วขึ้นมาให้คนอนุมัติ
 
-The architecture is documented in [`docs/agentic-workflow-presentation.md`](./docs/agentic-workflow-presentation.md) — a write-up of the Hybrid Multi-Agent Architecture (Multi-Turn Negotiation Loop + Dynamic Skill Injection) originally prepared as a project presentation.
+สถาปัตยกรรมนี้บันทึกไว้ใน [`docs/agentic-workflow-presentation.md`](./docs/agentic-workflow-presentation.md) — เอกสารอธิบาย Hybrid Multi-Agent Architecture (Multi-Turn Negotiation Loop + Dynamic Skill Injection) ซึ่งเดิมจัดทำเป็น presentation ของโปรเจกต์
 
-## Layout
+## โครงสร้าง
 
-Skills live under `skills/`:
+Skills อยู่ภายใต้ `skills/`:
 
-- `multi-agent/` — orchestrating multiple AI CLIs together
-- `t4/` — the T4 team's agent-primary operating standard (entry map, bootstrap, memory, records, workflow)
+- `multi-agent/` — การ orchestrate CLI ของ AI หลายตัวให้ทำงานร่วมกัน
+- `t4/` — มาตรฐานการทำงานแบบ agent-primary ของทีม T4 (entry map, bootstrap, memory, records, workflow)
 
-Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
+แต่ละ skill เป็น directory ของตัวเอง มี `SKILL.md` (พร้อม YAML frontmatter — `name` และ `description`) และไฟล์ reference ที่แนบมา
 
-## Install
+## การติดตั้ง
 
-### With `npx skills` (Recommended — works for every agent)
+### ด้วย `npx skills` (แนะนำ — ใช้ได้กับทุก agent)
 
 ```bash
 npx skills add xenodeve/xeno-skills
 ```
 
-Install a specific skill by name:
+ติดตั้ง skill เฉพาะตัวตามชื่อ:
 
 ```bash
 npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 ```
 
-## Reference
+## รายการอ้างอิง
 
 ### Multi-agent
 
-- **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — Fan a question out to multiple independent AI CLI agents (Gemini/Antigravity, Codex, Claude, etc.) through [PAL](https://github.com/BeehiveInnovations/pal-mcp-server)'s `clink` tool, then synthesize one recommendation. Each agent has a distinct cognitive lens (Code-centric, System-centric, Logic-centric, Conceptual-centric) that determines how to tailor challenge prompts. Includes a judge-led challenge loop for when agents disagree and a lens-targeted adversarial round for when they converge (convergence without pressure ≠ validation). **Requires PAL MCP server** connected to your agent with at least two `clink` CLI agents configured.
+- **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — กระจายคำถามออกไปยัง CLI agent อิสระหลายตัว (Gemini/Antigravity, Codex, Claude ฯลฯ) ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) แล้วสังเคราะห์เป็นข้อเสนอแนะเดียว แต่ละ agent มี cognitive lens ที่ต่างกัน (Code-centric, System-centric, Logic-centric, Conceptual-centric) ซึ่งกำหนดวิธีปรับ prompt สำหรับการ challenge มี judge-led challenge loop สำหรับตอนที่ agent เห็นไม่ตรงกัน และ adversarial round แบบเจาะ lens สำหรับตอนที่ทุกตัวเห็นตรงกัน (การเห็นตรงกันโดยไม่ถูกกดดัน ≠ การยืนยันว่าถูก) **ต้องมี PAL MCP server** เชื่อมต่อกับ agent ของคุณ พร้อม `clink` CLI agent อย่างน้อยสองตัว
 
-### T4 team (agent-primary operating standard)
+### ทีม T4 (มาตรฐานการทำงานแบบ agent-primary)
 
-A family of skills distilled project-agnostic from the T4 team's mature repos (MangaDock, T4-Fastwork), for repos where **the coding agent is the primary developer**. Built retrieval-first so an agent keeps context across sessions and compaction. Each is independently discoverable by its own trigger; `using-t4` is the entry map, `t4-project-bootstrap` installs the files, and the other three own the ongoing disciplines.
+ตระกูลของ skill ที่กลั่นออกมาแบบไม่ผูกกับโปรเจกต์เดียว จาก repo ที่โตเต็มที่ของทีม T4 (MangaDock, T4-Fastwork) สำหรับ repo ที่ **coding agent เป็น developer หลัก** ออกแบบมาแบบ retrieval-first เพื่อให้ agent คง context ข้าม session และการ compaction ได้ แต่ละตัวค้นเจอได้เองด้วย trigger ของตัวเอง; `using-t4` เป็น entry map, `t4-project-bootstrap` เป็นตัวติดตั้งไฟล์ ส่วนอีกสามตัวที่เหลือดูแล discipline ที่ทำต่อเนื่อง
 
-- **[using-t4](./skills/t4/using-t4/SKILL.md)** — The entry-point map for the family (like `using-superpowers`). At the start of any task in a T4 repo it routes you to the right skill — session-start memory, repo setup, feature pipeline, or engineering record — and carries the non-negotiable team rules. A repo's `CLAUDE.md` points a fresh agent here first.
-- **[t4-project-bootstrap](./skills/t4/t4-project-bootstrap/SKILL.md)** — Scaffold a new (or under-documented) T4 repo with the operating layer in one pass: the domain/product docs (`CONTEXT.md`, `UBIQUITOUS_LANGUAGE.md`, `PRODUCT.md`, `DESIGN.md`, `docs/agents/domain.md`), the status-indexed knowledge dirs, and the `CLAUDE.md` wiring — orchestrating the three sibling skills below. Tiered by agent-context-load (memory layer is default-on), plus an optional 7-phase Software-Engineering deliverable set.
-- **[t4-agent-memory](./skills/t4/t4-agent-memory/SKILL.md)** — The durable working memory an agent-primary repo runs on: the team memory vault (`Home.md` Map-of-Content → linked notes), the open-work ledger, the ship log, the survey-provenance cache, and Serena code memories — with the session-start read protocol and the retrieval-first rules (index-then-open, single-source, bounded logs, freshness over authority).
-- **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — Which record to write when something notable happens (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) and how to write it so it stays a reliable index (`file:line`, commit SHAs, validated-only, blameless). Templates included.
-- **[t4-dev-workflow](./skills/t4/t4-dev-workflow/SKILL.md)** — The feature pipeline (grill→PRD→issues→TDD), the PRD→issues→PR gate, the auto-triggered skill map, triage labels, the issue lifecycle, and the bilingual (Thai-mirrors-English) tracker rule. `docs/agents/*` + PRD/spec/plan templates included.
-- **[t4-afk](./skills/t4/t4-afk/SKILL.md)** — The discipline layer for running an unattended autonomous batch: the preflight scope-lock (AFK runs only on a pre-approved worklist), the may-decide-alone vs must-park boundary, the safe per-item loop (conventions→TDD→gates→checkpoint), the stop-and-park conditions that keep the tree from breaking, and how to land the batch with one digest and every issue reconciled. Preflight / park-note / landing-digest templates included. It doesn't relax any T4 rule — it removes the human checkpoint, so the gates hold themselves.
+- **[using-t4](./skills/t4/using-t4/SKILL.md)** — entry-point map ของทั้งตระกูล (คล้าย `using-superpowers`) ตอนเริ่ม task ใดๆ ใน T4 repo มันจะ route คุณไปยัง skill ที่ถูกต้อง — memory ตอนเริ่ม session, การ setup repo, pipeline ของ feature หรือ engineering record — และแบก non-negotiable rules ของทีมไว้ `CLAUDE.md` ของ repo จะชี้ agent ที่เพิ่งเข้ามาให้มาที่นี่ก่อน
+- **[t4-project-bootstrap](./skills/t4/t4-project-bootstrap/SKILL.md)** — scaffold repo T4 ใหม่ (หรือที่ยังมีเอกสารไม่ครบ) ด้วย operating layer ในรอบเดียว: เอกสาร domain/product (`CONTEXT.md`, `UBIQUITOUS_LANGUAGE.md`, `PRODUCT.md`, `DESIGN.md`, `docs/agents/domain.md`), knowledge dir ที่ index ตามสถานะ และการ wiring `CLAUDE.md` — โดย orchestrate สาม skill พี่น้องด้านล่าง แบ่งเป็น tier ตามภาระ context ของ agent (memory layer เปิดเป็น default) พร้อมชุด deliverable ของ Software-Engineering แบบ 7 เฟสให้เลือกเสริม
+- **[t4-agent-memory](./skills/t4/t4-agent-memory/SKILL.md)** — working memory ถาวรที่ repo แบบ agent-primary ใช้ขับเคลื่อน: team memory vault (`Home.md` Map-of-Content → note ที่ link กัน), open-work ledger, ship log, survey-provenance cache และ Serena code memories — พร้อม protocol การอ่านตอนเริ่ม session และกฎ retrieval-first (index-then-open, single-source, จำกัดขนาด log, ความสดใหม่เหนือ authority)
+- **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — เลือกว่าจะเขียน record แบบไหนเมื่อมีอะไรสำคัญเกิดขึ้น (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) และเขียนอย่างไรให้ยังเป็น index ที่เชื่อถือได้ (`file:line`, commit SHA, เฉพาะที่ validated แล้ว, blameless) มีเทมเพลตให้
+- **[t4-dev-workflow](./skills/t4/t4-dev-workflow/SKILL.md)** — pipeline ของ feature (grill→PRD→issues→TDD), gate แบบ PRD→issues→PR, map ของ skill ที่ trigger อัตโนมัติ, triage label, issue lifecycle และกฎ tracker แบบ bilingual (ไทยสะท้อนอังกฤษ) มีเทมเพลต `docs/agents/*` + PRD/spec/plan ให้
+- **[t4-afk](./skills/t4/t4-afk/SKILL.md)** — ชั้น discipline สำหรับรัน autonomous batch แบบไม่มีคนเฝ้า: preflight scope-lock (AFK รันได้เฉพาะ worklist ที่อนุมัติไว้ก่อน), เส้นแบ่ง "ตัดสินเองได้ vs ต้อง park", ลูปต่อชิ้นงานที่ปลอดภัย (convention→TDD→gate→checkpoint), เงื่อนไข stop-and-park ที่กัน tree ไม่ให้พัง และวิธีปิดจบ batch ด้วย digest เดียวพร้อม reconcile ทุก issue มีเทมเพลต preflight / park-note / landing-digest ให้ มันไม่ผ่อนกฎ T4 ข้อไหน — มันแค่เอา human checkpoint ออก ดังนั้น gate ต่างๆ ต้องยืนด้วยตัวเอง
 
-## Related
+## ที่เกี่ยวข้อง
 
-**Companion skill ecosystems** — the `t4-*` family is a thin team-specific layer on top of these; `using-t4` routes to them and they're meant to be installed alongside:
+**Companion skill ecosystems** — ตระกูล `t4-*` เป็นชั้นบางๆ เฉพาะทีมที่วางทับสิ่งเหล่านี้; `using-t4` route ไปหาพวกมัน และตั้งใจให้ติดตั้งควบคู่กัน:
 
-- **[superpowers](https://github.com/obra/superpowers)** — general process discipline (brainstorming, TDD, systematic-debugging, writing-plans/skills, verification-before-completion). Its own entry map is `superpowers:using-superpowers`; T4 defers to it for *how to work*.
-- **[mattpocock/skills](https://github.com/mattpocock/skills)** — "Skills for Real Engineers." The flow the T4 pipeline is built on: the grill→spec→tickets loop plus the issue-tracker / triage-label / domain-doc conventions T4 reuses. Install/configure via `/setup-matt-pocock-skills`.
-- **[thananon/9arm-skills](https://github.com/thananon/9arm-skills)** — `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent` (delegate to a cheap Qwen-backed subagent via `claude-9arm`), `qwenchance`, `management-talk`.
+- **[superpowers](https://github.com/obra/superpowers)** — process discipline ทั่วไป (brainstorming, TDD, systematic-debugging, writing-plans/skills, verification-before-completion) entry map ของมันเองคือ `superpowers:using-superpowers`; T4 ยกเรื่อง *วิธีการทำงาน* ให้มัน
+- **[mattpocock/skills](https://github.com/mattpocock/skills)** — "Skills for Real Engineers" flow ที่ pipeline ของ T4 สร้างขึ้นมาจาก: loop grill→spec→tickets บวกกับ convention ของ issue-tracker / triage-label / domain-doc ที่ T4 นำมาใช้ซ้ำ ติดตั้ง/ตั้งค่าผ่าน `/setup-matt-pocock-skills`
+- **[thananon/9arm-skills](https://github.com/thananon/9arm-skills)** — `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent` (delegate ไปยัง subagent ราคาถูกที่ขับด้วย Qwen ผ่าน `claude-9arm`), `qwenchance`, `management-talk`
 
-**Tooling:**
+**เครื่องมือ:**
 
-- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — Fork of PAL that adds the `antigravity` clink agent (Google's Gemini successor, `agy`, via ConPTY on Windows) and a `claude-9arm.json.example` template for pointing `claude` at an alternate model gateway. Prerequisite for using `clink-brainstorm` with Antigravity or a custom gateway.
+- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — fork ของ PAL ที่เพิ่ม clink agent `antigravity` (ตัวสืบทอดของ Gemini จาก Google, `agy`, ผ่าน ConPTY บน Windows) และเทมเพลต `claude-9arm.json.example` สำหรับชี้ `claude` ไปยัง model gateway อื่น เป็นสิ่งที่ต้องมีก่อนจะใช้ `clink-brainstorm` กับ Antigravity หรือ gateway ที่กำหนดเอง
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — ดู [LICENSE](LICENSE)
