@@ -8,7 +8,7 @@ Agent skills loaded by Claude Code.
 
 This repo grew out of a project to replace the human-in-the-middle bottleneck of AI brainstorming — instead of a developer sitting at a terminal answering each model's questions one by one, a master agent fans the problem out to a panel of independent CLI agents that debate automatically, then surfaces only the final synthesised result for human approval.
 
-The architecture is documented in [`docs/agentic-workflow-presentation.md`](./docs/agentic-workflow-presentation.md) — a write-up of the Hybrid Multi-Agent Architecture (Multi-Turn Negotiation Loop + Dynamic Skill Injection) originally prepared as a project presentation.
+The architecture is documented in [`docs/agentic-workflow-presentation.en.md`](./docs/agentic-workflow-presentation.en.md) — a write-up of the Hybrid Multi-Agent Architecture (Multi-Turn Negotiation Loop + Dynamic Skill Injection) originally prepared as a project presentation.
 
 ## Layout
 
