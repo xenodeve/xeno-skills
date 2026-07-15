@@ -16,6 +16,7 @@ Skills live under `skills/`:
 
 - `multi-agent/` — orchestrating multiple AI CLIs together
 - `t4/` — the T4 team's agent-primary operating standard (entry map, bootstrap, memory, records, workflow)
+- `karpathy-guidelines/` — behavioral guardrails for writing code (T4 auto-loads it at session start)
 
 Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
 
@@ -49,6 +50,10 @@ A family of skills distilled project-agnostic from the T4 team's mature repos (M
 - **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — Which record to write when something notable happens (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) and how to write it so it stays a reliable index (`file:line`, commit SHAs, validated-only, blameless). Templates included.
 - **[t4-dev-workflow](./skills/t4/t4-dev-workflow/SKILL.md)** — The feature pipeline (grill→PRD→issues→TDD), the PRD→issues→PR gate, the auto-triggered skill map, triage labels, the issue lifecycle, and the bilingual (Thai-mirrors-English) tracker rule. `docs/agents/*` + PRD/spec/plan templates included.
 - **[t4-afk](./skills/t4/t4-afk/SKILL.md)** — The discipline layer for running an unattended autonomous batch: the preflight scope-lock (AFK runs only on a pre-approved worklist), the may-decide-alone vs must-park boundary, the safe per-item loop (conventions→TDD→gates→checkpoint), the stop-and-park conditions that keep the tree from breaking, and how to land the batch with one digest and every issue reconciled. Preflight / park-note / landing-digest templates included. It doesn't relax any T4 rule — it removes the human checkpoint, so the gates hold themselves.
+
+### Coding behavior
+
+- **[karpathy-guidelines](./skills/karpathy-guidelines/SKILL.md)** — Behavioral guardrails that reduce the mistakes LLMs commonly make when writing code (think before coding, keep it simplest, make surgical changes, define verifiable success criteria), distilled from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876). `using-t4` auto-loads this once at session start in a T4 repo — so it runs alongside the T4 family out of the box (MIT, credits Karpathy).
 
 ## Related
 

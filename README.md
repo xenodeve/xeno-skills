@@ -16,6 +16,7 @@ Skills อยู่ภายใต้ `skills/`:
 
 - `multi-agent/` — การ orchestrate CLI ของ AI หลายตัวให้ทำงานร่วมกัน
 - `t4/` — มาตรฐานการทำงานแบบ agent-primary ของทีม T4 (entry map, bootstrap, memory, records, workflow)
+- `karpathy-guidelines/` — guardrails เชิงพฤติกรรมสำหรับการเขียนโค้ด (T4 โหลดอัตโนมัติตอนเริ่ม session)
 
 แต่ละ skill เป็น directory ของตัวเอง มี `SKILL.md` (พร้อม YAML frontmatter — `name` และ `description`) และไฟล์ reference ที่แนบมา
 
@@ -49,6 +50,10 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 - **[t4-engineering-records](./skills/t4/t4-engineering-records/SKILL.md)** — เลือกว่าจะเขียน record แบบไหนเมื่อมีอะไรสำคัญเกิดขึ้น (post-mortem vs ADR vs system-impact entry vs bug-case-catalog) และเขียนอย่างไรให้ยังเป็น index ที่เชื่อถือได้ (`file:line`, commit SHA, เฉพาะที่ validated แล้ว, blameless) มีเทมเพลตให้
 - **[t4-dev-workflow](./skills/t4/t4-dev-workflow/SKILL.md)** — pipeline ของ feature (grill→PRD→issues→TDD), gate แบบ PRD→issues→PR, map ของ skill ที่ trigger อัตโนมัติ, triage label, issue lifecycle และกฎ tracker แบบ bilingual (ไทยสะท้อนอังกฤษ) มีเทมเพลต `docs/agents/*` + PRD/spec/plan ให้
 - **[t4-afk](./skills/t4/t4-afk/SKILL.md)** — ชั้น discipline สำหรับรัน autonomous batch แบบไม่มีคนเฝ้า: preflight scope-lock (AFK รันได้เฉพาะ worklist ที่อนุมัติไว้ก่อน), เส้นแบ่ง "ตัดสินเองได้ vs ต้อง park", ลูปต่อชิ้นงานที่ปลอดภัย (convention→TDD→gate→checkpoint), เงื่อนไข stop-and-park ที่กัน tree ไม่ให้พัง และวิธีปิดจบ batch ด้วย digest เดียวพร้อม reconcile ทุก issue มีเทมเพลต preflight / park-note / landing-digest ให้ มันไม่ผ่อนกฎ T4 ข้อไหน — มันแค่เอา human checkpoint ออก ดังนั้น gate ต่างๆ ต้องยืนด้วยตัวเอง
+
+### Coding behavior
+
+- **[karpathy-guidelines](./skills/karpathy-guidelines/SKILL.md)** — guardrails เชิงพฤติกรรมที่ลดข้อผิดพลาดที่ LLM มักทำตอนเขียนโค้ด (คิดก่อนเขียน, ทำให้ง่ายที่สุด, แก้แบบ surgical, ตั้งเกณฑ์ success ที่ตรวจสอบได้) กลั่นจาก[ข้อสังเกตของ Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) `using-t4` โหลดตัวนี้อัตโนมัติครั้งเดียวตอนเริ่ม session ใน T4 repo — จึงใช้ควบคู่กับตระกูล T4 ได้ทันที (MIT, ให้เครดิต Karpathy)
 
 ## ที่เกี่ยวข้อง
 
