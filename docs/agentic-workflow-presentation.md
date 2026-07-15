@@ -82,3 +82,21 @@ graph TD
 > [!TIP]  
 > **การประหยัดกำลังสมองผู้พัฒนา (Developer Cognitive Load Reduction)**  
 > การย้ายกระบวนการถกเถียงเชิงเทคนิคไปอยู่ในระดับ AI-to-AI ช่วยลดเวลาที่นักพัฒนาต้องมานั่งคิดทีละสเต็ป ทำให้แผนงานเสร็จเร็วขึ้นและรัดกุมขึ้นอย่างเห็นได้ชัด โดยนักพัฒนามีหน้าที่เป็นเพียง **"ผู้อนุมัติขั้นสุดท้าย (Final Approver)"** เท่านั้น
+
+---
+
+## 6. การมอบหมายงานให้เอเจนต์ลงมือทำจริง (Work Delegation ผ่าน `clink-subagents`)
+
+ถ้า `clink-brainstorm` คือขั้น **ออกแบบ** (คณะกรรมการถกกันจนได้แผน) — Skill คู่กันชื่อ **`clink-subagents`** คือขั้น **ลงมือทำ**: หลังได้แผนแล้ว Master Agent จะ **มอบหมายงานย่อยที่มีขอบเขตชัด (leaf tasks)** ให้เอเจนต์ตัวอื่นทำจริงผ่าน `clink` แล้วดึงผลกลับมา verify และประกอบร่างเอง
+
+**เกณฑ์เลือกเอเจนต์** อิงดัชนีจริงจาก [Artificial Analysis](https://artificialanalysis.ai/models) (Coding Index / Agentic Index) — ยืนยันด้วย benchmark ในเครื่อง:
+
+| เอเจนต์ | โมเดล | Coding | Agentic | เหมาะกับ |
+|---|---|---|---|---|
+| **Codex** | GPT-5.6 | **71–77** | **45–54** | งาน coding ยากแบบ self-contained, in-place edit, code review — *โมเดลเทพแต่ harness อ่อน จึงต้อง verify เสมอ* |
+| **Antigravity** | Gemini 3.x | 68–70 | **21–37** ⚠️ | เฉพาะงาน single-shot ง่าย ๆ ที่ verify ง่าย — *agentic อ่อน ห้ามงาน multi-step* |
+| **Master (Claude)** | Opus 4.8 | ~74 | ~47 | decompose + integrate + **verify ทุกอย่างที่ subagent คืนมา** |
+
+> [!IMPORTANT]
+> **แบ่งงานตามจุดแข็ง — "Delegate the leaves, own the tree"**
+> Master ถือ agentic loop ที่ยากไว้เอง (วางแผน ประกอบ ตรวจสอบ) แล้วผลัก "ใบไม้" ที่ verify ได้ออกไป — Codex สำหรับใบไม้ยาก, Antigravity สำหรับใบไม้จิ๊บ — ได้ทั้งความเร็ว (รันขนาน) และประหยัด context โดยไม่เสียการควบคุมคุณภาพ เพราะ **ผลของ subagent ทุกชิ้นถือว่ายังไม่ผ่านจนกว่าจะ verify เอง**

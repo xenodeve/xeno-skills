@@ -40,6 +40,8 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — กระจายคำถามออกไปยัง CLI agent อิสระหลายตัว (Gemini/Antigravity, Codex, Claude ฯลฯ) ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) แล้วสังเคราะห์เป็นข้อเสนอแนะเดียว แต่ละ agent มี cognitive lens ที่ต่างกัน (Code-centric, System-centric, Logic-centric, Conceptual-centric) ซึ่งกำหนดวิธีปรับ prompt สำหรับการ challenge มี judge-led challenge loop สำหรับตอนที่ agent เห็นไม่ตรงกัน และ adversarial round แบบเจาะ lens สำหรับตอนที่ทุกตัวเห็นตรงกัน (การเห็นตรงกันโดยไม่ถูกกดดัน ≠ การยืนยันว่าถูก) **ต้องมี PAL MCP server** เชื่อมต่อกับ agent ของคุณ พร้อม `clink` CLI agent อย่างน้อยสองตัว
 
+- **[clink-subagents](./skills/multi-agent/clink-subagents/SKILL.md)** — มอบหมาย **งานที่มีขอบเขตชัด** (เขียน implementation, refactor, แปลงชุดใหญ่, research เฉพาะจุด, ร่างแรก) ให้ Codex (GPT-5.6) หรือ Antigravity (Gemini) ทำเป็น subagent ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) — เพื่อ offload งาน, รันขนานกัน หรือประหยัด context ต่างจาก `clink-brainstorm` (ที่ขอ *ความเห็น*) ตรงที่อันนี้ *สั่งให้ทำงานจริงแล้วเอาผลกลับมา* มาพร้อม routing rubric อิงดัชนี [Artificial Analysis](https://artificialanalysis.ai/models) (Codex = โมเดล coding เทพแต่ harness อ่อน → งานยาก self-contained + ต้อง verify; Antigravity = agentic อ่อน → เฉพาะงาน single-shot ง่าย ๆ; คุณ = orchestrate + verify) และกฎเหล็ก **verify ทุกอย่างที่ subagent คืนมา** **ต้องมี PAL MCP server** พร้อม `clink` agent `codex`/`antigravity`
+
 ### ทีม T4 (มาตรฐานการทำงานแบบ agent-primary)
 
 ตระกูลของ skill ที่กลั่นออกมาแบบไม่ผูกกับโปรเจกต์เดียว จาก repo ที่โตเต็มที่ของทีม T4 (MangaDock, T4-Fastwork) สำหรับ repo ที่ **coding agent เป็น developer หลัก** ออกแบบมาแบบ retrieval-first เพื่อให้ agent คง context ข้าม session และการ compaction ได้ แต่ละตัวค้นเจอได้เองด้วย trigger ของตัวเอง; `using-t4` เป็น entry map, `t4-project-bootstrap` เป็นตัวติดตั้งไฟล์ ส่วนอีกสามตัวที่เหลือดูแล discipline ที่ทำต่อเนื่อง
@@ -65,7 +67,7 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 
 **เครื่องมือ:**
 
-- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — fork ของ PAL ที่เพิ่ม clink agent `antigravity` (ตัวสืบทอดของ Gemini จาก Google, `agy`, ผ่าน ConPTY บน Windows) และเทมเพลต `claude-9arm.json.example` สำหรับชี้ `claude` ไปยัง model gateway อื่น เป็นสิ่งที่ต้องมีก่อนจะใช้ `clink-brainstorm` กับ Antigravity หรือ gateway ที่กำหนดเอง
+- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — fork ของ PAL ที่เพิ่ม clink agent `antigravity` (ตัวสืบทอดของ Gemini จาก Google, `agy`, ผ่าน ConPTY บน Windows) และเทมเพลต `claude-9arm.json.example` สำหรับชี้ `claude` ไปยัง model gateway อื่น เป็นสิ่งที่ต้องมีก่อนจะใช้ `clink-brainstorm` / `clink-subagents` กับ Antigravity หรือ gateway ที่กำหนดเอง
 
 ## License
 

@@ -82,3 +82,21 @@ Bringing all 4 agents into a single session gives us 360-degree perspectives, be
 > [!TIP]
 > **Developer Cognitive Load Reduction**
 > Moving the technical debate down to the AI-to-AI level cuts the time a developer must spend thinking step by step, making plans finish faster and noticeably more rigorous — with the developer serving only as the **"Final Approver."**
+
+---
+
+## 6. Delegating real work to agents (Work Delegation via `clink-subagents`)
+
+If `clink-brainstorm` is the **design** phase (a committee debating until it has a plan), its companion skill **`clink-subagents`** is the **execution** phase: once the plan exists, the Master Agent **delegates well-scoped leaf tasks** to other agents to actually do via `clink`, then pulls the results back, verifies them, and stitches them together itself.
+
+**Agent routing** is grounded in real [Artificial Analysis](https://artificialanalysis.ai/models) indices (Coding Index / Agentic Index), confirmed by a local benchmark:
+
+| Agent | Model | Coding | Agentic | Best for |
+|---|---|---|---|---|
+| **Codex** | GPT-5.6 | **71–77** | **45–54** | Hard self-contained coding, in-place edits, code review — *elite model but weaker harness, so always verify* |
+| **Antigravity** | Gemini 3.x | 68–70 | **21–37** ⚠️ | Only simple, single-shot, easily-verifiable tasks — *weak agentic, no multi-step work* |
+| **Master (Claude)** | Opus 4.8 | ~74 | ~47 | Decompose + integrate + **verify everything a subagent returns** |
+
+> [!IMPORTANT]
+> **Delegate the leaves, own the tree**
+> The Master keeps the hard agentic loop (plan, integrate, verify) and pushes verifiable "leaves" out — Codex for the hard leaf, Antigravity for the trivial one — gaining speed (parallel runs) and context savings without losing quality control, because **every subagent output is treated as unverified until the Master proves it.**

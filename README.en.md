@@ -40,6 +40,8 @@ npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — Fan a question out to multiple independent AI CLI agents (Gemini/Antigravity, Codex, Claude, etc.) through [PAL](https://github.com/BeehiveInnovations/pal-mcp-server)'s `clink` tool, then synthesize one recommendation. Each agent has a distinct cognitive lens (Code-centric, System-centric, Logic-centric, Conceptual-centric) that determines how to tailor challenge prompts. Includes a judge-led challenge loop for when agents disagree and a lens-targeted adversarial round for when they converge (convergence without pressure ≠ validation). **Requires PAL MCP server** connected to your agent with at least two `clink` CLI agents configured.
 
+- **[clink-subagents](./skills/multi-agent/clink-subagents/SKILL.md)** — Delegate a **well-scoped chunk of work** (implementation, refactor, bulk transform, focused research, first-draft) to Codex (GPT-5.6) or Antigravity (Gemini) as a subagent through [PAL](https://github.com/BeehiveInnovations/pal-mcp-server)'s `clink` tool — to offload effort, parallelize, or save context. Unlike `clink-brainstorm` (which gathers *opinions*), this one *has work done and returned*. Ships a routing rubric grounded in [Artificial Analysis](https://artificialanalysis.ai/models) indices (Codex = elite coding model but weaker agentic harness → hard self-contained tasks + verify; Antigravity = weak agentic → trivial single-shot tasks only; you = orchestrate + verify) and the non-negotiable rule: **verify everything a subagent returns**. **Requires PAL MCP server** with the `codex`/`antigravity` `clink` agents configured.
+
 ### T4 team (agent-primary operating standard)
 
 A family of skills distilled project-agnostic from the T4 team's mature repos (MangaDock, T4-Fastwork), for repos where **the coding agent is the primary developer**. Built retrieval-first so an agent keeps context across sessions and compaction. Each is independently discoverable by its own trigger; `using-t4` is the entry map, `t4-project-bootstrap` installs the files, and the other three own the ongoing disciplines.
@@ -65,7 +67,7 @@ A family of skills distilled project-agnostic from the T4 team's mature repos (M
 
 **Tooling:**
 
-- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — Fork of PAL that adds the `antigravity` clink agent (Google's Gemini successor, `agy`, via ConPTY on Windows) and a `claude-9arm.json.example` template for pointing `claude` at an alternate model gateway. Prerequisite for using `clink-brainstorm` with Antigravity or a custom gateway.
+- **[xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server)** — Fork of PAL that adds the `antigravity` clink agent (Google's Gemini successor, `agy`, via ConPTY on Windows) and a `claude-9arm.json.example` template for pointing `claude` at an alternate model gateway. Prerequisite for using `clink-brainstorm` / `clink-subagents` with Antigravity or a custom gateway.
 
 ## License
 
