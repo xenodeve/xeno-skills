@@ -38,8 +38,9 @@ The `t4-*` skills are a thin, team-specific layer **on top of** three general sk
 
 At the start of any session in a T4 repo, before picking up work:
 
-1. **`t4-agent-memory`** — read the memory vault index and the open-work ledger (this is what survives a context reset). Then read the specific GitHub issue you're picking up.
-2. Route the task through the map above.
+1. **`karpathy-guidelines`** — load once at session start (or the first time you consult this map) so every edit this session is surgical, simple, and goal-verified. These behavioral guardrails apply to all coding here — see the coding-behavior rule below.
+2. **`t4-agent-memory`** — read the memory vault index and the open-work ledger (this is what survives a context reset). Then read the specific GitHub issue you're picking up.
+3. Route the task through the map above.
 
 ## The non-negotiable rules (all skills carry these)
 
@@ -51,6 +52,7 @@ At the start of any session in a T4 repo, before picking up work:
 - **Bun** is the package manager — commit `bun.lock`, use `bunx`.
 - **Records stay a reliable index** — `file:line`, commit SHAs, validated-only, blameless (`t4-engineering-records`).
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
+- **Coding behavior follows `karpathy-guidelines`** — think before coding, simplest thing that works, surgical diffs tracing to the request, verifiable success criteria (loaded once at session start).
 
 ## When NOT to use
 
