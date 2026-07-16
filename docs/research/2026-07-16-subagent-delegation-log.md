@@ -70,3 +70,33 @@ Context: before closing 19 "done" GitHub issues, the developer required *real* v
 - **Verify-before-close earns its keep — delegated verification caught 2 real gaps.** Trusting the ledger + "PR merged" would have wrongly closed #18 (RLS existed on prod but **not in any committed migration** — a reproducibility drift the grep-only agent flagged) and #20 (the `pushed_at`-delta / WARM-tier poll was **never implemented**; the code comment defers it). The chat epic (#37/#38–43, #33, #35) verified clean with file:line. Lesson: a subagent auditing acceptance criteria against real code is a cheap, high-value gate before any bulk issue-close.
 - **Ground-truth beats a stale ledger (prod DB check).** The ledger claimed a broad "~13 public tables have RLS disabled"; a direct `pg_class`/`pg_policies` query on prod showed RLS **already enabled + policied on the content tables** — only a small remaining set (a handful of chat/RAG tables) still needs the pass. The planned "big security epic" is really a small, focused job. (Exact tables/columns live in the project's private security note, not here.) Verifying against the live system, not the memory doc, re-scoped the work by ~4×.
 - **Knowing when *not* to delegate is part of the discipline.** Declined to delegate the SHA/evidence gather to qwen — the source (the ledger) was already in my context, so the round-trip would have cost more than it saved. Logged as a decision (run 7), per the skill's own economics.
+
+## The difficulty ladder — same task at 3 agents, escalating rungs (2026-07-16)
+
+The deliberate experiment the research is *for*: run the **same** task at codex / antigravity / qwen,
+starting trivial and climbing difficulty, verifying every output myself, to find **each agent's
+breaking point**. Rungs R0–R2 are artifact-mode (return code, I run it); R3 is in-place agentic
+(the agent must write files *and* run its own test). All 3 fired in parallel per rung.
+
+| Rung | Task (identical prompt) | codex (GPT-5.6) | antigravity (Gemini) | qwen (`claude-9arm`, 35B) |
+|---|---|---|---|---|
+| **R0** trivial read — "list the exports of a small file" | ✅ correct, terse, 36s | ✅ correct, 22s, **no `<SUMMARY>`** | ✅ correct, 19s (no 524 today) |
+| **R1** easy write — `chunkString` w/ surrogate-pair trap (don't split emoji) | ✅ `Array.from`, 31s | ✅ correct, 27s, **`<SUMMARY>` returned** | ✅ correct, 13s (fastest) |
+| **R2** moderate — `mergeIntervals`, must merge *touching* + accept *unsorted* | ✅ correct, **no input mutation** | ✅ correct, **clones to avoid mutation** | ⚠️ **output correct but MUTATES the caller's input** (aliasing: `merged=[sorted[0]]` then writes `last[1]`) |
+| **R3** hard multi-step agentic — write `slug.mjs` + `slug.test.mjs`, then **run the test** | ✅ **full loop**: wrote both, first run hit `ERR_MODULE_NOT_FOUND`, **self-corrected**, reported 3/3 PASS (verified by me) | ⚠️ **wrote correct code** (its own test passes when *I* run it) but **could not execute** — headless auto-denied the `command` permission → returned the jetski error instead of a result | ❌ **total failure**: ignored the given cwd, tried to write to the **repo root**, thrashed **13 turns** across Write/PowerShell/Bash, every attempt sandbox-denied, **0 files produced**, burned 729k input tokens |
+
+**The breaking-point curve (verified, not eyeballed — I ran every artifact):**
+- **qwen (index ~32):** clean through R1; **first crack at R2** — a *subtle* defect (correct output, hidden input-mutation) that an output-only test passes. **Shatters at R3**: doesn't respect the specified working directory (defaulted to the repo root), can't sequence a multi-step write→run, thrashes. Its failures are quiet at R2 and catastrophic-but-safe at R3 (only the sandbox stopped it polluting the repo).
+- **antigravity (weak agentic 21–37):** solid *artifact* quality through R2 (even adds a defensive `typeof` guard at R3). **Breaks at R3's agentic step** exactly as the rubric predicts — its headless harness can't get the `command` permission to *run* anything, so it can produce code but never self-verify. Great single-shot artifact generator; useless for "do it and check it yourself."
+- **codex (top tier):** **no break in R0–R3.** The only agent to close the full write→run→self-correct loop autonomously (R3), and separately it sustained a ~11-minute hard read-only adversarial review that surfaced 3 real findings. Its ceiling is above this ladder.
+
+**New, verified findings (fold into `clink-subagents`):**
+1. **qwen ignores the target cwd and defaults to the repo root.** In an in-place write via clink it repeatedly tried to write at the repo root despite an explicit scratch path. **The write sandbox / allow-rules are not optional for qwen** — they are the only thing that prevented repo pollution. Never give qwen unsandboxed write.
+2. **antigravity can *write* but not *run* in headless.** Its files were correct; the `command`-permission wall (same one that no-ops its `codereviewer` role) blocks execution. So for antigravity, use **artifact mode and run/verify it yourself** — never ask it to "run the tests."
+3. **qwen's R2 failure mode = subtle side-effects, not obvious wrongness.** Output-only tests pass; you need an *input-mutation / aliasing* check to catch it. This is the concrete reason the verify-everything rule matters most for the cheapest agent.
+4. **codex is the only "delegate the whole leaf and trust-but-verify" agent** here — and even then I re-ran its passing test independently (it was genuinely green).
+5. **`<SUMMARY>` tax is task-dependent for antigravity:** absent on the R0 one-word read, present on R1/R2 code returns. Strip it whenever output size matters.
+
+## Codex adversarial review — R4-class, hard read-only agentic (sanitized)
+
+`clink → codex` (`codereviewer`, effort `high`), pointed at a real security-sensitive change and asked to *break* it. **~11 min**, ~1.45M input (mostly cached) / 13.6k output; it connected to the live system for read-only catalog introspection on its own initiative and returned **three genuine, distinct findings** (one higher-severity pre-existing issue, one correctness/UX split-brain, one durability gap in the change itself) — all verified plausible, none hallucinated. **The specific findings are security-sensitive and live in the project's private security note, not this public research log.** The research takeaway (which is what belongs here): codex **sustains hard, context-heavy, genuinely-adversarial review that finds real issues** — its single best-fit delegation lane. Operational notes: the result again spilled to a ~64k-char one-line file (slice by character range, not Read's line offsets); ignore the trailing `bun`/`node` PATH-fail stderr noise.
