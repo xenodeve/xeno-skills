@@ -63,6 +63,26 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 4. **Synthesize and present your own recommendation** — don't just paste the raw responses at the user. State what the agents converged on, what they disagreed about, and your own read on which is right and why (you have the full session context they don't).
 5. **Use `continuation_id`** (returned in each clink/chat response) to follow up with the *same* agent in the *same* thread if you want to push back or ask a clarifying question — it preserves that agent's prior context, so you don't have to re-explain the whole question from scratch.
 
+## Dialing model + effort per call (this PAL fork)
+
+The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional per-call** `clink` params — `model` and `reasoning_effort` — so you can tune each agent's capability *per round* without editing config (which is cached at server start). For brainstorming this is a real lever: match depth to the question, and widen cognitive diversity by routing an agent to a different backend family.
+
+`mcp__pal__clink(prompt, cli_name, model?, reasoning_effort?, role?, continuation_id?)`
+
+| Back-end | `model` (per call) | `reasoning_effort` (per call) |
+|---|---|---|
+| `codex` | ✅ `-m` — e.g. `gpt-5.6-sol`, `gpt-5.5` (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) |
+| `antigravity` | ✅ `--model "<label>"` — incl. **`Claude Opus 4.6 (Thinking)` / `Sonnet 4.6`** (a non-Google, non-OpenAI heavyweight route) | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
+| `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
+
+Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
+
+**Brainstorm-specific use:**
+- **Escalate effort on the round that matters, not every call.** Run a cheap first round (`low`/`medium`) to surface positions; then for the **adversarial round** or the final consequential call, push codex to `high`/`max`. The depth lands exactly where the loop needs it.
+- **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. One strong round: `codex` → `gpt-5.6-sol`, `antigravity` → **`Claude Opus 4.6 (Thinking)`**, your gateway model via `claude-9arm` — three genuinely different families in one fan-out. (Caveat: antigravity's Claude/GPT routes drain the faster-burning non-Google quota — see `clink-subagents` token economics.)
+- **Steep diminishing returns on effort** — `medium`/`high` is the value sweet spot; reserve `max`/`xhigh` for the single hardest probe. Don't blanket-`max` a 3-agent × 3-round loop (it's a multi-minute, quota-heavy operation for little marginal signal).
+- These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
+
 ## Round 2+: bounded judge-led challenge loop
 
 A single round (independent parallel answers) is the default. For a genuinely consequential decision where round 1 produced real disagreement, run a **bounded challenge loop** instead of accepting round 1 as final — but **you (the orchestrating agent) are the judge and the stop condition**, not the sub-agents:

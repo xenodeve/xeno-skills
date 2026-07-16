@@ -34,10 +34,14 @@ Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indi
 | Agent (`cli_name`) | Backend | Coding | Agentic | Delegate to it… | Guardrail |
 |---|---|---|---|---|---|
 | **`codex`** | GPT-5.6 (Sol/Terra/Luna) | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, focused code review, in-place edits of a known file | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. |
-| **`antigravity`** | Gemini 3.x (`agy`) | 68–70 (ok) | **21–37 (weak)** ⚠️ | ONLY simple, **single-shot**, single-file, trivially-verifiable tasks — a pure function, boilerplate, one format/transform, a focused lookup | **Weak at multi-step agentic** — never give it work where a wrong early step compounds. Chatty: appends a `<SUMMARY>` block even when told "output only X" — strip it. |
+| **`antigravity`** | Gemini 3.x (`agy`) | 68–70 (ok) | **21–37 (weak)** ⚠️ | ONLY simple, **single-shot**, single-file, trivially-verifiable **artifact** tasks — a pure function, boilerplate, one format/transform, a focused lookup | **Weak at multi-step agentic** — never give it work where a wrong early step compounds. **In headless it can *write* files but cannot *run* anything** (any command tool auto-denies) — so use **artifact mode** and run/verify yourself; never ask it to "run the tests". Chatty: appends a `<SUMMARY>` block even when told "output only X" — strip it. |
 | **you (orchestrator)** | e.g. Claude Opus 4.8 | ~74 | ~47 | — | Decompose, integrate, verify. Delegate the leaves, own the tree. |
 
 Rule of thumb: **Codex for the hard leaf, Antigravity for the trivial leaf, you for the tree.** If a task needs more than one dependent step of judgment, it isn't a leaf — don't delegate it (least of all to Antigravity).
+
+**Two more channels the rubric doesn't table:**
+- **`claude-9arm` / qwen via clink** (the free/unlimited local model — details in `qwen-agent`): fine for **read/gather/format** leaves, but its quality cracks earlier than the others (see the ladder) — at a moderate task it can return **correct output with a hidden side-effect** (e.g. mutating its input) that an output-only test passes. And **it ignores the working directory you specify** — an in-place write defaulted to the *repo root* despite an explicit scratch path, so its **write sandbox / allow-rules are not optional**; never give qwen unsandboxed write. Verify its writes by diff, and its returns by checking for side-effects, not just output equality.
+- **In-harness Task/Explore subagents** (your own platform's subagent, not clink): a distinct lever for **read-only fan-out** — dispatch several in parallel over independent areas, each returning a terse structured verdict, so you ingest conclusions not file dumps. Best for *verify-before-you-act* sweeps (e.g. audit N issues' acceptance criteria against real code before a bulk close); it shrinks *your* context the same way clink does, with per-area parallelism clink lacks. Constrain output ("report only, not file contents") and they obey.
 
 ## Token economics — what "cheaper" actually means
 
@@ -95,6 +99,8 @@ Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml
 - Ran code? Run the test / execute it yourself.
 - Edited files? Read the **diff**, then run the build/tests.
 - Made a claim? Check it against the real code.
+- **Check for side-effects, not just output equality.** A weaker agent (esp. qwen) can return *correct output* while mutating its input or leaving hidden state — an output-only test passes it. Diff, and assert the input is unchanged where it should be.
+- **Run the real thing, not only the unit tests.** Unit tests pass a lot that a real build/boot rejects: a delegated (or your own) edit once passed `bun test` but broke `nest build` (an `import.meta` that the CommonJS build forbids) — only starting the server surfaced it. For anything that compiles/boots/serves, run the actual build + boot after verifying units.
 - Antigravity especially: correct-*looking* but weaker — re-check the logic and **strip its `<SUMMARY>`** before using anything.
 
 If your repo has agent operating rules (e.g. an `AGENTS.md`), a delegated subagent is bound by the same rules — and *you* are accountable for enforcing them on its output.
@@ -108,6 +114,13 @@ Snapshots that calibrated the rubric — **synthetic** plus **real tasks in a li
 **Real-repo (T4-Fastwork):**
 - *Summarize a 30,696-char ledger → 5 bullets:* **Codex** 37s, input 50k (20k cached), result **~240 tok**, obeyed "only 5 bullets". **Antigravity** 38s, appended `<SUMMARY>`, ~375 tok. **Qwen/`claude-9arm`** (local) 64s, input **130k** (full CC harness, uncached) but free, ~464 tok, accurate + honest. Doing it myself ≈ **8.5k of *my* tokens**; delegating ≈ 240–464.
 - *Adversarial review of a real regex fn (`tagForKey`); correct answer = no bug:* **Codex** (`codereviewer`) → `NO BUGS FOUND` in **19s**, 144 out — **correct** (no hallucinated false-positive), terse. **Antigravity** (`codereviewer`) → **failed**: its harness tried a command tool that headless auto-denied → no review produced (see Gotchas).
+
+**Difficulty ladder — the same task at all three, escalating, every artifact re-run to verify (2026-07-16).** This is the sharpest calibration: it finds *where each agent breaks*.
+- **R0 trivial** (list a file's exports) → all three correct + terse (~19–36s). Floor.
+- **R1 easy write** (a pure fn with a surrogate-pair trap) → all three correct (all knew the code-point idiom).
+- **R2 moderate** (`mergeIntervals`, must merge touching + accept unsorted) → codex + antigravity correct **and side-effect-free**; **qwen correct output but MUTATED the caller's input** (aliasing) — the first crack, and an *invisible* one (output-only tests pass).
+- **R3 hard, multi-step agentic** (write two files + run the test) → **codex ✅ full loop** (wrote, first run errored, **self-corrected**, verified); **antigravity ⚠️** wrote correct files but **couldn't run them** (headless command wall) → no self-verify; **qwen ❌ total failure** — ignored the given cwd, thrashed 13 turns writing to the repo root, sandbox-denied all, 0 files.
+- **Breaking-point curve:** qwen cracks at R2 (subtle), shatters at R3 (agentic); antigravity is a solid *artifact* generator but breaks at "run it yourself"; **codex holds through R3** and sustained an ~11-min adversarial review that surfaced 3 real findings. Its ceiling is above this ladder.
 
 **Takeaway:** Codex is the reliable default — top intelligence, follows tight output constraints, cheapest on *your* pool, no false-positive on a clean-code review. Antigravity is fine only for the trivial single-shot **`default`-role** leaf; its `codereviewer` role can no-op in headless. A local model is the free/unlimited option when you're offloading bulk, not chasing quality. **Snapshot — re-run if the CLIs/models change.**
 
