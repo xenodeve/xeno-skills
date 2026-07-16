@@ -39,6 +39,29 @@ Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indi
 
 Rule of thumb: **Codex for the hard leaf, Antigravity for the trivial leaf, you for the tree.** If a task needs more than one dependent step of judgment, it isn't a leaf — don't delegate it (least of all to Antigravity).
 
+## Token economics — what "cheaper" actually means
+
+Measured 2026-07-16 (same tasks, a live repo). The back-ends are **billed differently**, so "count total tokens" is the wrong lens:
+
+- **You (the orchestrator)** are the only **metered, context-window-bound** token pool — the scarce one.
+- **`codex` / `antigravity` are subscription** — flat, **rate-limited**, not per-token-billed.
+- **A local model** (e.g. Qwen via `claude-9arm` — see the `qwen-agent` skill) is **unlimited + $0**: its tokens cost only electricity + latency.
+
+So **"cheaper" = fewer of *your* tokens**, and delegation wins whenever `(what you'd read + reason yourself) > (prompt + result you ingest + verification)`. Big-input / small-output / cheaply-verifiable → delegate. A 2-line edit in a file already in your context → do it yourself; the round-trip costs more of *your* tokens than the edit.
+
+**The subagent's *returned* text is *your* tokens.** Constrain it hard ("return ONLY X"):
+- `codex` obeys + is terse (5-bullet summary of an 8k-token file came back ~240 tok; a `NO BUGS FOUND` review, ~15).
+- `antigravity` appends a `<SUMMARY>` block anyway (~+60% ingest) — strip it.
+- A read-heavy `codex` **review** once echoed its whole transcript back = **91k chars ≈ 23k of your tokens**. For read-heavy delegations, say "return findings only, not the files."
+
+**Pick the back-end by latency × intelligence × subscription-quota you'll spend — never by its token count** (free or flat). Unlimited menial bulk you don't want to bill to a subscription → the local model (slower, less smart). Must be *right* → `codex` (top intelligence *and* tersest = also cheapest on your pool). The ~130k-token harness overhead a fresh local `claude-9arm -p` call reloads each time is **free compute** — it costs you only latency, nothing metered.
+
+**Antigravity's quota is split by vendor — and the non-Google side drains fast.** Within `agy` there are **two shared subscription pools**:
+- **Google pool** — `Gemini 3.5 Flash` + `Gemini 3.1 Pro` share this one.
+- **non-Google pool** — `GPT-OSS 120B` + `Claude Sonnet 4.6` + `Claude Opus 4.6` share this one, and it **burns noticeably faster** than the Google side.
+
+So routing `antigravity` to a Claude/GPT route (e.g. for a non-OpenAI second opinion) is fine *occasionally*, but it drains the non-Google allowance quickly; keep bulk/repeated antigravity work on the cheaper Gemini pool and spend the Claude/GPT route only when a different vendor's judgment is the point.
+
 ## How to delegate (the call)
 
 `mcp__pal__clink(prompt, cli_name, role?, continuation_id?, images?)`
@@ -52,6 +75,20 @@ Rule of thumb: **Codex for the hard leaf, Antigravity for the trivial leaf, you 
 5. **`continuation_id`** (returned each call) — reuse it to follow up with the *same* agent in the *same* thread (≈49 turns) without re-sending context.
 6. **File access:** prefer putting the absolute path *in the prompt text* and telling the agent to read it with its own tools. (Some orchestrators' permission classifiers block the `absolute_file_paths` parameter into repo source even with consent — don't fight it; use the prompt-text path instead.)
 
+## Model & reasoning level — per call (this fork) or in config
+
+This [PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional per-call** `clink` params — `model` and `reasoning_effort` — so you can dial capability per delegation without editing config. Support differs by back-end (all verified live 2026-07-16):
+
+| Back-end | `model` (per call) | `reasoning_effort` (per call) | Notes |
+|---|---|---|---|
+| **`codex`** | ✅ `-m <model>` — **validated** (invalid model → hard 400 error) | ✅ `-c model_reasoning_effort=` — `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) | Full support. This account exposes `gpt-5.6-sol`, `gpt-5.6-luna`, `gpt-5.5`. |
+| **`antigravity`** | ✅ `--model "<label>"` — **fail-closed** (invalid → exit 1 + catalog) | ➖ no separate flag — effort is **baked into the model label** (`(Low/Medium/High)`, `(Thinking)`) | agy's `--model` **must precede `--print`** (value-taking flag) or it's silently swallowed → default model; the fork's runner handles ordering. See gotchas. |
+| **`claude-9arm`** (Claude Code → a gateway model, e.g. Qwen) | ✅ `--model` (last-wins) — **limited to what the gateway serves** | ❌ **no-op** — not a `claude`/gateway flag (this Qwen gateway has only thinking on/off, no graded effort) | Activate by copying `claude-9arm.json.example` → `.json` with your `claude.exe` + `--settings`/`--model`. |
+
+Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`). Effort has steep diminishing returns — `medium`/`high` is the sweet spot; reserve `max`/`xhigh` for the hardest leaf.
+
+**Config-based selection (still valid):** pin `-m`/`--model`/`-c` in a client's `additional_args` (every call) or a role's `role_args`, or define multiple pinned clients (`codex-high.json`, `codex-fast.json`) selected via `cli_name`. **Restart PAL after any config edit** (cached at server start).
+
 ## The non-negotiable rule: verify everything they return
 
 **A subagent's output is unverified until you prove it.** This is the whole discipline — a strong model behind a weaker agent harness still produces output you cannot trust on faith:
@@ -62,19 +99,26 @@ Rule of thumb: **Codex for the hard leaf, Antigravity for the trivial leaf, you 
 
 If your repo has agent operating rules (e.g. an `AGENTS.md`), a delegated subagent is bound by the same rules — and *you* are accountable for enforcing them on its output.
 
-## Benchmark of record (example — re-run for your setup)
+## Benchmark of record (re-run for your setup)
 
-A local snapshot (2026-07-16) that calibrated the rubric above:
-- **Artifact mode:** `merge_intervals` + a `median` bug-fix → **4/4 correct**; Codex ~26–31s (clean output), Antigravity ~21–30s (correct, always appends `<SUMMARY>`).
-- **In-place mode:** Codex read + patched a file's `average()` (empty-list guard) correctly, verified by running it → ~50s.
-- **Takeaway:** both are reliable for simple→moderate coding; Codex follows tight output constraints better; Antigravity is fine only for the trivial single-shot leaf. **These numbers are a snapshot — re-run a quick benchmark if the CLIs/models change.**
+Snapshots that calibrated the rubric — **synthetic** plus **real tasks in a live repo** (T4-Fastwork as sandbox, 2026-07-16):
+
+**Synthetic (coding):** `merge_intervals` + a `median` bug-fix (artifact) → 4/4 correct; Codex ~26–31s (clean), Antigravity ~21–30s (correct, always `<SUMMARY>`). In-place: Codex patched an `average()` empty-list guard, verified by running → ~50s.
+
+**Real-repo (T4-Fastwork):**
+- *Summarize a 30,696-char ledger → 5 bullets:* **Codex** 37s, input 50k (20k cached), result **~240 tok**, obeyed "only 5 bullets". **Antigravity** 38s, appended `<SUMMARY>`, ~375 tok. **Qwen/`claude-9arm`** (local) 64s, input **130k** (full CC harness, uncached) but free, ~464 tok, accurate + honest. Doing it myself ≈ **8.5k of *my* tokens**; delegating ≈ 240–464.
+- *Adversarial review of a real regex fn (`tagForKey`); correct answer = no bug:* **Codex** (`codereviewer`) → `NO BUGS FOUND` in **19s**, 144 out — **correct** (no hallucinated false-positive), terse. **Antigravity** (`codereviewer`) → **failed**: its harness tried a command tool that headless auto-denied → no review produced (see Gotchas).
+
+**Takeaway:** Codex is the reliable default — top intelligence, follows tight output constraints, cheapest on *your* pool, no false-positive on a clean-code review. Antigravity is fine only for the trivial single-shot **`default`-role** leaf; its `codereviewer` role can no-op in headless. A local model is the free/unlimited option when you're offloading bulk, not chasing quality. **Snapshot — re-run if the CLIs/models change.**
 
 ## Gotchas
 
 - **clink client config is cached at PAL server start.** Editing `conf/cli_clients/*.json` (e.g. changing a model or args) has no effect until PAL is restarted — don't conclude a change failed before restarting.
 - **`command` must resolve from PAL's process env**, not just your shell. If a clink call errors "not found", use the absolute path to the exe in the config. The bare `gemini` CLI is **retired** → use `antigravity`.
 - **Harmless Codex noise:** its stderr often shows `rmcp … DELETE returned HTTP 404 session` — ignore it; check `return_code` and the content instead.
-- **Don't paste secrets** (`.env` values, tokens) into a clink prompt — you're sending to a third-party CLI/model.
+- **Antigravity's `codereviewer` role can no-op in headless.** It may invoke a command tool that headless mode auto-denies (`jetski: no output produced … required the "command" permission`) and return that error *instead of* a review — with `return_code: 0`, so check the **content**, not just the code. Safe fix: use `role: default` for Antigravity (its plain-Q&A path doesn't hit this), or grant that one tool a scoped allow-rule in the CLI's own settings. Codex's `codereviewer` role is unaffected.
+- **Antigravity `--model` must come BEFORE `--print`.** `agy`'s `--print` is a **value-taking** flag (it consumes the next token as the prompt), so `agy --print --model "X" "<prompt>"` swallows `--model` as the prompt → agy runs with an empty model and **silently falls back to its default** (always reports *Gemini 3.5 Flash* regardless of what you asked). Correct order: `agy --model "X" --print "<prompt>"` (live-verified). This fork's Antigravity runner already emits that order and fails closed on a non-zero exit; if you hand-build an `agy` command, mind the order and check the exit code (an unsupported model exits `1` with a catalog).
+- **Don't paste secrets** (`.env` values, tokens) into a clink prompt — you're sending to a third-party CLI/model. (During this work a GitHub PAT was found sitting in `~/.gemini/config/config.json` and echoed by an `agy` diagnostic log — audit those too.)
 - **Latency is the real budget**, not (flat-rate) cost — a multi-delegation round is a multi-minute wall-clock operation. Parallelize, and don't delegate the trivial.
 
 ## See also
