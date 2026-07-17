@@ -44,4 +44,13 @@ The four scripts are the canonical hook scripts, kept byte-identical to the plug
 
 - **Marker-guarded:** every hook exits silently unless `<cwd>/.claude/t4.json` exists, so a copy leaking into a non-T4 checkout does nothing.
 - **Fail-safe:** no bash on the machine → `run-hook.cmd` exits 0 and the hooks become no-ops (a missing reminder, never a broken session).
-- **The gate never auto-approves** — silence means "no opinion, normal permission flow"; it only ever adds a `deny`.
+- **The gate never auto-approves** — silence means "no opinion, normal permission flow"; it only ever adds a `deny` or an `ask`.
+
+## Ship gate: verify + CI — the layer that actually holds
+
+Injected reminders are soft and PreToolUse denies only cover *agent-run* commands. The genuinely un-bypassable enforcement is verification the machine runs itself:
+
+1. **Local ship gate (opt-in).** Set `.claude/t4.json` `"verify"` to the repo's test command (e.g. `"bun test"`). `t4-gate` then **runs it itself** before any `gh pr create` / `gh pr merge` and blocks on failure — real, un-forgeable, because the hook runs the tests rather than trusting a claim. Empty = off. `gh pr merge` also `ask`s the human to confirm `/scrutinize` + `/code-review` ran.
+2. **Server-side gate (the real guarantee).** Install `references/ci/t4-verify.yml` as `.github/workflows/t4-verify.yml` and make it a **required status check** on `main`, with **direct pushes to `main` disallowed**. This is the only layer that also catches a human merging on the web and that `--no-hooks` can't skip. Keep its command in sync with `.claude/t4.json` `"verify"`.
+
+Honest scope: the local gate raises the floor for agent-run merges; the CI required-check is what makes "no merge without a green verify" actually true.

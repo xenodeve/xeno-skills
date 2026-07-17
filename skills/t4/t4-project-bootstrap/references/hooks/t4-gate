@@ -4,8 +4,10 @@
 # Scoped to T4 repos via the `.claude/t4.json` marker.
 #
 # Rules:
-#   - PR needs a referenced issue  (PRD -> issues -> PR gate)
 #   - dangerous git is blocked     (reset --hard, force-push, clean -f, branch -D)
+#   - PR needs a referenced issue  (PRD -> issues -> PR gate)
+#   - ship gate: a green `verify` (.claude/t4.json) is required to open/merge a PR
+#   - before-merge: `gh pr merge` asks the human to confirm review ran
 set -uo pipefail
 
 input="$(cat)"
@@ -22,11 +24,28 @@ cmd="$(printf '%s' "$input" | perl -0777 -ne '
     my $c=$1; $c=~s/\\n/\n/g; $c=~s/\\t/\t/g; $c=~s/\\"/"/g; $c=~s/\\\\/\\/g; print $c;
   }')"
 
-deny() {
-  local r="$1"
+_decide() {  # $1 = deny|ask ; $2 = reason
+  local r="$2"
   r="${r//\\/\\\\}"; r="${r//\"/\\\"}"; r="${r//$'\n'/\\n}"; r="${r//$'\r'/\\r}"; r="${r//$'\t'/\\t}"
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$r"
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"%s","permissionDecisionReason":"%s"}}\n' "$1" "$r"
   exit 0
+}
+deny() { _decide deny "$1"; }
+ask()  { _decide ask  "$1"; }
+
+# Runs the repo's configured verify command (.claude/t4.json "verify") itself, so
+# the ship gate is real, un-forgeable enforcement — not a claim to trust.
+# Returns 0 when it passes OR when nothing is configured; 1 when it fails.
+run_verify() {
+  local vcmd
+  vcmd="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < .claude/t4.json 2>/dev/null)"
+  vcmd="${vcmd//\\\"/\"}"; vcmd="${vcmd//\\\\/\\}"
+  [ -n "$vcmd" ] || return 0
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 600 bash -c "$vcmd" >/dev/null 2>&1
+  else
+    bash -c "$vcmd" >/dev/null 2>&1
+  fi
 }
 
 # --- dangerous git -----------------------------------------------------------
@@ -53,7 +72,10 @@ if [[ "$scan" =~ (^|[/\\\"[:space:]])git(\.exe)?([[:space:]]|$) ]]; then
 fi
 
 # --- PR needs a referenced issue --------------------------------------------
-if [[ "$cmd" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$cmd" =~ pr[[:space:]]+create ]]; then
+# Detect the command on the quote-stripped `scan` (so a commit message that just
+# says "gh pr create" doesn't trip it); detect the issue ref on the raw `cmd`
+# (so a ref inside a quoted --body still counts).
+if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]]+create ]]; then
   ref=""
   [[ "$cmd" =~ \#[0-9]+ ]] && ref="yes"
   if [ -z "$ref" ] && [[ "$cmd" =~ --body-file[[:space:]=]+([^[:space:]]+) ]]; then
@@ -61,6 +83,16 @@ if [[ "$cmd" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$cmd" =~ pr[[:space:]]+
     [ -f "$bf" ] && grep -Eq '#[0-9]+' "$bf" && ref="yes"
   fi
   [ -n "$ref" ] || deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first."
+fi
+
+# --- ship gate: a green verify is required to open OR merge a PR -------------
+if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]]+(create|merge) ]]; then
+  run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before opening/merging the PR."
+fi
+
+# --- before-merge gate: confirm the review skills ran -----------------------
+if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]]+merge ]]; then
+  ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?"
 fi
 
 exit 0
