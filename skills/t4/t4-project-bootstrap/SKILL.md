@@ -32,7 +32,7 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 
 | Repo stage | Install |
 |---|---|
-| **Seed** (new repo, first sessions) | `CLAUDE.md` wiring · `docs/agents/{domain,issue-tracker,triage-labels,workflow}.md` (`t4-dev-workflow`) · `docs/adr/README.md` (`t4-engineering-records`) · **`docs/OPEN-WORK-LEDGER.md` + `DONE.md` + the memory vault** (`t4-agent-memory`) — memory is not deferred. Create `CONTEXT.md`/`UBIQUITOUS_LANGUAGE.md`/`PRODUCT.md` **lazily** (proceed-silently rule). |
+| **Seed** (new repo, first sessions) | `CLAUDE.md` wiring · **the workflow-hooks layer** (`references/hooks-layer.md`) — keeps the session on the rails from day one · `docs/agents/{domain,issue-tracker,triage-labels,workflow}.md` (`t4-dev-workflow`) · `docs/adr/README.md` (`t4-engineering-records`) · **`docs/OPEN-WORK-LEDGER.md` + `DONE.md` + the memory vault** (`t4-agent-memory`) — memory is not deferred. Create `CONTEXT.md`/`UBIQUITOUS_LANGUAGE.md`/`PRODUCT.md` **lazily** (proceed-silently rule). |
 | **Active** (real feature work, growing surface) | + `CONTEXT.md` + `UBIQUITOUS_LANGUAGE.md` + `PRODUCT.md` + `DESIGN.md` + `docs/reports/README.md` + `post-mortem` / `impact-register` / `bug-catalog` (`t4-engineering-records`) + `docs/superpowers/{plans,specs}/` (`t4-dev-workflow`) + the `survey-manifest` (`t4-agent-memory`). |
 | **Consolidating** (work scattered; agent misses MD-only items) | + a full `docs/OPEN-WORK-LEDGER.md` reconciliation pass + Serena `mem:` graph. This is the tier where the ledger earns its keep. |
 | **Formal delivery** (academic / client dossier) | + the optional 7-phase SE set — see `references/se-deliverables.md`. On demand only. |
@@ -44,15 +44,17 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 3. **Write the `CLAUDE.md` wiring** — engineering north-star, repo layout, commands, a pointer to **`using-t4`** as the entry map, the **session-start read protocol** (point it at `docs/OPEN-WORK-LEDGER.md` + the memory vault `Home.md` — see `t4-agent-memory`), the dev-notification protocol, the bilingual writing-conventions block, and pointers to `docs/agents/*`.
 4. **Install the memory layer** from `t4-agent-memory` (ledger, ship log, vault `Home.md` + note format). This is what makes the repo agent-durable.
 5. **Install the workflow layer** from `t4-dev-workflow` (`docs/agents/{workflow,issue-tracker,triage-labels}.md`) — replace `<ORG>/<REPO>`, the E2E/verify command, the label vocabulary.
-6. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
-7. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
-8. **Verify placeholders are gone** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
-9. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
+6. **Install the hooks layer** from `references/hooks-layer.md` — copy the marker (`.claude/t4.json`), the `.claude/hooks/` scripts + `run-hook.cmd`, merge the hook entries into `.claude/settings.json`, and write `using-t4.snapshot.md`. This is what keeps a session on the rails: session-start injects `using-t4`, a per-turn reminder re-anchors it, and a `PreToolUse` gate blocks a PR with no issue and dangerous git. Tell the user what the gate will block.
+7. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
+8. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
+9. **Verify placeholders are gone** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
+10. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
 
 ## Reference files
 
 - **`references/governance-docs.md`** — the domain/product/index layer this skill owns: taxonomy + status system, and skeletons for `CONTEXT.md`, `UBIQUITOUS_LANGUAGE.md`, `PRODUCT.md`, `docs/agents/domain.md`, and the reports/research/plans README indexes. (ADR, memory, and workflow skeletons live in the sibling skills.)
 - **`references/se-deliverables.md`** — the optional 7-phase Software-Engineering deliverable set + UML outline (formal delivery only).
+- **`references/hooks-layer.md`** + **`references/hooks/`** — the workflow-hooks layer (path A): the `.claude/t4.json` marker, the `.claude/hooks/` scripts + `run-hook.cmd`, and the `settings.json` hook entries that make session-start / prompt-reminder / PreToolUse-gate keep a session on the T4 rails. The scripts are byte-identical to the `xeno-skills` plugin's `hooks/` (a repo test enforces the sync).
 
 ## The non-negotiable team rules
 

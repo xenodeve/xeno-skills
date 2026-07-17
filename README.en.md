@@ -20,6 +20,8 @@ Skills live under `skills/`:
 
 Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
 
+This repo is also a **Claude Code plugin** (`.claude-plugin/` + `hooks/`) that ships **workflow-enforcement hooks** to keep a session on the T4 rails.
+
 ## Install
 
 ### With `npx skills` (Recommended — works for every agent)
@@ -33,6 +35,23 @@ Install a specific skill by name:
 ```bash
 npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 ```
+
+### As a plugin (adds the workflow-enforcement hooks)
+
+Install as a Claude Code plugin to get the hooks that keep a session on the T4 rails:
+
+```
+/plugin marketplace add xenodeve/xeno-skills
+/plugin install xeno-skills
+```
+
+Three hooks — they fire only in a repo carrying the `.claude/t4.json` marker (no other repo is touched):
+
+- **`SessionStart`** → injects the `using-t4` content once per session (fixes "didn't invoke the skill at start")
+- **`UserPromptSubmit`** → a short rails reminder every turn (reduces mid-session drift)
+- **`PreToolUse`** → **blocks** `gh pr create` with no referenced issue, and dangerous git (`reset --hard`, force-push, `clean -f`, `branch -D`)
+
+Injected hooks are *reminders* (the model can still ignore them); only the `PreToolUse` deny is a hard wall, and only for checkable conditions. Repos scaffolded by `t4-project-bootstrap` carry the same hooks via git without needing the plugin.
 
 ## Reference
 

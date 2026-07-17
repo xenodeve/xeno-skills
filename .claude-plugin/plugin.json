@@ -1,0 +1,10 @@
+{
+  "name": "xeno-skills",
+  "description": "T4 agent-primary operating skills (using-t4, dev-workflow, memory, records, bootstrap, afk), multi-agent orchestration, and karpathy guidelines — plus workflow-enforcement hooks that keep a session on the T4 rails.",
+  "version": "0.1.0",
+  "author": { "name": "xenodeve" },
+  "homepage": "https://github.com/xenodeve/xeno-skills",
+  "repository": "https://github.com/xenodeve/xeno-skills",
+  "license": "MIT",
+  "keywords": ["t4", "skills", "hooks", "workflow", "agent-primary"]
+}

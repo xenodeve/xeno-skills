@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# T4 PreToolUse gate — the one hard-enforcement layer. It only ever BLOCKS a
+# tool call (deny); silence means "no opinion, let the normal flow proceed".
+# Scoped to T4 repos via the `.claude/t4.json` marker.
+#
+# Rules:
+#   - PR needs a referenced issue  (PRD -> issues -> PR gate)
+#   - dangerous git is blocked     (reset --hard, force-push, clean -f, branch -D)
+set -uo pipefail
+
+input="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+
+# hooks.json already scopes this to the Bash tool; this in-process check is a
+# cheap defensive guard for the bootstrap path, no subprocess.
+tool=""
+[[ "$input" =~ \"tool_name\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]] && tool="${BASH_REMATCH[1]}"
+[ "$tool" = "Bash" ] || exit 0
+
+cmd="$(printf '%s' "$input" | perl -0777 -ne '
+  if (/"command"\s*:\s*"((?:\\.|[^"\\])*)"/s) {
+    my $c=$1; $c=~s/\\n/\n/g; $c=~s/\\t/\t/g; $c=~s/\\"/"/g; $c=~s/\\\\/\\/g; print $c;
+  }')"
+
+deny() {
+  local r="$1"
+  r="${r//\\/\\\\}"; r="${r//\"/\\\"}"; r="${r//$'\n'/\\n}"; r="${r//$'\r'/\\r}"; r="${r//$'\t'/\\t}"
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$r"
+  exit 0
+}
+
+# --- dangerous git -----------------------------------------------------------
+if [[ "$cmd" =~ (^|[/\\\"[:space:]])git(\.exe)?([[:space:]]|$) ]]; then
+  if [[ "$cmd" =~ reset[[:space:]].*--hard ]]; then
+    deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, or run it yourself if you truly intend it."
+  fi
+  if [[ "$cmd" =~ push ]] && [[ ! "$cmd" =~ --force-with-lease ]] \
+     && { [[ "$cmd" =~ --force([^-]|$) ]] || [[ "$cmd" =~ [[:space:]]-f([[:space:]]|$) ]]; }; then
+    deny "T4 gate: force-push is blocked. Use --force-with-lease, or run it yourself if intended."
+  fi
+  if [[ "$cmd" =~ clean[[:space:]] ]] && { [[ "$cmd" =~ -[a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
+    deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, or run it yourself."
+  fi
+  if [[ "$cmd" =~ branch[[:space:]].*-D ]]; then
+    deny "T4 gate: 'git branch -D' force-deletes a branch (unmerged work lost). Use -d, or run it yourself."
+  fi
+fi
+
+# --- PR needs a referenced issue --------------------------------------------
+if [[ "$cmd" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$cmd" =~ pr[[:space:]]+create ]]; then
+  ref=""
+  [[ "$cmd" =~ \#[0-9]+ ]] && ref="yes"
+  if [ -z "$ref" ] && [[ "$cmd" =~ --body-file[[:space:]=]+([^[:space:]]+) ]]; then
+    bf="${BASH_REMATCH[1]}"
+    [ -f "$bf" ] && grep -Eq '#[0-9]+' "$bf" && ref="yes"
+  fi
+  [ -n "$ref" ] || deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first."
+fi
+
+exit 0
