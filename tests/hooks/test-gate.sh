@@ -35,6 +35,8 @@ allowed "$(run "$REPO" "$(bashj 'git push --force-with-lease origin main')")" "a
 denied  "$(run "$REPO" "$(bashj 'git clean -fd')")"                        "deny:  git clean -fd"
 denied  "$(run "$REPO" "$(bashj 'git branch -D feature')")"                "deny:  git branch -D"
 allowed "$(run "$REPO" "$(bashj 'git commit -m wip')")"                    "allow: ordinary git commit"
+allowed "$(run "$REPO" "$(bashj 'git commit -m \"fix: reset --hard was risky\"')")" "allow: 'reset --hard' only inside a commit message"
+allowed "$(run "$REPO" "$(bashj 'git commit -m \"document git push --force\"')")"   "allow: 'push --force' only inside a commit message"
 
 echo "scope:"
 allowed "$(run "$REPO" '{"tool_name":"Edit","tool_input":{"file_path":"x"},"cwd":"x"}')" "allow: non-Bash tool"

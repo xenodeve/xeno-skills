@@ -30,18 +30,24 @@ deny() {
 }
 
 # --- dangerous git -----------------------------------------------------------
-if [[ "$cmd" =~ (^|[/\\\"[:space:]])git(\.exe)?([[:space:]]|$) ]]; then
-  if [[ "$cmd" =~ reset[[:space:]].*--hard ]]; then
+# Match against the command with quoted spans removed, so a dangerous pattern
+# merely *mentioned* in a commit message / PR body / echo string ("fix: reset
+# --hard was risky") doesn't trigger a false deny — a real destructive flag is an
+# unquoted command arg. (An unquoted mention inside a non-git command is a rare,
+# accepted edge.)
+scan="$(printf '%s' "$cmd" | sed 's/"[^"]*"//g' | sed "s/'[^']*'//g")"
+if [[ "$scan" =~ (^|[/\\\"[:space:]])git(\.exe)?([[:space:]]|$) ]]; then
+  if [[ "$scan" =~ reset[[:space:]].*--hard ]]; then
     deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, or run it yourself if you truly intend it."
   fi
-  if [[ "$cmd" =~ push ]] && [[ ! "$cmd" =~ --force-with-lease ]] \
-     && { [[ "$cmd" =~ --force([^-]|$) ]] || [[ "$cmd" =~ [[:space:]]-f([[:space:]]|$) ]]; }; then
+  if [[ "$scan" =~ push ]] && [[ ! "$scan" =~ --force-with-lease ]] \
+     && { [[ "$scan" =~ --force([^-]|$) ]] || [[ "$scan" =~ [[:space:]]-f([[:space:]]|$) ]]; }; then
     deny "T4 gate: force-push is blocked. Use --force-with-lease, or run it yourself if intended."
   fi
-  if [[ "$cmd" =~ clean[[:space:]] ]] && { [[ "$cmd" =~ -[a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
+  if [[ "$scan" =~ clean[[:space:]] ]] && { [[ "$scan" =~ -[a-zA-Z]*f ]] || [[ "$scan" =~ --force ]]; }; then
     deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, or run it yourself."
   fi
-  if [[ "$cmd" =~ branch[[:space:]].*-D ]]; then
+  if [[ "$scan" =~ branch[[:space:]].*-D ]]; then
     deny "T4 gate: 'git branch -D' force-deletes a branch (unmerged work lost). Use -d, or run it yourself."
   fi
 fi
