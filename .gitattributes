@@ -1,0 +1,11 @@
+# Hook and test scripts are executed by bash — CRLF breaks the shebang and
+# `\r` leaks into strings, so pin them to LF regardless of core.autocrlf.
+hooks/t4-session-start   text eol=lf
+hooks/t4-prompt-reminder text eol=lf
+hooks/t4-gate            text eol=lf
+hooks/run-hook.cmd       text eol=lf
+tests/hooks/*.sh         text eol=lf
+skills/t4/t4-project-bootstrap/references/hooks/t4-session-start   text eol=lf
+skills/t4/t4-project-bootstrap/references/hooks/t4-prompt-reminder text eol=lf
+skills/t4/t4-project-bootstrap/references/hooks/t4-gate            text eol=lf
+skills/t4/t4-project-bootstrap/references/hooks/run-hook.cmd       text eol=lf
