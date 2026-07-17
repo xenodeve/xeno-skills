@@ -20,6 +20,8 @@ Skills อยู่ภายใต้ `skills/`:
 
 แต่ละ skill เป็น directory ของตัวเอง มี `SKILL.md` (พร้อม YAML frontmatter — `name` และ `description`) และไฟล์ reference ที่แนบมา
 
+repo นี้ยังเป็น **Claude Code plugin** ด้วย (`.claude-plugin/` + `hooks/`) — ที่ ship **workflow-enforcement hooks** เพื่อดึง session ให้อยู่บนรางของ T4
+
 ## การติดตั้ง
 
 ### ด้วย `npx skills` (แนะนำ — ใช้ได้กับทุก agent)
@@ -33,6 +35,23 @@ npx skills add xenodeve/xeno-skills
 ```bash
 npx skills add xenodeve/xeno-skills --skill clink-brainstorm
 ```
+
+### ด้วย plugin (ได้ workflow-enforcement hooks เพิ่ม)
+
+ติดตั้งเป็น Claude Code plugin เพื่อให้ได้ hook ที่ดึง session ให้อยู่บนราง T4:
+
+```
+/plugin marketplace add xenodeve/xeno-skills
+/plugin install xeno-skills
+```
+
+hook สามตัว — ยิงเฉพาะ repo ที่มี marker `.claude/t4.json` เท่านั้น (repo อื่นไม่ถูกแตะ):
+
+- **`SessionStart`** → inject เนื้อ `using-t4` ครั้งเดียวต่อ session (แก้ปัญหา "ไม่เรียก skill ตั้งแต่ต้น")
+- **`UserPromptSubmit`** → เตือน rails สั้นๆ ทุก turn (ลด drift กลางทาง)
+- **`PreToolUse`** → **บล็อก** `gh pr create` ที่ไม่มี issue อ้างอิง และ git อันตราย (`reset --hard`, force-push, `clean -f`, `branch -D`)
+
+hook แบบ inject = "เตือน" (model ยังเลือกไม่ทำตามได้) มีแค่ `PreToolUse` deny ที่ "บังคับ" ได้จริงบนเงื่อนไขที่ตรวจได้ ส่วน repo ที่ผ่าน `t4-project-bootstrap` จะพก hook ชุดเดียวกันไปเองผ่าน git (ไม่ต้องมี plugin)
 
 ## รายการอ้างอิง
 

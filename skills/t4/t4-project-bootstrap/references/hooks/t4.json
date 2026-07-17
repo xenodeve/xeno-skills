@@ -1,0 +1,4 @@
+{
+  "t4": true,
+  "note": "Marker that flags this as a T4 repo. The T4 workflow hooks (SessionStart / UserPromptSubmit / PreToolUse) only fire when this file is present, so they never touch a non-T4 repo. Safe to extend with per-repo hook config later."
+}

@@ -11,6 +11,24 @@ The T4 team runs its repos **agent-primary** — the coding agent is the main de
 
 **Core rule:** in a T4 repo, when a task matches one of the skills below, **invoke that skill before acting** — don't work from memory of what it says. Skills evolve; load the current one. (User instructions — this repo's `CLAUDE.md` / direct requests — always win over any skill.)
 
+## Route first — before you respond
+
+Before you answer, ask a clarifying question, explore, edit, or run any tool: check the map below and invoke the matching skill. **Uncertainty about the map is a reason to consult it, not skip it** — but a leaf skill fires on its own explicit trigger, not a hunch (don't invoke `security-review` just because a line contains "token"). Then announce **"Using `<skill>` to `<purpose>`"** and invoke it — the announcement is not the work.
+
+**Re-route at every phase boundary.** A check at task start does **not** discharge a later trigger: after writing code → `simplify`; before merge → `code-review` + `scrutinize`; touched auth/secret → `security-review`; implementation done → `verify`. Invoking a parent skill (`t4-dev-workflow`) **does not discharge** its leaf skills (`tdd`, `verify`, …).
+
+**Red flags — these thoughts mean STOP and route:**
+
+| Thought | Reality |
+|---|---|
+| "Small change, skip it" | Small changes still cross phases. Route. |
+| "I know the T4 workflow" | Skills evolve — load the current one. |
+| "Tests already exist, so it's TDD" | Existing tests ≠ red-first for this change. Load `tdd`. |
+| "t4-dev-workflow covers it" | Parent ≠ leaf; invoke the phase skill. |
+| "Just a token/config value" | If it plausibly crosses a trust boundary → `security-review`. |
+| "I announced it, that's enough" | Announcing ≠ doing. Invoke and follow. |
+| "Let me look around first" | Route first — the skill tells you HOW to look. |
+
 ## The map — route by what you're doing
 
 | You are… | Invoke |
