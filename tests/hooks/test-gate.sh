@@ -11,11 +11,14 @@ pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL: $1"; fail=$((fail+1)); }
 denied()  { case "$1" in *'"permissionDecision":"deny"'*) ok "$2";; *) bad "$2 (expected deny, got: ${1:0:50})";; esac; }
+asked()   { case "$1" in *'"permissionDecision":"ask"'*)  ok "$2";; *) bad "$2 (expected ask, got: ${1:0:50})";; esac; }
 allowed() { if [ -z "$1" ]; then ok "$2"; else bad "$2 (expected allow/silent, got: ${1:0:50})"; fi; }
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 REPO="$TMP/repo"; mkdir -p "$REPO/.claude"; printf '{"t4":true}\n' > "$REPO/.claude/t4.json"
 PLAIN="$TMP/plain"; mkdir -p "$PLAIN"
+REPOV="$TMP/repov"; mkdir -p "$REPOV/.claude"; printf '{"t4":true,"verify":"exit 0"}\n' > "$REPOV/.claude/t4.json"
+REPOF="$TMP/repof"; mkdir -p "$REPOF/.claude"; printf '{"t4":true,"verify":"exit 1"}\n' > "$REPOF/.claude/t4.json"
 printf 'PR body\nCloses #7\n' > "$TMP/withref.md"
 printf 'PR body\njust some text\n'   > "$TMP/noref.md"
 
@@ -37,10 +40,22 @@ denied  "$(run "$REPO" "$(bashj 'git branch -D feature')")"                "deny
 allowed "$(run "$REPO" "$(bashj 'git commit -m wip')")"                    "allow: ordinary git commit"
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"fix: reset --hard was risky\"')")" "allow: 'reset --hard' only inside a commit message"
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"document git push --force\"')")"   "allow: 'push --force' only inside a commit message"
+allowed "$(run "$REPO" "$(bashj 'git commit -m \"add gh pr create helper\"')")"     "allow: 'gh pr create' only inside a commit message"
+allowed "$(run "$REPO" "$(bashj 'git commit -m \"note: gh pr merge flow\"')")"       "allow: 'gh pr merge' only inside a commit message"
 
 echo "scope:"
 allowed "$(run "$REPO" '{"tool_name":"Edit","tool_input":{"file_path":"x"},"cwd":"x"}')" "allow: non-Bash tool"
 allowed "$(run "$PLAIN" "$(bashj 'git reset --hard HEAD~1')")"             "allow: dangerous git in a NON-T4 repo (guard)"
+
+echo "verify-gate (the gate runs the configured verify command itself):"
+allowed "$(run "$REPOV" "$(bashj 'gh pr create --title x --body Closes #12')")" "allow: PR create when verify passes"
+denied  "$(run "$REPOF" "$(bashj 'gh pr create --title x --body Closes #12')")" "deny:  PR create when verify fails"
+allowed "$(run "$REPOF" "$(bashj 'git commit -m wip')")"                        "allow: verify does not gate ordinary commits"
+
+echo "merge-gate:"
+asked  "$(run "$REPOV" "$(bashj 'gh pr merge 3 --squash')")" "ask:  merge prompts for scrutinize when verify passes"
+denied "$(run "$REPOF" "$(bashj 'gh pr merge 3 --squash')")" "deny: merge blocked when verify fails"
+asked  "$(run "$REPO"  "$(bashj 'gh pr merge 3 --squash')")" "ask:  merge prompts even with no verify configured"
 
 echo ""
 echo "gate: $pass passed, $fail failed"

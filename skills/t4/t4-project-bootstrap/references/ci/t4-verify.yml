@@ -1,0 +1,18 @@
+# T4 ship gate (server-side) — the real guarantee that local hooks can't be.
+# Local hooks only catch agent-run commands; this also covers a human merging on
+# the web and can't be `--no-hooks`'d away. Make it a REQUIRED status check in
+# the branch-protection rule for `main`, and disallow direct pushes to `main`.
+#
+# Keep the `run:` command in sync with `.claude/t4.json` "verify".
+name: T4 verify
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test            # <ORG>/<REPO> ship gate — match .claude/t4.json "verify"
