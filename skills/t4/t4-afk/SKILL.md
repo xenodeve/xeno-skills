@@ -7,7 +7,7 @@ description: Use when the developer hands the agent a bounded batch to run unatt
 
 ## Overview
 
-AFK = the developer walks away and the agent clears a **pre-agreed, bounded worklist** on its own, making every implementation decision itself. The whole risk of AFK is a single question the developer isn't there to answer: *is this decision mine to make, or must I stop and leave it?* This skill draws that line and keeps the tree safe across a long unattended run.
+AFK = the developer walks away and the agent clears a **pre-agreed, bounded worklist** on its own, making every implementation decision itself. The whole risk of AFK is a single question the developer isn't there to answer: *is this decision mine to make, or must I stop and leave it?* Get it wrong in **either** direction and AFK breaks — guess past a real decision, or stop to ask what's already answered (see "Act on what's already decided" below). This skill draws that line and keeps the tree safe across a long unattended run.
 
 **AFK does not relax any T4 rule — it removes the human checkpoint, so the rules must hold themselves.** Every gate that a developer would normally eyeball (TDD, `/verify`, `/code-review`, `/scrutinize`, `/security-review`, `/simplify`, issue reconciliation) still runs; the only change is that a **failed gate parks the item** instead of asking a human. Autonomy is bounded scope executed rigorously — never "the dev is away, so power through."
 
@@ -18,6 +18,21 @@ AFK = the developer walks away and the agent clears a **pre-agreed, bounded work
 - A long run where nobody will approve each step.
 
 **When NOT to use:** a single interactive task (just do it); exploratory work where the scope isn't yet bounded (grill + PRD first — see `t4-dev-workflow`); a batch dominated by security-boundary or architecture decisions (those are must-park, so there'd be nothing left to run).
+
+## Act on what's already decided — don't re-ask (the other half of AFK)
+
+AFK fails in **two** directions, not one. Over-guessing past a real decision is the famous failure. The opposite — **stopping to ask what's already answered** — is just as much a failure: it turns "handle it while I'm away" into a chat that needs the developer at the keyboard. That is *sticking*, not AFK. The developer's feedback for it is blunt: *"if there's already a way, don't ask again."*
+
+**Before you ask the developer anything, check whether the answer already exists. If it does, act — silently — and put the outcome in the digest, not a question.** The answer already exists when:
+
+- **A standing instruction covers it.** "keep going", "clear the queue", "if scrutinized, merge", "do what you can, skip what needs me" — these are durable for the whole run. Re-confirming each step ("shall I continue?", "merge now?") ignores an authorization you already have.
+- **The tracker / ledger / an issue says what to do.** The `ready-for-human` label, an issue body, a park note, the open-work ledger — that *is* the worklist and its state. Reconcile to it; don't ask the developer to re-tell you what a query would answer (`gh issue list --label ready-for-human`).
+- **You already produced the recommendation.** A decision brief or a "recommend Option A" you wrote is a decision you may act on under standing authorization — build A. Do **not** re-surface it as "A, B, or C?". (If you're genuinely unsure enough to need them, you didn't have a recommendation.)
+- **A senior engineer wouldn't ask.** An obvious default, a naming choice, which of two equivalent implementations — pick it (North Star: the simplest) and move on.
+
+**Only interrupt for a decision that is genuinely unresolved AND genuinely theirs** — an irreversible/boundary action, or an ambiguous requirement whose two readings produce materially different code — *and* that none of the above already answers. Then **park it** (note + move on); do not block the batch waiting on a reply. Collect every such item into the **one** end-of-run digest. A mid-run "is this ok?" when continuing is the plan is the tell you're sticking.
+
+The test: *"Could I answer this myself from the standing instructions, the tracker, or my own recommendation?"* If yes, asking is the mistake — act.
 
 ## Preflight — lock scope before they leave (last interactive act)
 
@@ -78,6 +93,9 @@ When the worklist is done or the run bound is hit:
 | "I'll commit this red and fix it next item." | Never leave the tree broken. Revert to green and park; the returning dev must land on green. |
 | "This item needs a bit more than the issue said — I'll just widen it." | Scope growth is a park. Note the extra work as new tracked work; don't absorb it silently. |
 | "One notification per item so they see progress." | One digest at the end (or on a real decision). Per-item pings defeat AFK. |
+| "I'll ask which option they want before building." | If you already recommended one and hold standing authorization, **build it**. Re-asking "A or B?" you can answer yourself is sticking, not AFK. |
+| "Let me just confirm they still want me to continue." | "Keep going / handle it" is durable for the run. Re-confirming each step ignores the authorization you already have. |
+| "I'll ask what they want me to do next." | Read the tracker (`ready-for-human` label, issue bodies, the ledger) — it already says. Ask only for what no query and no standing instruction can answer. |
 
 ## Cross-skill
 
