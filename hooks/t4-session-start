@@ -2,8 +2,9 @@
 # T4 SessionStart hook — inject the `using-t4` map into a T4 repo, once per session.
 #
 # Guard:  runs only when the current repo carries the `.claude/t4.json` marker.
-# Dedup:  a per-session lock (shared path with the bootstrap-installed copy) so
-#         the plugin (B) and the repo-committed hook (A) never inject twice.
+# Dedup:  a short time-window lock (shared path with the bootstrap copy) collapses
+#         the concurrent plugin (B) + repo (A) firings at one event, while still
+#         letting a LATER compact/clear re-inject (survives context compaction).
 # Source: prefers the plugin's own using-t4 SKILL.md, then a repo-local snapshot,
 #         then a minimal directive — so one script serves both delivery paths.
 set -uo pipefail
@@ -20,8 +21,17 @@ sid=""
 lock_dir="${T4_HOOK_LOCK_DIR:-${TMPDIR:-/tmp}/t4-hooks}"
 mkdir -p "$lock_dir" 2>/dev/null || true
 lock="$lock_dir/${sid}.session-start"
-[ -e "$lock" ] && exit 0
-: > "$lock"
+# Dedup only *concurrent* duplicate firings (the plugin B + repo A copies at the
+# same SessionStart event), NOT later events. A short time window lets a later
+# compact/clear (matcher: startup|clear|compact) RE-inject, so the map survives
+# context compaction — a permanent lock would silently kill that.
+window="${T4_HOOK_DEDUP_WINDOW:-10}"
+now="$(date +%s)"
+if [ -f "$lock" ]; then
+  last="$(cat "$lock" 2>/dev/null || printf 0)"
+  [ "$(( now - last ))" -lt "$window" ] && exit 0
+fi
+printf '%s' "$now" > "$lock"
 
 # --- resolve using-t4 content ------------------------------------------------
 content=""

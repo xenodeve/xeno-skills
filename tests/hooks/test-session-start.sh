@@ -28,9 +28,15 @@ has "$out" '"additionalContext"' "emits additionalContext"
 has "$out" 'Using T4'            "includes using-t4 skill content"
 has "$out" 'EXTREMELY_IMPORTANT' "wraps in EXTREMELY_IMPORTANT"
 
-echo "Test 2: second call in the same session is silent (per-session dedup)"
+echo "Test 2: an immediate second firing is silent (concurrent A+B dedup, within window)"
 out2="$(run s1 "$TMP/repo")"
-empty "$out2" "no re-injection for same session_id"
+empty "$out2" "no double-injection for the same event"
+
+echo "Test 2b: same session RE-injects on a later event past the window (compaction survival)"
+mkdir -p "$T4_HOOK_LOCK_DIR"
+printf '%s' "$(( $(date +%s) - 3600 ))" > "$T4_HOOK_LOCK_DIR/s1.session-start"
+out2b="$(run s1 "$TMP/repo")"
+has "$out2b" '"additionalContext"' "a stale lock (past the dedup window) re-injects"
 
 echo "Test 3: a fresh session_id still injects (lock is per-session)"
 out3="$(run s2 "$TMP/repo")"
