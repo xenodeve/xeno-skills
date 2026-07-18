@@ -39,6 +39,21 @@ When planning or implementing a feature, follow this order:
 | Exploring unfamiliar code | `/zoom-out` | High-level context before editing |
 | User asks "is there a skill for X?" | `/find-skills` | Search before hand-writing code |
 
+## Capability router (optional)
+
+Route by the *capability* a task needs, not a hardcoded tool name — the capability is stable; the tool/command is repo/runtime config that `t4-project-bootstrap` populates from the installed MCP/PAL tools.
+
+| Capability | Tool (repo-configured — examples) |
+|---|---|
+| Code review | `mcp__pal__codereview` |
+| Debug / diagnose | `mcp__pal__debug` |
+| Architecture review | `mcp__pal__analyze` |
+| Security audit | `mcp__pal__secaudit` |
+| Test / QA planning | `mcp__pal__testgen` |
+| Deep reasoning / second opinion | `mcp__pal__thinkdeep` / `consensus` |
+
+If nothing is configured for a capability, use the general skills directly.
+
 ## What's mechanically enforced (vs. agent discipline)
 
 In a repo with the T4 hooks installed (`t4-project-bootstrap` → `references/hooks-layer.md`), part of this pipeline is a **hard gate**, not just discipline the agent is trusted to keep:
@@ -72,7 +87,7 @@ Issue bodies, PRD bodies, and PR descriptions must be **bilingual — English + 
 - **The Thai must mirror the English exactly** — same detail, sentence count, bullets, tables. "สรุป" is not a summary; never shorten or omit.
 - Code identifiers, filenames, log excerpts, and acceptance-criteria checkboxes stay English; the Thai explains them, never translates identifiers.
 - **Review-reply comments may be English-only.** Anything a teammate reads to *decide* gets both languages.
-- **Scope: tracker only.** Chat, reports, and status updates outside GitHub follow the developer's preferred language (Thai) and are not required bilingual. Code, commit messages, and inline comments stay English.
+- **Scope: the GitHub tracker.** This rule governs issue / PRD / PR bodies. Governed **agent docs** (`CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `docs/agents/*`) have their *own* bilingual convention — `<!-- lang:en/th -->` markers, full mirror (see `t4-project-bootstrap` → governance-docs). Chat, reports, and status updates are single-language (the developer's — Thai); code, commit messages, and inline comments stay English.
 
 ## Issue lifecycle (Definition-of-Done gate)
 

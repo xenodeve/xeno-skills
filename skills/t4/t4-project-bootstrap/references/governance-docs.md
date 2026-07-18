@@ -168,7 +168,7 @@ context, plus context-scoped `docs/adr/` — once a second package/context is ad
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root — the authoritative domain glossary.
+- **`CONTEXT.md`** at the repo root — the system-context doc; the **canonical term glossary is `UBIQUITOUS_LANGUAGE.md`** (`CONTEXT.md` points at it and defers to it on any conflict).
 - **`docs/adr/`** — read ADRs touching the area you're about to work in before proposing alternatives.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't

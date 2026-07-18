@@ -21,6 +21,9 @@ Drop-in skeletons for the T4 agent-memory layers. Fill `<PLACEHOLDER>` tokens; s
 
 ## user — who the developer is (role, preferences)
 - [[<user-slug>]] — <one-line description>
+
+## concept — compiled topic hubs (a retrieval index over notes/ADRs/reports, not a new fact source)
+- [[<concept-slug>]] — <one-line description>
 ```
 
 ## A memory note — `Obsidian-<Repo>/<slug>.md`
@@ -29,7 +32,7 @@ Drop-in skeletons for the T4 agent-memory layers. Fill `<PLACEHOLDER>` tokens; s
 ---
 name: <short-kebab-slug>            # must match the filename so [[wikilinks]] resolve
 description: <one-line summary — what a future agent skims to decide relevance>
-type: feedback | project | reference | user
+type: feedback | project | reference | user | concept   # concept = a hub linking existing records, not a new fact
 ---
 
 <The fact. For feedback/project, follow with:>

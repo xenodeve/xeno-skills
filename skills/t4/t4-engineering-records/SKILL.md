@@ -16,7 +16,7 @@ This skill answers two questions: **which record** to write, and **how** to writ
 | What just happened | Record | Home |
 |---|---|---|
 | A bug is **fixed and validated** (reliable repro + known root cause + validated fix) | **post-mortem** | `docs/reports/YYYY-MM-DD-<slug>.md` + a pointer in the impact register |
-| A significant, **hard-to-reverse decision** was made (already in the code, or explicitly planned) | **ADR** | `docs/adr/NNNN-<kebab>.md` + a row in `docs/adr/README.md` |
+| A significant, **hard-to-reverse decision** — or a **quality / performance decision** whose rationale or benchmark would otherwise be lost — was made (already in the code, or explicitly planned) | **ADR** | `docs/adr/NNNN-<kebab>.md` + a row in `docs/adr/README.md` |
 | Any **system-affecting change** shipped (feature, refactor, security, hotfix) and needs a report-level log | **system-impact register entry** | append to `docs/reports/system-impact-report.md` |
 | A notable bug whose **transferable lesson** is worth keeping (for retros / onboarding / decks) | **bug-case-catalog entry** | append to `docs/reports/bug-case-catalog.md` |
 
