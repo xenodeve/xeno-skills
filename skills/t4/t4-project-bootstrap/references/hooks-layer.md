@@ -54,3 +54,16 @@ Injected reminders are soft and PreToolUse denies only cover *agent-run* command
 2. **Server-side gate (the real guarantee).** Install `references/ci/t4-verify.yml` as `.github/workflows/t4-verify.yml` and make it a **required status check** on `main`, with **direct pushes to `main` disallowed**. This is the only layer that also catches a human merging on the web and that `--no-hooks` can't skip. Keep its command in sync with `.claude/t4.json` `"verify"`.
 
 Honest scope: the local gate raises the floor for agent-run merges; the CI required-check is what makes "no merge without a green verify" actually true.
+
+## Troubleshooting
+
+| Symptom | Likely cause → fix |
+|---|---|
+| **No hook fires at all** | The repo has no `.claude/t4.json` marker (every hook exits silently without it) → add it. Or the plugin isn't installed / `.claude/settings.json` doesn't register the hooks → check the install path (plugin vs bootstrap). |
+| **Hooks silent on Windows only** | `run-hook.cmd` found no `bash` → install Git for Windows (it looks in `C:\Program Files\Git\bin\bash.exe` then `PATH`). By design it exits 0 (no-op) rather than erroring. |
+| **`using-t4` not re-injected after a compaction** | The session-start dedup lock must be the **time-window** form (`hooks/t4-session-start`); a permanent per-session lock suppresses the `compact` re-inject. Confirm `hooks.json` matcher is `startup\|clear\|compact`. |
+| **`using-t4` injection rejected as too large** | The dispatcher content exceeds the token budget (`tests/hooks/test-dispatcher-content.sh`, ≤ 9000 B) → trim it; keep leaf detail in the target skill, not the injected map. |
+| **The gate denies a legitimate command** | A destructive pattern in **quoted** text is stripped before matching, but an unquoted mention in a non-git command can still trip it (rare) → rephrase, or run it yourself. |
+| **`gh pr create` / `gh pr merge` blocked with "verify failed"** | `.claude/t4.json` `"verify"` command is failing (or timing out at 600 s) → fix the tests, or set `"verify": ""` to disarm the local ship gate. |
+| **Injected twice / duplicate reminder** | Both delivery paths (plugin B + bootstrap A) are active and their per-`session_id` locks don't share a `$TMPDIR` → they should resolve to the same lock dir; verify `T4_HOOK_LOCK_DIR` isn't overridden differently per path. |
+| **A non-T4 repo is affected** | Shouldn't happen (marker-guarded) — a stray `.claude/t4.json` leaked into that checkout → remove it. |
