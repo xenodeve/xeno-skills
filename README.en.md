@@ -53,6 +53,8 @@ Three hooks — they fire only in a repo carrying the `.claude/t4.json` marker (
 
 Injected hooks are *reminders* (the model can still ignore them); the hard enforcement is the `PreToolUse` deny + the **verify the hook runs itself** (un-forgeable — it runs the tests rather than trusting a claim). The top guarantee — "no merge without a green verify" — lives in a **CI required-check + branch protection** (templated by `t4-project-bootstrap`), which also covers a human merging on the web; local hooks only catch agent-run commands. Repos scaffolded by `t4-project-bootstrap` carry the same hooks via git without needing the plugin.
 
+> **The full design rationale** (the two failure modes it solves, the enforcement ladder, and the honest ceiling of what's enforceable vs. theater) is in [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md).
+
 ## Reference
 
 ### Multi-agent

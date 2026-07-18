@@ -53,6 +53,8 @@ hook สามตัว — ยิงเฉพาะ repo ที่มี marker
 
 hook แบบ inject = "เตือน" (model ยังเลือกไม่ทำตามได้) ที่ "บังคับ" ได้จริงคือ `PreToolUse` deny + **verify ที่ hook รันเอง** (ปลอมไม่ได้เพราะ hook รันเทสต์เอง ไม่เชื่อคำอ้าง) การันตีสูงสุด "ห้าม merge ถ้าไม่เขียว" อยู่ที่ **CI required-check + branch protection** (เทมเพลตมากับ `t4-project-bootstrap`) ที่คุมการ merge บนเว็บของคนได้ด้วย — local hook คุมได้แค่คำสั่งที่ agent รัน ส่วน repo ที่ผ่าน bootstrap พก hook ชุดเดียวกันไปเองผ่าน git (ไม่ต้องมี plugin)
 
+> **เหตุผลการออกแบบทั้งหมด** (ปัญหา 2 อย่างที่แก้, enforcement ladder, เพดานความจริงว่าอะไรบังคับได้/อะไรเป็น theater) อยู่ใน [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md)
+
 ## รายการอ้างอิง
 
 ### Multi-agent
