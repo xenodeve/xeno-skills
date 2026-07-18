@@ -45,6 +45,13 @@ allowed "$(run "$REPO" "$(bashj 'git commit -m \"document git push --force\"')")
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"add gh pr create helper\"')")"     "allow: 'gh pr create' only inside a commit message"
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"note: gh pr merge flow\"')")"       "allow: 'gh pr merge' only inside a commit message"
 
+echo "dangerous git — a quoted FLAG must still be denied (no bypass):"
+denied "$(run "$REPO" "$(bashj 'git reset \"--hard\" HEAD~1')")"     "deny: git reset with a quoted --hard"
+denied "$(run "$REPO" "$(bashj 'git push \"--force\" origin main')")" "deny: git push with a quoted --force"
+denied "$(run "$REPO" "$(bashj 'git clean \"-fd\"')")"               "deny: git clean with a quoted -fd"
+denied "$(run "$REPO" "$(bashj 'git branch \"-D\" feature')")"       "deny: git branch with a quoted -D"
+denied "$(run "$REPO" "$(bashj 'true && git reset --hard HEAD~1')")" "deny: dangerous git after a shell separator"
+
 echo "scope:"
 allowed "$(run "$REPO" '{"tool_name":"Edit","tool_input":{"file_path":"x"},"cwd":"x"}')" "allow: non-Bash tool"
 allowed "$(run "$PLAIN" "$(bashj 'git reset --hard HEAD~1')")"             "allow: dangerous git in a NON-T4 repo (guard)"
