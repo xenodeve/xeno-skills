@@ -71,6 +71,7 @@ At the start of any session in a T4 repo, before picking up work:
 - **Records stay a reliable index** — `file:line`, commit SHAs, validated-only, blameless (`t4-engineering-records`).
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — think before coding, simplest thing that works, surgical diffs tracing to the request, verifiable success criteria (loaded once at session start).
+- **Some rules are hook-enforced** — the `PreToolUse` gate hard-blocks a PR with no issue, dangerous git, and a failed `verify` (details: `t4-dev-workflow`). Hooks raise the floor, not replace judgment skills.
 - **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker (`ready-for-human` label / issue body / ledger), or a recommendation you already wrote answers the question, *act* — don't stop to ask it. Interrupt only for a genuinely unresolved decision that's truly the developer's, and prefer parking + one digest over a mid-run question. Re-asking what you can answer yourself is the "sticking" anti-pattern (see `t4-afk`).
 
 ## When NOT to use
