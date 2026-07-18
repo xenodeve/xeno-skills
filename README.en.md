@@ -49,11 +49,11 @@ Three hooks — they fire only in a repo carrying the `.claude/t4.json` marker (
 
 - **`SessionStart`** → injects the `using-t4` content once per session (fixes "didn't invoke the skill at start")
 - **`UserPromptSubmit`** → a short rails reminder every turn (reduces mid-session drift)
-- **`PreToolUse`** → **blocks / asks** before risky commands: `gh pr create` with no referenced issue, dangerous git (`reset --hard`, force-push, `clean -f`, `branch -D`), and a **ship gate** — it runs the repo's verify command (`.claude/t4.json` `"verify"`) **itself** before `gh pr merge` and denies on failure (keep `verify` a **fast** suite — unit+build+lint; leave e2e to CI); `gh pr merge` also `ask`s you to confirm `/scrutinize` + `/code-review` ran — **skipped when `"autoMerge"`/`"afk"` is set** (AFK / standing authorization)
+- **`PreToolUse`** → **blocks / asks** before risky commands: `gh pr create` with no referenced issue, dangerous git (`reset --hard`, force-push, `clean -f`, `branch -D` — `reset --hard`/`clean` are allowed under `"afk"` for revert-to-green), and a **ship gate** — it runs the repo's verify command (`.claude/t4.json` `"verify"`) **itself** before `gh pr merge` and denies on failure (keep `verify` a **fast** suite — unit+build+lint; leave e2e to CI); `gh pr merge` also `ask`s you to confirm `/scrutinize` + `/code-review` ran — **skipped when `"autoMerge"`/`"afk"` is set** (AFK / standing authorization)
 
 Injected hooks are *reminders* (the model can still ignore them); the hard enforcement is the `PreToolUse` deny + the **verify the hook runs itself** (un-forgeable — it runs the tests rather than trusting a claim). The top guarantee — "no merge without a green verify" — lives in a **CI required-check + branch protection** (templated by `t4-project-bootstrap`), which also covers a human merging on the web; local hooks only catch agent-run commands. Repos scaffolded by `t4-project-bootstrap` carry the same hooks via git without needing the plugin.
 
-> **The full design rationale** (the two failure modes it solves, the enforcement ladder, and the honest ceiling of what's enforceable vs. theater) is in [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md).
+> **The full design rationale** (the two failure modes it solves, the enforcement ladder, and the honest ceiling of what's enforceable vs. theater) is in [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md). A report-level workflow overview (pipeline + enforcement ladder) is in [`docs/development-workflow.md`](./docs/development-workflow.md).
 
 ## Reference
 
