@@ -87,7 +87,7 @@ Five canonical triage roles: `needs-triage` · `needs-info` · `ready-for-agent`
 
 ## Delegation guardrail
 
-Delegate only mechanical, low-blast-radius work to a cheap subagent (bulk renames, boilerplate, log summarizing, grep-and-report). Never delegate security-boundary code, architecture/seam decisions, bilingual issue/PR authoring, or judgment-gated skills (`/scrutinize`, `/code-review`, `/security-review`, `/debug-mantra`). A delegated change is not exempt from the verify/E2E mandate.
+Delegate only mechanical, low-blast-radius work to a cheap subagent (bulk renames, boilerplate, log summarizing, grep-and-report). Never delegate security-boundary code, architecture/seam decisions, bilingual issue/PR authoring, or judgment-gated skills (`/scrutinize`, `/code-review`, `/security-review`, `/debug-mantra`). A delegated change is not exempt from the verify/E2E mandate. See **`references/delegation.md`** for the discipline: sizing (chunk by independently-governed unit), the Option A/B skill-handoff economics (a handed-off skill costs context budget, not free), landmine injection into the child prompt, and component-aware verification.
 
 ## Skeletons
 
