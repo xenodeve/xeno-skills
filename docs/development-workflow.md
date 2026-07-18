@@ -55,7 +55,7 @@ graph TD
 | Tier | กลไก | บังคับได้แค่ไหน |
 |---|---|---|
 | **0 hard** | `PreToolUse` gate — PR-ต้องมี-issue, git อันตราย, **verify ที่ hook รันเอง** | บังคับจริง (ปลอมไม่ได้เพราะ hook รันเทสต์เอง) |
-| **1 soft** | dispatcher ที่ inject ตอน SessionStart (route-first + red-flags), `gh pr merge` → `ask` | ยกโอกาสทำตามให้สูงขึ้น แต่ model ยังข้ามได้ |
+| **1 soft** | dispatcher ที่ inject ตอน SessionStart (route-first + red-flags), `gh pr merge` → `ask` (ข้ามด้วย marker `autoMerge`/`afk` ตอน AFK) | ยกโอกาสทำตามให้สูงขึ้น แต่ model ยังข้ามได้ |
 | **3 real** | CI required-check + branch protection | การันตีสูงสุด — อยู่นอกมือ agent, คุมคน merge บนเว็บได้ |
 
 ---
@@ -66,7 +66,7 @@ graph TD
 |---|---|
 | PR ต้องมี issue อ้างอิง | *คุณภาพ* ของ code-review / scrutinize |
 | git อันตราย (`reset --hard`, force-push, `clean -f`, `branch -D`) | วินัย TDD (เขียน test ก่อนจริงไหม) |
-| verify ต้องเขียวก่อน `gh pr create`/`merge` | `/simplify`, `/debug-mantra` (เป็นดุลพินิจ) |
+| verify ต้องเขียวก่อน `gh pr merge` (ชุดเร็ว; e2e ที่ CI) | `/simplify`, `/debug-mantra` (เป็นดุลพินิจ) |
 
 **เพดานความจริง:** hook บังคับได้แค่ *action ที่ตรวจได้* ไม่ใช่ *วินัยของกระบวนการ* — การเคลมว่า "hook บังคับ TDD ได้" โดยแค่เช็คว่ามีไฟล์ test = **theater** ส่วนที่บังคับไม่ได้จะพึ่ง **soft dispatcher** (ยก trigger rate) + คนรีวิว/CI
 

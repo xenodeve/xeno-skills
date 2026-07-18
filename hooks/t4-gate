@@ -6,8 +6,9 @@
 # Rules:
 #   - dangerous git is blocked     (reset --hard, force-push, clean -f, branch -D)
 #   - PR needs a referenced issue  (PRD -> issues -> PR gate)
-#   - ship gate: a green `verify` (.claude/t4.json) is required to open/merge a PR
-#   - before-merge: `gh pr merge` asks the human to confirm review ran
+#   - ship gate: a green `verify` (.claude/t4.json) is required to MERGE a PR
+#   - before-merge: `gh pr merge` asks to confirm review ran — skipped when
+#     .claude/t4.json sets "autoMerge"/"afk": true (AFK / standing authorization)
 set -uo pipefail
 
 input="$(cat)"
@@ -85,13 +86,18 @@ if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]
   [ -n "$ref" ] || deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first."
 fi
 
-# --- ship gate: a green verify is required to open OR merge a PR -------------
-if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]]+(create|merge) ]]; then
-  run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before opening/merging the PR."
-fi
-
-# --- before-merge gate: confirm the review skills ran -----------------------
+# --- ship gate: MERGE is the ship point (verify + review) -------------------
+# verify runs on `merge` only, not the iterative `create` (CI builds on push).
+# Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
+# e2e to the CI required-check.
 if [[ "$scan" =~ (^|[/\\\"[:space:]])gh(\.exe)? ]] && [[ "$scan" =~ pr[[:space:]]+merge ]]; then
+  run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging."
+  # Standing authorization (AFK / auto-merge) skips the review-confirm ask — the
+  # developer already authorized the batch, and re-asking a decided call is the
+  # 'sticking' anti-pattern. The checkable guard (verify, above) still holds.
+  if grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
+    exit 0
+  fi
   ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?"
 fi
 
