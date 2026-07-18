@@ -55,7 +55,7 @@ graph TD
 | Tier | Mechanism | How strong |
 |---|---|---|
 | **0 hard** | `PreToolUse` gate — PR-needs-issue, dangerous git, **verify the hook runs itself** | Real (un-forgeable — the hook runs the tests) |
-| **1 soft** | dispatcher injected at SessionStart (route-first + red-flags), `gh pr merge` → `ask` | Raises the odds of compliance; the model can still skip |
+| **1 soft** | dispatcher injected at SessionStart (route-first + red-flags), `gh pr merge` → `ask` (skipped by an `autoMerge`/`afk` marker for AFK runs) | Raises the odds of compliance; the model can still skip |
 | **3 real** | CI required-check + branch protection | Top guarantee — outside the agent, covers human web-merges |
 
 ---
@@ -66,7 +66,7 @@ graph TD
 |---|---|
 | A PR must reference an issue | The *depth* of a code-review / scrutinize |
 | Dangerous git (`reset --hard`, force-push, `clean -f`, `branch -D`) | TDD discipline (was the test really written first) |
-| A green verify before `gh pr create`/`merge` | `/simplify`, `/debug-mantra` (judgment calls) |
+| A green verify before `gh pr merge` (fast suite; e2e in CI) | `/simplify`, `/debug-mantra` (judgment calls) |
 
 **The honest ceiling:** hooks enforce *checkable actions*, not *process discipline* — claiming a hook "enforces TDD" by checking a test file exists is **theater**. What can't be enforced leans on the **soft dispatcher** (raising the trigger rate) plus human review / CI.
 
