@@ -33,6 +33,9 @@ When planning or implementing a feature, follow this order:
 | Before merge / ship | `/code-review` + `/scrutinize` | Correctness + outsider perspective |
 | Touching auth / token / secret / any security boundary | `/security-review` | Every boundary crossing |
 | After implementation | `/verify` | Confirm the feature works in the app |
+| New UI needs a design brief | `/impeccable` (shape) | Plan the UX before implementing a component |
+| UI ready to ship | `/impeccable` (audit + harden) | a11y / perf / responsive + edge cases before merge |
+| Codebase complexity growing | `/improve-codebase-architecture` (or equivalent) | On a cadence (e.g. every few days) or after a major feature |
 | Exploring unfamiliar code | `/zoom-out` | High-level context before editing |
 | User asks "is there a skill for X?" | `/find-skills` | Search before hand-writing code |
 

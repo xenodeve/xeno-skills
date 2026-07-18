@@ -21,7 +21,8 @@ Agents in an agent-primary repo fail two ways: **(1)** they don't invoke the ski
 ```mermaid
 graph LR
     Idea["Idea / task"] --> Grill["/grill-me<br/>stress-test the concept"]
-    Grill --> PRD["/to-prd<br/>PRD (1 per epic)"]
+    Grill --> GrillDocs["/grill-with-docs<br/>challenge vs ADRs"]
+    GrillDocs --> PRD["/to-prd<br/>PRD (1 per epic)"]
     PRD --> Issues["/to-issues<br/>GitHub issues<br/>(1 per deliverable)"]
     Issues --> TDD["/tdd<br/>red → green"]
     TDD --> PR["PR<br/>(references an issue)"]

@@ -66,7 +66,7 @@ These are the rules the skeletons carry; know them so you don't dilute them.
 - **TDD is mandatory** for features and bugfixes.
 - **Non-standard framework version → read the vendored docs first** (e.g. `node_modules/<pkg>/dist/docs/`), not prior knowledge.
 - **Verify every frontend change end-to-end** — unit tests can't see real layout/hydration; run the repo's E2E/verify pass and add a case per new page/interactive UI.
-- **Bun** is the package manager/runtime — commit `bun.lock`, never `package-lock.json`/`yarn.lock`, use `bunx`.
+- **Bun** is the default package manager/runtime for a new T4 repo — commit `bun.lock`, use `bunx`; where a workspace already uses npm/yarn, honor its lockfile rather than forcing Bun.
 - **Close issues with a stated reason**; **domain glossary is load-bearing**; **proceed silently if a governance file is absent** (details in the sibling skills + `references/governance-docs.md`).
 
 ## Common mistakes

@@ -47,7 +47,7 @@ This is the safety gate. AFK runs **only on a bounded, pre-approved worklist**; 
 
 | ✅ May decide alone (execute) | 🛑 Must park (stop, don't guess) |
 |---|---|
-| Implementation details **inside an approved issue**, in a **non-boundary** file | Any edit to a file in a **security-boundary module** — `auth` / `wallet` / `unlock` / token / secret — **including a "pure rename" or behavior-preserving refactor** |
+| Implementation details **inside an approved issue**, in a **non-boundary** file | Any edit to a file in a **security-boundary module** — the repo's auth / payments / token / secret / entitlement paths (e.g. `auth`, `wallet`, `unlock`; configure per repo) — **including a "pure rename" or behavior-preserving refactor** |
 | Behavior-preserving refactors and picking the **simplest** of equivalent designs (North Star) — **outside boundary modules** | **Architecture / seam / data-model** decisions, or a schema change without a migration path |
 | Writing tests; naming within existing convention (non-boundary) | **Irreversible ops** — deleting non-orphan code, destructive migration, force-push, `cache:reset` mid-batch, dropping data |
 | Fixing what **your own change** broke | **Scope growth** beyond the issue, or new work you discover |
