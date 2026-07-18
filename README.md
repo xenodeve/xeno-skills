@@ -49,11 +49,11 @@ hook สามตัว — ยิงเฉพาะ repo ที่มี marker
 
 - **`SessionStart`** → inject เนื้อ `using-t4` ครั้งเดียวต่อ session (แก้ปัญหา "ไม่เรียก skill ตั้งแต่ต้น")
 - **`UserPromptSubmit`** → เตือน rails สั้นๆ ทุก turn (ลด drift กลางทาง)
-- **`PreToolUse`** → **บล็อก/ถาม** ก่อนคำสั่งเสี่ยง: `gh pr create` ที่ไม่มี issue อ้างอิง, git อันตราย (`reset --hard`, force-push, `clean -f`, `branch -D`), และ **ship gate** — รันคำสั่ง verify ของ repo (`.claude/t4.json` `"verify"`) **เอง** ก่อน `gh pr merge` แล้ว deny ถ้าไม่ผ่าน (verify ควรเป็นชุด**เร็ว** unit+build+lint; e2e ปล่อยให้ CI); `gh pr merge` ยัง `ask` ให้ยืนยัน `/scrutinize` + `/code-review` — **ข้ามได้เมื่อตั้ง `"autoMerge"`/`"afk"`** ตอน AFK
+- **`PreToolUse`** → **บล็อก/ถาม** ก่อนคำสั่งเสี่ยง: `gh pr create` ที่ไม่มี issue อ้างอิง, git อันตราย (`reset --hard`, force-push, `clean -f`, `branch -D` — โดย `reset --hard`/`clean` อนุญาตใต้ `"afk"` เพื่อ revert-to-green), และ **ship gate** — รันคำสั่ง verify ของ repo (`.claude/t4.json` `"verify"`) **เอง** ก่อน `gh pr merge` แล้ว deny ถ้าไม่ผ่าน (verify ควรเป็นชุด**เร็ว** unit+build+lint; e2e ปล่อยให้ CI); `gh pr merge` ยัง `ask` ให้ยืนยัน `/scrutinize` + `/code-review` — **ข้ามได้เมื่อตั้ง `"autoMerge"`/`"afk"`** ตอน AFK
 
 hook แบบ inject = "เตือน" (model ยังเลือกไม่ทำตามได้) ที่ "บังคับ" ได้จริงคือ `PreToolUse` deny + **verify ที่ hook รันเอง** (ปลอมไม่ได้เพราะ hook รันเทสต์เอง ไม่เชื่อคำอ้าง) การันตีสูงสุด "ห้าม merge ถ้าไม่เขียว" อยู่ที่ **CI required-check + branch protection** (เทมเพลตมากับ `t4-project-bootstrap`) ที่คุมการ merge บนเว็บของคนได้ด้วย — local hook คุมได้แค่คำสั่งที่ agent รัน ส่วน repo ที่ผ่าน bootstrap พก hook ชุดเดียวกันไปเองผ่าน git (ไม่ต้องมี plugin)
 
-> **เหตุผลการออกแบบทั้งหมด** (ปัญหา 2 อย่างที่แก้, enforcement ladder, เพดานความจริงว่าอะไรบังคับได้/อะไรเป็น theater) อยู่ใน [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md)
+> **เหตุผลการออกแบบทั้งหมด** (ปัญหา 2 อย่างที่แก้, enforcement ladder, เพดานความจริงว่าอะไรบังคับได้/อะไรเป็น theater) อยู่ใน [`docs/adr/0001`](./docs/adr/0001-hook-based-workflow-enforcement.md) · ภาพรวม workflow ระดับรายงาน (pipeline + enforcement ladder) อยู่ใน [`docs/development-workflow.md`](./docs/development-workflow.md)
 
 ## รายการอ้างอิง
 
