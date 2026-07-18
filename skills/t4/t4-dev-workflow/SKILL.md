@@ -50,6 +50,19 @@ In a repo with the T4 hooks installed (`t4-project-bootstrap` → `references/ho
 
 Everything else — TDD discipline, `/simplify`, the *depth* of a review — stays agent discipline, reinforced by the session-start dispatcher (the injected `using-t4` map). Hooks can raise the cost of skipping a judgment skill but can't verify the reasoning; only checkable actions are hard-enforced.
 
+## High-risk / core refactor protocol
+
+Ordinary TDD covers most changes. A refactor of a **large or load-bearing module** — a "god object", a critical seam, a monolith you're decomposing — needs more, because the risk is *silent behavior change during relocation*. When you're moving/extracting code in such a module, follow this (distilled from the MangaDock characterization ADRs):
+
+1. **Inventory first.** List the behavioral variants and landmines the module actually has (known divergences, edge cases) before moving anything — you only preserve what you've named.
+2. **Characterize before you move.** Add characterization tests that pin the *current* output (quirks included) at the seam **first**. Refactor only behind green characterization — it's the net that catches a relocation that changed behavior.
+3. **One seam per commit.** Extract one boundary at a time, each commit output-equivalent (ideally byte-identical). A reviewer or a diff can verify one seam; a ten-seam commit hides a regression.
+4. **Never mix relocation with a behavior fix.** Move in one commit, fix in another — otherwise "did the move change anything?" is unanswerable.
+5. **Preserve known divergences.** A deliberate quirk stays (with its characterization test); don't "clean it up" mid-move.
+6. **Attach new features at the new seam, not the monolith** you're retiring.
+
+Under AFK this is doubly load-bearing: seam/architecture decisions are a 🛑 **park** (see `t4-afk`), so an unattended run does the *mechanical* extraction behind characterization tests and parks the judgment calls.
+
 ## Bilingual tracker rule (GitHub only)
 
 Issue bodies, PRD bodies, and PR descriptions must be **bilingual — English + a full Thai mirror**:
