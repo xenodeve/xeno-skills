@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Run every hook contract test and aggregate the result.
+# Run every contract test under tests/ (hooks + skills) and aggregate the result.
 set -uo pipefail
-DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 rc=0
-for t in "$DIR"/test-*.sh; do
-  echo "== $(basename "$t") =="
+while IFS= read -r t; do
+  echo "== ${t#"$ROOT"/} =="
   bash "$t" || rc=1
   echo
-done
-if [ "$rc" -eq 0 ]; then echo "ALL HOOK TESTS PASSED"; else echo "SOME HOOK TESTS FAILED"; fi
+done < <(find "$ROOT" -name 'test-*.sh' | sort)
+if [ "$rc" -eq 0 ]; then echo "ALL TESTS PASSED"; else echo "SOME TESTS FAILED"; fi
 exit "$rc"

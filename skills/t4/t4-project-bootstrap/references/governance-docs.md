@@ -122,6 +122,7 @@ as written — in code identifiers, PR descriptions, issue titles, and team conv
 ```markdown
 # Product
 
+<!-- lang:en -->
 > This is the product brief (users, purpose, brand). The **visual design system** —
 > color tokens, typography, components, do/don'ts — is canonical in **`DESIGN.md`**;
 > the brand/principles below are the "why", DESIGN.md is the "how".
@@ -143,6 +144,11 @@ as written — in code identifiers, PR descriptions, issue titles, and team conv
 
 ## Accessibility & Inclusion
 <WCAG target, i18n stance, reduced-motion, focus indicators.>
+<!-- lang:end -->
+
+<!-- lang:th -->
+<Full Thai mirror of every section above — same headings, same depth, not a summary. Identifiers, tokens, and env vars stay English.>
+<!-- lang:end -->
 ```
 
 ### docs/agents/domain.md
