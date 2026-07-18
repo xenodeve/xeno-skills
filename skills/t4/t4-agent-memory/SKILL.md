@@ -19,7 +19,7 @@ Each layer exists because it answers a different question, and each is structure
 |---|---|---|---|
 | **Team memory vault** — `Obsidian-<Repo>/` (committed), `Home.md` is the Map-of-Content index | "What durable facts/decisions/feedback does the team hold?" | one note per memory, opened via `Home.md` links | **Every session start** — read `Home.md`, then only the linked notes the task touches |
 | **Personal memory** — `~/.claude/projects/<slug>/memory/` + `MEMORY.md` index | "What did *I* learn across my own sessions?" (same note format) | one file per memory, via `MEMORY.md` | Loaded by the runtime each session; keep in sync with the vault |
-| **Open-work ledger** — `docs/OPEN-WORK-LEDGER.md` | "What is still open, tracked *and* untracked?" | one row per work item | **Every session start** — this is the single source of open work |
+| **Open-work ledger** — `docs/OPEN-WORK-LEDGER.md` | "What is still open, tracked *and* untracked?" | one row per work item | **Every session start** — the consolidated *discovery index* (GitHub issues stay the source of truth for tracked work; the ledger also catches untracked MD-only items and reconciles to issues) |
 | **Ship log** — `DONE.md` | "What did past sessions actually ship, and how was it validated?" | one dated entry (newest on top) | When you need the history of a change; append after each shipped unit |
 | **Survey-provenance cache** — `docs/reports/survey-manifest/` | "What did a prior scan already read, at which commit?" | one entry per file/issue/PR | Before a broad codebase/issue survey — skip or diff unchanged sources |
 | **Serena code memories** — `mem:` graph | "How is the *code* structured?" | one memory per topic, reached via `mem:core` | When exploring unfamiliar code |

@@ -67,7 +67,7 @@ At the start of any session in a T4 repo, before picking up work:
 - **Bilingual is tracker-only, Thai mirrors English exactly** — issue/PRD/PR bodies; not chat/reports; identifiers stay English (`t4-dev-workflow`).
 - **TDD is mandatory**; **verify every frontend change end-to-end** (unit tests can't see real layout/hydration).
 - **Non-standard framework version → read the vendored docs first**, not prior knowledge.
-- **Bun** is the package manager — commit `bun.lock`, use `bunx`.
+- **Bun** is the default package manager (`bun.lock`, `bunx`).
 - **Records stay a reliable index** — `file:line`, commit SHAs, validated-only, blameless (`t4-engineering-records`).
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — think before coding, simplest thing that works, surgical diffs tracing to the request, verifiable success criteria (loaded once at session start).
