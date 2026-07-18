@@ -42,11 +42,13 @@ run_verify() {
   vcmd="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < .claude/t4.json 2>/dev/null)"
   vcmd="${vcmd//\\\"/\"}"; vcmd="${vcmd//\\\\/\\}"
   [ -n "$vcmd" ] || return 0
+  local rc
   if command -v timeout >/dev/null 2>&1; then
-    timeout 600 bash -c "$vcmd" >/dev/null 2>&1
+    VERIFY_OUTPUT="$(timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
   else
-    bash -c "$vcmd" >/dev/null 2>&1
+    VERIFY_OUTPUT="$(bash -c "$vcmd" 2>&1)"; rc=$?
   fi
+  return "$rc"
 }
 
 # --- command-position anchoring ----------------------------------------------
@@ -60,16 +62,24 @@ GITH='git(\.exe)?([[:space:]]+-[cC][[:space:]]+[^[:space:]]+)*[[:space:]]+'
 GHH='gh(\.exe)?([[:space:]]+-{1,2}[^[:space:]]+)*[[:space:]]+pr[[:space:]]+'
 FLAG_F="[[:space:]\"']-f([[:space:]\"']|$)"
 
+# A repo under standing AFK authorization (.claude/t4.json "afk": true) needs to
+# revert an in-flight item to "last green" when a gate parks it (see t4-afk) —
+# reset --hard / clean are exactly those revert tools, so the gate must not
+# deadlock them. force-push and branch -D are NOT revert tools (higher blast
+# radius; t4-afk parks them regardless), so they stay blocked even under afk.
+is_afk=""
+grep -Eq '"afk"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && is_afk="yes"
+
 # --- dangerous git -----------------------------------------------------------
-if [[ "$cmd" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
-  deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, or run it yourself if you truly intend it."
+if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
+  deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
 if [[ "$cmd" =~ ${POS}${GITH}push[[:space:]] ]] && [[ ! "$cmd" =~ --force-with-lease ]] \
    && { [[ "$cmd" =~ --force([^-]|$) ]] || [[ "$cmd" =~ $FLAG_F ]]; }; then
   deny "T4 gate: force-push is blocked. Use --force-with-lease, or run it yourself if intended."
 fi
-if [[ "$cmd" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$cmd" =~ [-][a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
-  deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, or run it yourself."
+if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$cmd" =~ [-][a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
+  deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
 if [[ "$cmd" =~ ${POS}${GITH}branch[[:space:]].*-D ]]; then
   deny "T4 gate: 'git branch -D' force-deletes a branch (unmerged work lost). Use -d, or run it yourself."
@@ -94,7 +104,9 @@ fi
 # Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
 # e2e to the CI required-check.
 if [[ "$cmd" =~ ${POS}${GHH}merge ]]; then
-  run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging."
+  run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
+--- last verify output ---
+$(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
   # Standing authorization (AFK / auto-merge) skips the review-confirm ask — the
   # developer already authorized the batch, and re-asking a decided call is the
   # 'sticking' anti-pattern. The checkable guard (verify, above) still holds.

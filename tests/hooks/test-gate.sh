@@ -21,6 +21,8 @@ REPOV="$TMP/repov"; mkdir -p "$REPOV/.claude"; printf '{"t4":true,"verify":"exit
 REPOF="$TMP/repof"; mkdir -p "$REPOF/.claude"; printf '{"t4":true,"verify":"exit 1"}\n' > "$REPOF/.claude/t4.json"
 REPOA="$TMP/repoa"; mkdir -p "$REPOA/.claude"; printf '{"t4":true,"autoMerge":true}\n' > "$REPOA/.claude/t4.json"
 REPOAF="$TMP/repoaf"; mkdir -p "$REPOAF/.claude"; printf '{"t4":true,"verify":"exit 1","autoMerge":true}\n' > "$REPOAF/.claude/t4.json"
+REPOAFK="$TMP/repoafk"; mkdir -p "$REPOAFK/.claude"; printf '{"t4":true,"afk":true}\n' > "$REPOAFK/.claude/t4.json"
+REPOFV="$TMP/repofv"; mkdir -p "$REPOFV/.claude"; printf '{"t4":true,"verify":"echo BROKEN_XYZ; exit 1"}\n' > "$REPOFV/.claude/t4.json"
 printf 'PR body\nCloses #7\n' > "$TMP/withref.md"
 printf 'PR body\njust some text\n'   > "$TMP/noref.md"
 
@@ -66,6 +68,17 @@ echo "before-merge ask — skipped under standing authorization (#12: AFK):"
 asked   "$(run "$REPO"   "$(bashj 'gh pr merge 3 --squash')")" "ask:   interactive merge (no marker) still prompts"
 allowed "$(run "$REPOA"  "$(bashj 'gh pr merge 3 --squash')")" "allow: autoMerge/afk marker skips the ask"
 denied  "$(run "$REPOAF" "$(bashj 'gh pr merge 3 --squash')")" "deny:  autoMerge still can't bypass a failed verify"
+
+echo "AFK revert allowance (gate must not deadlock t4-afk's revert-to-green):"
+allowed "$(run "$REPOAFK" "$(bashj 'git reset --hard HEAD')")"          "allow: reset --hard under afk (revert the in-flight item)"
+allowed "$(run "$REPOAFK" "$(bashj 'git clean -fd')")"                  "allow: clean -fd under afk (drop in-flight untracked)"
+denied  "$(run "$REPOAFK" "$(bashj 'git push --force origin main')")"   "deny:  force-push still blocked even under afk"
+denied  "$(run "$REPO"    "$(bashj 'git reset --hard HEAD')")"          "deny:  reset --hard still blocked without afk"
+
+echo "verify diagnostics (failure output surfaced, not swallowed):"
+out_fv="$(run "$REPOFV" "$(bashj 'gh pr merge 3 --squash')")"
+denied "$out_fv" "deny: merge blocked when verify fails"
+case "$out_fv" in *BROKEN_XYZ*) ok "verify failure output is in the deny reason";; *) bad "verify output swallowed (no BROKEN_XYZ)";; esac
 
 echo ""
 echo "gate: $pass passed, $fail failed"

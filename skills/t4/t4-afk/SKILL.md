@@ -63,7 +63,7 @@ For each independent item on the worklist:
 2. **TDD** — red → green → refactor (mandatory, no exceptions AFK).
 3. **Checkpoint per green.** Commit small at each green step; **never leave the tree broken between items** — the next item, and the returning developer, both start from green.
 4. **Run the gates unattended** — `/simplify`, then `/verify` (E2E for any frontend change — unit tests can't see real layout/hydration), `/code-review` + `/scrutinize`, and `/security-review` if a boundary was touched.
-5. **A gate fails and you can't fix it within this item's scope → revert to last green, park the item, move on.** Do not expand scope to chase a fix; do not commit red.
+5. **A gate fails and you can't fix it within this item's scope → revert to last green, park the item, move on.** Do not expand scope to chase a fix; do not commit red. (Reverting an in-flight item uses `git reset --hard` / `git clean` — the `t4-gate` hook permits these **only when** `.claude/t4.json` sets `"afk": true`, so set that for an unattended run; force-push and `branch -D` stay blocked.)
 6. **Reconcile** — update the issue **body** to current state (bilingual), add a ledger row / ship-log line (see `t4-agent-memory`). Close only with evidence.
 
 ## Stop-and-park (never guess past these)

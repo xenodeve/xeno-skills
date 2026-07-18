@@ -55,6 +55,8 @@ Injected reminders are soft and PreToolUse denies only cover *agent-run* command
 
 Honest scope: the local gate raises the floor for agent-run merges; the CI required-check is what makes "no merge without a green verify" actually true.
 
+**AFK note.** Under `.claude/t4.json` `"afk": true` the gate permits `git reset --hard` / `git clean` so an unattended run can revert a parked item to green (`t4-afk`); force-push and `branch -D` stay blocked. When `verify` fails, the deny reason includes the last lines of the command's output, so an unattended agent can diagnose it and write a park note.
+
 ## Troubleshooting
 
 | Symptom | Likely cause → fix |
