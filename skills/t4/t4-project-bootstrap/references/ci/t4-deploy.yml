@@ -1,0 +1,51 @@
+# T4 deploy (CD) — install only when the repo actually deploys something.
+#
+# The gating rule: deploy is DOWNSTREAM of the same gate that guards merge. It
+# runs on `main` after `T4 verify` reports success — never on a PR, never in
+# parallel with the gate, never on a branch that skipped it.
+#
+# Install as `.github/workflows/t4-deploy.yml`.
+name: T4 deploy
+
+# `workflow_run` (not `push`) so a green gate is a precondition of deploying,
+# not a coincidence of timing.
+on:
+  workflow_run:
+    workflows: ["T4 verify"]
+    branches: [main]
+    types: [completed]
+
+# Never two deploys at once, and never cancel one mid-flight — a half-applied
+# deploy is worse than a queued one. (Contrast with the gate, which cancels.)
+concurrency:
+  group: t4-deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write                         # OIDC — prefer it over long-lived secrets
+
+jobs:
+  deploy:
+    # Belt and braces: only a successful gate run on main proceeds.
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production                    # add required reviewers here for a human approval gate
+      url: <PRODUCTION_URL>
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}   # deploy the sha that passed, not HEAD
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: <DEPLOY_COMMAND>             # e.g. `bunx vercel deploy --prod`, `bunx wrangler deploy`
+      # A smoke check turns "the deploy step exited 0" into "the site answers".
+      - run: curl --fail --silent --show-error --retry 5 --retry-delay 10 <HEALTHCHECK_URL>
+
+# Rollback is part of the deliverable, not an afterthought: record how to roll
+# this back (previous deployment id / `git revert` + redeploy) in the repo's
+# runbook. An agent under AFK must never invent a rollback procedure mid-incident.

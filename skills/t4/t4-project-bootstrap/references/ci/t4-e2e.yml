@@ -1,0 +1,47 @@
+# T4 e2e — the slow suite, deliberately NOT in `.claude/t4.json` "verify".
+#
+# Why separate: the local gate runs `verify` on every `gh pr merge`, so a suite
+# that takes minutes makes shipping expensive (issue #13). E2E belongs here,
+# where it runs once per push in parallel with the rest of the gate.
+#
+# Install as `.github/workflows/t4-e2e.yml`. Required check name: `e2e`.
+# Start it ADVISORY (not required) for a week — a flaky e2e made required is how
+# a team learns to merge with the gate disabled. Promote it once it's stable.
+name: T4 e2e
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: t4-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20                   # a hung browser must not pin a runner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run e2e                  # <ORG>/<REPO> end-to-end suite
+      # The artifact is what makes a red e2e diagnosable without a local repro —
+      # without it the agent only sees "e2e failed".
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+# T4 rule this enforces: every frontend change is verified end-to-end — unit
+# tests can't see real layout or hydration. Add a case per new page /
+# interactive component; a PR that adds UI and no e2e case is incomplete.

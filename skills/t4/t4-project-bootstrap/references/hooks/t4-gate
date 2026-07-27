@@ -7,6 +7,7 @@
 #   - dangerous git is blocked     (reset --hard, force-push, clean -f, branch -D)
 #   - PR needs a referenced issue  (PRD -> issues -> PR gate)
 #   - ship gate: a green `verify` (.claude/t4.json) is required to MERGE a PR
+#   - CI gate (opt-in "requireGreenCI"): every server-side check must be green
 #   - before-merge: `gh pr merge` asks to confirm review ran — skipped when
 #     .claude/t4.json sets "autoMerge"/"afk": true (AFK / standing authorization)
 set -uo pipefail
@@ -47,6 +48,27 @@ run_verify() {
     VERIFY_OUTPUT="$(timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
   else
     VERIFY_OUTPUT="$(bash -c "$vcmd" 2>&1)"; rc=$?
+  fi
+  return "$rc"
+}
+
+# Asks GitHub whether the PR's checks are green (.claude/t4.json
+# "requireGreenCI": true). Branch protection with required checks is the better
+# guarantee — this is the fallback for repos that can't use it, and it turns a
+# server-side rejection into an actionable local message either way.
+# `gh pr checks` exits 0 = all passing, 1 = a check failed (or none reported),
+# 8 = still pending. Anything non-zero is not shippable.
+check_ci() {
+  local target="" rest rc
+  # Take the argument right after `pr merge` (the PR number) without depending on
+  # capture-group numbering inside the anchored POS/GHH patterns.
+  rest="${cmd#*pr }"; rest="${rest#merge}"
+  [[ "$rest" =~ ^[[:space:]]+([0-9]+) ]] && target="${BASH_REMATCH[1]}"
+  # $target is intentionally unquoted/word-split: empty means "the current branch".
+  if command -v timeout >/dev/null 2>&1; then
+    CI_OUTPUT="$(timeout 120 gh pr checks $target 2>&1)"; rc=$?
+  else
+    CI_OUTPUT="$(gh pr checks $target 2>&1)"; rc=$?
   fi
   return "$rc"
 }
@@ -104,6 +126,13 @@ fi
 # Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
 # e2e to the CI required-check.
 if [[ "$cmd" =~ ${POS}${GHH}merge ]]; then
+  # CI first: it's one cheap network call, and "a check is red/pending" is a
+  # faster, more useful answer than a local suite that passes anyway.
+  if grep -Eq '"requireGreenCI"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
+    check_ci || deny "T4 gate: the PR's checks are not green (failing or still pending). CI is the real ship gate — wait for it, or fix the failing check.
+--- gh pr checks ---
+$(printf '%s' "${CI_OUTPUT:-}" | tail -n 15)"
+  fi
   run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
 --- last verify output ---
 $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"

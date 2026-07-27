@@ -1,18 +1,72 @@
-# T4 ship gate (server-side) — the real guarantee that local hooks can't be.
-# Local hooks only catch agent-run commands; this also covers a human merging on
-# the web and can't be `--no-hooks`'d away. Make it a REQUIRED status check in
-# the branch-protection rule for `main`, and disallow direct pushes to `main`.
+# T4 verify — the server-side ship gate, and the enforcement local hooks can't
+# be. Local hooks only catch agent-run commands; this also covers a human
+# merging on the web and can't be `--no-hooks`'d away.
 #
-# Keep the `run:` command in sync with `.claude/t4.json` "verify".
+# Install as `.github/workflows/t4-verify.yml`, then make ALL FOUR jobs required
+# status checks on `main` and disallow direct pushes (see ci-cd-layer.md).
+# Required check names: `lint`, `typecheck`, `test`, `build`.
+#
+# Keep the fast subset in sync with `.claude/t4.json` "verify" — the local gate
+# should fail for the same reasons this does, just sooner.
 name: T4 verify
+
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+
+# A new push supersedes the previous run on the same ref; nothing is gained by
+# finishing a gate for a commit that has already been replaced.
+concurrency:
+  group: t4-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the gate only reads the code. Never grant write here — a
+# workflow that can push is a workflow that can bypass the gate it enforces.
+permissions:
+  contents: read
+
 jobs:
-  verify:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bun test            # <ORG>/<REPO> ship gate — match .claude/t4.json "verify"
+      - run: bun run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck            # e.g. `tsc --noEmit`
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test                     # <ORG>/<REPO> unit suite
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      # Hand the built output to e2e / deploy instead of rebuilding it there.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: <DIST_DIR>                # e.g. dist/ or .next/
+          retention-days: 7
+          if-no-files-found: error
+
+# Not Bun? Swap `oven-sh/setup-bun@v2` for `actions/setup-node@v4` with
+# `cache: npm|pnpm|yarn`, and each `run:` for that runner's equivalent. Honor the
+# lockfile the repo already has rather than forcing Bun.

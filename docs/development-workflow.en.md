@@ -59,6 +59,17 @@ graph TD
 | **1 soft** | dispatcher injected at SessionStart (route-first + red-flags), `gh pr merge` → `ask` (skipped by an `autoMerge`/`afk` marker for AFK runs) | Raises the odds of compliance; the model can still skip |
 | **3 real** | CI required-check + branch protection | Top guarantee — outside the agent, covers human web-merges |
 
+**What Tier 3 consists of** (installed by `t4-project-bootstrap` → `references/ci-cd-layer.md`):
+
+| Part | File | Role |
+|---|---|---|
+| Quality gate | `.github/workflows/t4-verify.yml` | Split into 4 jobs — `lint` · `typecheck` · `test` · `build` — each a **required check** on `main`, so the check name alone says what broke |
+| Slow suite | `t4-e2e.yml` | e2e/browser, kept out of the local `verify` (issue #13). Start advisory, promote to required once stable |
+| CD | `t4-deploy.yml` | Deploys only after `T4 verify` is green on `main` (`workflow_run`, not `push`), checks out the passing `head_sha`, uses a GitHub Environment as the human approval gate |
+| Branch ruleset | `gh api ... /rulesets` | No direct pushes to `main`, no force-push/deletion, branch must be up to date before merge (`strict`), review threads must be resolved |
+
+**The limit, stated plainly:** a private repo on the free plan can't enforce rulesets → use `.claude/t4.json` `"requireGreenCI": true` instead, which makes the hook run `gh pr checks` before merge and deny on a failing or pending check — **weaker than a ruleset**, since it only binds commands the agent runs through the hook; a human merging on the web still slips past.
+
 ---
 
 ## 4. Enforced vs. discipline
