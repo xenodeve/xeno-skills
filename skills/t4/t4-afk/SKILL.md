@@ -86,6 +86,7 @@ When the worklist is done or the run bound is hit:
 | Rationalization | Reality |
 |---|---|
 | "Dev's away, I'll just power through the ambiguity." | Ambiguity is a **park**, not a coin-flip. A wrong guess unattended costs more than a parked item. |
+| "Skipping the test/review step is fine for this one — no one's waiting on it." | Skipping a rule needs a **checkable proof** it doesn't apply, not a judgment call (`t4-dev-workflow`). AFK removes the reviewer who would have caught a bad exemption, so the bar goes **up** here, not down — and the proof goes in the landing digest. |
 | "It's a security file but the change is tiny." | Blast radius, not diff size, decides. `auth`/`wallet`/`unlock` = park regardless of size. |
 | "It's a pure/behavior-preserving rename, so it's in the may-decide-alone column." | The execute column's refactor allowance stops at boundary modules. A rename in `wallet`/`auth`/`unlock` parks — "pure" is the reviewer's call to confirm, and AFK removed the reviewer. |
 | "I'll grep to prove it's internal-only, then rename it." | The grep is you reviewing your own boundary change unattended. Park it; the developer confirms "internal-only" in 20 seconds on return. |

@@ -21,6 +21,34 @@ When planning or implementing a feature, follow this order:
 
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
 
+## Skipping a rule requires proof (the burden is on the skip)
+
+Every rule here has a cost, so there is always a locally-reasonable argument for skipping one. That argument is exactly the failure mode: skipped once with a good story, the rule stops being a rule. So the burden of proof sits on the skip, never on compliance.
+
+**The default is comply.** An exemption is valid only when you can state a **checkable fact about this specific change** that makes the rule inapplicable — one a reviewer can verify *without redoing your reasoning*.
+
+| Not a proof (judgment dressed up) | A proof (checkable fact) |
+|---|---|
+| "Small change, tests can't be affected" | "`git diff --name-only` is `README.md` only — no code path is reachable from it" |
+| "This is unrelated to the failing suite" | "The suite imports `src/a.ts`; the diff touches `src/b.ts`, which nothing in `a` imports — checked with the import graph" |
+| "Obviously safe" / "I'm confident" | "The function is unreferenced: `rg 'fooBar\(' -g '!*.test.*'` returns only its definition" |
+| "Running it is slow" | *Never* a proof. Cost is not evidence. |
+| "The user is in a hurry" | *Never* a proof. Urgency changes priority, not truth. |
+
+**If you cannot state the proof, follow the skill.** Uncertainty resolves toward compliance — always, and without asking. "I'm not sure whether this needs a test" means it needs a test.
+
+**Say it where the work is reported.** An exemption that lives only in your head is a violation, not an exemption: write it in the PR body / the message reporting the work, in the form *rule → the checkable fact → how to verify it*. This is what makes it reviewable, and what makes a wrong exemption catchable later.
+
+**Never exemptable by argument:**
+
+- **Hook-enforced rules** — a PR needs a referenced issue, `verify` must pass, dangerous git. The gate does not read prose; arguing with it means disabling it, which is the anti-pattern itself.
+- **Safety and trust boundaries** — `/security-review` on anything touching auth/secrets/input trust, and the destructive-command rules. The blast radius is asymmetric: being right saves minutes, being wrong is unrecoverable.
+- **Anything the user has just told you to do.** A direct instruction is not a rule you get to prove your way out of.
+
+**Consequence for a stated exemption that turns out wrong:** it becomes a record, not a shrug — the rule that was skipped goes back on, and the wrong proof is worth a line in the post-mortem (`t4-engineering-records`), because a bad exemption pattern will otherwise repeat.
+
+*This meta-rule governs every "narrow exception" clause in these skills, including the one below.*
+
 ## Root cause before fix (applies to bugs *and* review findings)
 
 **Do not propose a fix, and do not edit, until you can name the root cause with evidence.** The output of diagnosis is a sentence of the shape: *"X fails because `path/file.ts:42` does Y when Z, which I reproduced by ___."* Until you can write that sentence, any fix is a guess dressed as a solution.
