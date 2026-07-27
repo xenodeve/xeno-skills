@@ -1,0 +1,128 @@
+# T4 verify (monorepo) — use INSTEAD of t4-verify.yml when the repo has several
+# independently-built components (MangaDock: Backend/ · Frontend/ · MIT/).
+#
+# The whole design here exists to avoid one trap: a required check that never
+# reports. A workflow-level `paths:` filter looks like the obvious way to stop a
+# Frontend-only PR from paying for the Backend suite — but a workflow that
+# doesn't run creates no check run at all, so a required check sits on
+# "Expected — waiting for status" until someone disables the rule. The check
+# must ALWAYS run; only the expensive work inside it is conditional.
+#
+# Required check names = the job's `name:` (see ci-cd-layer.md), so require:
+#   `backend (unit)`, `frontend (unit)`.
+name: T4 verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: t4-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend (unit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+
+    # Specs that talk to a real dependency get a real one. Without the
+    # healthcheck the suite starts before the container is accepting
+    # connections and fails as "flaky".
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      # Dummy values so import-time config reads don't crash a unit test that
+      # never touches the service. Real secrets belong to the deploy workflow,
+      # never to the gate.
+      <SERVICE>_URL: http://localhost:0000
+      <SERVICE>_KEY: test-key
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # needed to diff against the base branch
+
+      # The check reports either way; only the suite below is conditional.
+      - id: scope
+        working-directory: .
+        run: |
+          base="origin/${{ github.base_ref || github.event.repository.default_branch }}"
+          if [ "${{ github.event_name }}" != "pull_request" ] \
+             || git diff --name-only "$base...HEAD" | grep -q '^Backend/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No Backend/ changes in this PR — suite skipped, check still green."
+          fi
+
+      # Install with whatever tool maintains the lockfile, run with whatever the
+      # repo actually runs. These are allowed to differ: MangaDock's Backend
+      # installs with bun (its package-lock.json is stale, so `npm ci` fails)
+      # and runs Jest under Node. Honor reality over the default-runtime rule.
+      - if: steps.scope.outputs.run == 'true'
+        uses: oven-sh/setup-bun@v2
+      - if: steps.scope.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.scope.outputs.run == 'true'
+        run: bun install --frozen-lockfile
+
+      # --runInBand when specs share external state (one Redis, one database):
+      # parallel workers bleed state into each other and the suite reads flaky.
+      - if: steps.scope.outputs.run == 'true'
+        run: npx jest -c jest.ci.config.js --runInBand --ci
+
+  frontend:
+    name: frontend (unit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scope
+        working-directory: .
+        run: |
+          base="origin/${{ github.base_ref || github.event.repository.default_branch }}"
+          if [ "${{ github.event_name }}" != "pull_request" ] \
+             || git diff --name-only "$base...HEAD" | grep -q '^Frontend/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No Frontend/ changes in this PR — suite skipped, check still green."
+          fi
+      - if: steps.scope.outputs.run == 'true'
+        uses: oven-sh/setup-bun@v2
+      - if: steps.scope.outputs.run == 'true'
+        run: bun install --frozen-lockfile
+      # The unit run excludes integration specs BY NAMING CONVENTION, so a new
+      # integration test can't silently land in the fast gate. See
+      # ci-cd-layer.md — this is what keeps the local `verify` a fast prefix.
+      - if: steps.scope.outputs.run == 'true'
+        run: bun test $(find app lib -name '*.test.ts' -not -name '*.integration.test.ts')
+
+# Add one job per component, same shape. Keep lint/typecheck/build as their own
+# jobs (or steps within the component job) — whichever split gives a check name
+# that says what broke.

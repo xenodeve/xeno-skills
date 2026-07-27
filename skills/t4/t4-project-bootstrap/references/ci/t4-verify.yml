@@ -67,6 +67,12 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+# No job sets a `name:`, so each job KEY is its required-check context (`lint`,
+# `typecheck`, `test`, `build`). Add a `name:` and you must update the ruleset to
+# match, or it will wait on a check that never reports — see ci-cd-layer.md.
+#
 # Not Bun? Swap `oven-sh/setup-bun@v2` for `actions/setup-node@v4` with
 # `cache: npm|pnpm|yarn`, and each `run:` for that runner's equivalent. Honor the
-# lockfile the repo already has rather than forcing Bun.
+# lockfile the repo already has rather than forcing Bun — and note that the
+# install tool and the run tool are allowed to differ (install with whatever
+# maintains the lockfile, run with whatever the repo actually runs).

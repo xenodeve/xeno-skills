@@ -23,6 +23,8 @@ Install it in the same pass as the hooks layer — a repo with the local gate an
 └── t4-deploy.yml    # only if the repo deploys — CD, gated on a green t4-verify
 ```
 
+**Several independently-built components?** Use `t4-verify-monorepo.yml` *instead of* `t4-verify.yml` — one job per component, each skipping its own suite when the PR doesn't touch it. Read the trap it's built around before adapting it (below).
+
 Copy them verbatim from `references/ci/`, then replace `<ORG>/<REPO>`, `<DIST_DIR>`, `<DEPLOY_COMMAND>`, `<PRODUCTION_URL>`, `<HEALTHCHECK_URL>`, and drop any job the repo genuinely has no command for (a `typecheck` job that runs a script that doesn't exist is a red check that teaches everyone to ignore red checks).
 
 ## Install steps
@@ -79,6 +81,8 @@ What each line buys you:
 - **`required_review_thread_resolution`** — an unresolved review comment blocks merge. The one review-discipline item that *is* mechanically checkable.
 - **`required_approving_review_count: 0`** — deliberate for a solo/agent-primary repo: requiring an approval you then give yourself is theater, and it deadlocks an AFK run. Raise it the moment a second human is on the repo.
 
+**A check's name is the job's `name:`, not its key.** The templates in `references/ci/t4-verify.yml` set no job-level `name:`, so the key *is* the context (`lint`, `test`, …) and the ruleset above is correct as written. The moment a job gains `name: jest (unit)`, the context becomes `jest (unit)` and a ruleset requiring `test` waits forever on a check that will never report. Matrix jobs get `name (matrix-values)`. Read the names off an actual run (`gh pr checks`) rather than off the YAML keys.
+
 Verify it took, and check whether a run is green:
 
 ```bash
@@ -87,6 +91,45 @@ gh pr checks <pr>                               # 0 = green · 1 = failing · 8 
 ```
 
 **Promoting e2e:** once `t4-e2e.yml` has been stable for a week, add `{ "context": "e2e" }` to the same `required_status_checks` list.
+
+## Monorepos: never path-filter a required check's trigger
+
+The obvious way to stop a Frontend-only PR from paying for the Backend suite is a workflow-level `paths:` filter. It is also the way to deadlock the repo: **a workflow that doesn't run creates no check run**, so a required check stays on *"Expected — waiting for status"* until someone disables the rule — and once a team has disabled a rule to land a PR, it stays disabled.
+
+The rule: **the check always runs; only the expensive work inside it is conditional.** `t4-verify-monorepo.yml` does this with a `git diff` against the base branch feeding a step-level `if:` — dependency-free, and the check reports green with an explicit "no changes in this component" line in the log.
+
+(A job skipped by a job-level `if:` *is* reported as success to branch protection, so that also works. Step-level is preferred anyway: the log says why it was a no-op instead of showing an empty skipped job.)
+
+## When tests need real infrastructure
+
+Unit specs that talk to Redis/Postgres deserve a real one — a mock that drifts from the real client is how a green gate ships a broken cache.
+
+- **Service containers with a healthcheck.** Without `--health-cmd`, the suite starts before the container accepts connections and the failure reads as flakiness, which is the fastest way to teach a team to re-run CI instead of reading it.
+- **Dummy env vars for import-time config reads.** A module that reads `process.env.X` at import crashes every test that merely imports it, including ones that never touch that service. Set placeholder values in the job's `env:`. Real secrets belong to the deploy workflow, never to the gate.
+- **Serialize when specs share state.** One Redis, one database, parallel workers → cross-worker bleed. `--runInBand` (or the runner's equivalent) trades wall-clock for a suite whose failures mean something.
+- **Install with the tool that maintains the lockfile; run with what the repo actually runs.** These are allowed to differ — MangaDock's Backend installs with `bun` (its `package-lock.json` is stale, so `npm ci` fails) and runs Jest under Node. Honor the repo's reality over the "Bun is the default" rule; that rule is for new repos.
+
+## Keeping the fast gate fast, by construction
+
+The local `verify` is only a fast prefix of CI for as long as someone keeps it that way — unless the split is **mechanical**:
+
+> Name integration specs `*.integration.test.ts` (or an equivalent convention) and have the unit run *exclude the pattern* rather than *enumerate the files*.
+
+Then a new unit test is picked up automatically and a new integration test is auto-excluded from the fast gate. Nobody has to remember the rule, so nobody can forget it. Same idea for e2e: it lives in `t4-e2e.yml`, never in `"verify"`.
+
+## Provisional and quarantined checks
+
+Both of these keep a gate meaningful when part of the suite isn't ready. Both are also how a gate quietly rots, so each needs a stated **exit condition** — in the file, not in someone's memory.
+
+**A report-only check** (`continue-on-error: true`) is for a suite that can't block yet. Its header must state *why*, *the proper fix*, and *the exact condition to flip it*. MangaDock's `mit-ci.yml` is the model: eager `import torch` drags the whole ML stack into a font-fit unit test → lazy-import it → then drop `continue-on-error`. A provisional check with no flip condition is permanent.
+
+**A quarantine list** is for known, pre-existing failures. The discipline that makes it safe:
+
+- **Inherit the real config; don't copy it.** MangaDock's `jest.ci.config.js` spreads `require('./package.json').jest` and only *adds* a skip list — so a future change to transforms or module mapping is picked up automatically and CI can't silently drift from local.
+- **Every skip cites a tracking issue**, and no new skip lands without one.
+- **Delete each line as its suite is fixed.** The list converges toward zero; a growing one is a gate being dismantled.
+
+The reason to bother, stated the way MangaDock states it: *a perpetually-red gate gets ignored, which is worse than none.* That is the failure this whole layer is trying to avoid — not an unfixed test, but a team that has learned to merge past red.
 
 ## When you can't have required checks
 
@@ -114,10 +157,12 @@ If the repo deploys, the discipline is that **deploy is downstream of the same g
 
 | Symptom | Likely cause → fix |
 |---|---|
-| **The check name isn't selectable when creating the ruleset** | The workflow has never run → push once, then add it. Required checks are matched by **job name** (`lint`), not workflow name (`T4 verify`). |
-| **A PR is stuck "Expected — waiting for status"** | A required check is named for a job that didn't run on this PR (e.g. path filters, or the job was renamed) → align the name, or drop it from the ruleset. |
+| **The check name isn't selectable when creating the ruleset** | The workflow has never run → push once, then add it. Required checks are matched by the **job's `name:`** (falling back to its key), not the workflow name (`T4 verify`). |
+| **A PR is stuck "Expected — waiting for status"** | A required check never reported on this PR — almost always a workflow-level `paths:` filter (see the monorepo section) or a renamed job. Fix the workflow so the check always runs; don't "fix" it by removing the rule. |
 | **`gh pr merge` denied with "checks are not green" but GitHub looks green** | A check is *pending*, not failing (`gh pr checks` exits 8) → wait for it. Or the PR has no checks at all, which `gh pr checks` also reports non-zero — remove `requireGreenCI` in a repo with no CI. |
 | **CI red, local `verify` green** | The two have diverged → make `"verify"` a literal prefix of the CI jobs. This is the failure that erodes trust in the local gate fastest. |
 | **AFK run stalls on every merge** | `requireGreenCI` waits for pending checks and never polls → have the AFK loop wait for CI (`gh pr checks --watch`) before attempting the merge, or park the item. |
 | **Deploy ran on a commit that failed the gate** | `t4-deploy.yml` is triggered by `push` instead of `workflow_run`, or is missing the `conclusion == 'success'` guard → use the template as-is. |
 | **A required check can't pass because the repo has no such script** | Don't merge past it — either add the script or remove that job from both the workflow and the ruleset. A permanently red check trains everyone to ignore red. |
+| **A suite is red for reasons this PR didn't cause** | Quarantine it (see above) — a skip list that inherits the real config, cites a tracking issue per line, and shrinks. Not a disabled gate, and not `continue-on-error` on the whole job unless the header names the flip condition. |
+| **A monorepo job runs on every PR even when its component wasn't touched** | Intended: the *check* must always report. Only the install/test steps are conditional — the no-op run costs a runner spin-up and keeps the ruleset satisfiable. |

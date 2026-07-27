@@ -5,8 +5,15 @@
 # where it runs once per push in parallel with the rest of the gate.
 #
 # Install as `.github/workflows/t4-e2e.yml`. Required check name: `e2e`.
-# Start it ADVISORY (not required) for a week — a flaky e2e made required is how
-# a team learns to merge with the gate disabled. Promote it once it's stable.
+#
+# START ADVISORY — leave it out of the ruleset at first. A flaky e2e made
+# required is how a team learns to merge with the gate disabled.
+# FLIP CONDITION: add `{ "context": "e2e" }` to required_status_checks once this
+# has been green on `main` for a week with no re-runs. Write the date you started
+# counting here, so "advisory" can't quietly become permanent:
+#   advisory since: <YYYY-MM-DD>
+# (Same discipline as a `continue-on-error` gate — a provisional check with no
+# stated flip condition is a permanent one. See ci-cd-layer.md.)
 name: T4 e2e
 
 on:
