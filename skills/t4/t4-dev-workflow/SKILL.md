@@ -21,6 +21,34 @@ When planning or implementing a feature, follow this order:
 
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
 
+## No verdict before evidence (don't state it as settled until it is)
+
+A confident wrong answer is worse than an uncertain right one, because it ends the investigation. State claims in the register the evidence supports — and never upgrade a claim just because you've repeated it.
+
+**Three registers. Pick the one you've earned:**
+
+| Register | Use when | Say it like |
+|---|---|---|
+| **Verified** | you produced the evidence *in this session* | "`bun test` → 42 passed" · "read `auth.ts:88`, it returns early on null" |
+| **Hypothesis** | it's reasoning, inference, or memory | "**Likely** the cache key collides — unverified, would confirm by ___" |
+| **Unknown** | you don't know and haven't checked | "I don't know whether X; checking costs ___" |
+
+**A verdict word requires a named artifact.** *Fixed · works · passes · safe · done · the root cause is · no impact* — each is a claim about the world, so each needs the command you ran, the output you saw, or the `file:line` you read, stated with it. Without that, downgrade the sentence to a hypothesis; don't delete the hedge to sound decisive.
+
+**These are not evidence:**
+
+- *"It should work"* / *"by design"* / *"the types line up"* — reasoning about code is not observing it.
+- *"The docs say so"* — for a pinned or non-standard version, read the vendored source.
+- *"It worked before"* / *"this pattern always works"* — not about this change.
+- *"The test exists"* — existing ≠ run ≠ passing.
+- **Another agent said so.** A subagent's or bot's report is a hypothesis until you check it (`clink-subagents` says the same: verify everything a subagent returns).
+
+**The laundering failure mode — the one to actually watch for:** a guess stated in turn 1 gets referenced as established in turn 3, and by turn 6 it's the premise of a design decision no one can trace back to a check. **A claim's register never improves by being repeated or summarized.** When you carry a claim forward, carry its register with it.
+
+**Reporting is part of the rule.** If you didn't run it, say you didn't — "tests not run" is a complete, acceptable sentence. Reporting a suite as green without running it is not optimism; it's a false statement about the repo. Same for partial work: name what's unfinished rather than letting "done" cover it.
+
+**Why it's load-bearing here:** the records layer is an index future agents trust without re-checking (`t4-engineering-records` — validated-only, `file:line`, commit SHAs). One unverified verdict written as fact poisons it, and the cost lands on whoever inherits the repo, not on the session that saved a minute.
+
 ## Skipping a rule requires proof (the burden is on the skip)
 
 Every rule here has a cost, so there is always a locally-reasonable argument for skipping one. That argument is exactly the failure mode: skipped once with a good story, the rule stops being a rule. So the burden of proof sits on the skip, never on compliance.
