@@ -21,6 +21,25 @@ When planning or implementing a feature, follow this order:
 
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
 
+## Root cause before fix (applies to bugs *and* review findings)
+
+**Do not propose a fix, and do not edit, until you can name the root cause with evidence.** The output of diagnosis is a sentence of the shape: *"X fails because `path/file.ts:42` does Y when Z, which I reproduced by ___."* Until you can write that sentence, any fix is a guess dressed as a solution.
+
+The order — no step skipped because the answer "looks obvious":
+
+1. **Reproduce.** A failing test, a command, or an exact sequence. If you can't reproduce it, say so explicitly and treat everything after as a hypothesis, not a diagnosis.
+2. **Trace the actual path.** Read the real code from entry point to failure — not the diff, not the file you assume is at fault. Cite `file:line`.
+3. **Falsify.** State the hypothesis so it can be wrong, then try to break it. If two causes both explain the symptom, you haven't finished.
+4. **Then** propose the fix — and say which part of the trace it addresses.
+
+`/debug-mantra` (9arm) is the discipline for this; invoke it on any bug, error, stack trace, or failing test rather than working from the symptom.
+
+**Why it's a rule here:** a symptom-level fix in an agent-primary repo is expensive twice — it lands, looks green, and the real cause resurfaces later with the misleading fix now in the way. It also poisons the records layer: a post-mortem written from an untraced fix is a *wrong* index entry, worse than none (`t4-engineering-records`).
+
+**Applies equally to:** review findings (`/scrutinize`, `/code-review` — verify the finding against the code before acting on it, including one an agent or a bot reported), CI failures (read the log; don't re-run hoping), and performance work (measure first; a guessed bottleneck is the same error wearing a stopwatch).
+
+**The exceptions are narrow, and you say them out loud:** a trivially-reversible one-liner where reproduction costs more than the change, or an emergency mitigation to stop the bleeding — in which case the mitigation is *not* the fix, and the root cause stays open work (ledger row + issue).
+
 ## Auto-triggered skills (fire without waiting for the user)
 
 | Trigger | Skill | Condition |
@@ -119,4 +138,5 @@ See `references/workflow-artifacts.md` for: `docs/agents/{workflow,issue-tracker
 - **Opening a PR with no issue.** Breaks the gate; the work has no tracked state.
 - **A Thai body that summarizes instead of mirrors.** The rule is same-depth mirror, not a digest.
 - **Closing an issue silently.** Always state the reason + evidence.
+- **Fixing the symptom you saw first.** Name the root cause with evidence before proposing or applying a fix — see above.
 - **Translating code identifiers into Thai.** Identifiers stay English; the Thai explains around them.

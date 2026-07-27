@@ -21,12 +21,13 @@ Before you answer, ask a clarifying question, explore, edit, or run any tool: ch
 
 | Thought | Reality |
 |---|---|
-| "Small change, skip it" | Small changes still cross phases. Route. |
+| "Small change, skip it" | Small changes cross phases too. Route. |
 | "I know the T4 workflow" | Skills evolve — load the current one. |
 | "Tests already exist, so it's TDD" | Existing tests ≠ red-first for this change. Load `tdd`. |
 | "t4-dev-workflow covers it" | Parent ≠ leaf; invoke the phase skill. |
 | "Just a token/config value" | If it plausibly crosses a trust boundary → `security-review`. |
 | "I announced it, that's enough" | Announcing ≠ doing. Invoke and follow. |
+| "Obviously it's X — just fix it" | Obvious ≠ traced. Find the root cause first. |
 | "Let me look around first" | Route first — the skill tells you HOW to look. |
 
 ## The map — route by what you're doing
@@ -50,13 +51,13 @@ The `t4-*` skills are a thin, team-specific layer **on top of** three general sk
 | **matt pocock** (`mattpocock/skills`) | `/setup-matt-pocock-skills` to install + configure the tracker/labels/domain layout | **the flow the T4 pipeline is built on** — the grill→spec→tickets loop and the issue-tracker / triage-label / domain-doc conventions T4 reuses | `grilling` (`/grill-me`), `to-prd`/`to-spec`, `to-issues`/`to-tickets`, `domain-modeling`, `code-review` |
 | **9arm** (`thananon/9arm-skills`) | `npx skills add thananon/9arm-skills` | debugging + adversarial review discipline + cheap delegation | `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent`, `qwenchance`, `management-talk` |
 
-**Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the bilingual/tracker rules); they **hand off the general technique** to the ecosystem skill. E.g. `t4-engineering-records` decides a bug needs a post-mortem, then invokes `/post-mortem` (9arm) to write it; `t4-dev-workflow` sequences the pipeline, then invokes `grilling` / `to-prd` / `/tdd` for each step. For anything about *how to work* that isn't T4-specific, prefer `superpowers:using-superpowers` and the skill it points to.
+**Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the bilingual/tracker rules) and **hand off the general technique** to the ecosystem skill — `t4-engineering-records` decides a bug needs a post-mortem, then invokes `/post-mortem` (9arm) to write it. For anything about *how to work* that isn't T4-specific, prefer `superpowers:using-superpowers`.
 
 ## Session-start protocol
 
 At the start of any session in a T4 repo, before picking up work:
 
-1. **`karpathy-guidelines`** — load once at session start (or the first time you consult this map) so every edit this session is surgical, simple, and goal-verified. These behavioral guardrails apply to all coding here — see the coding-behavior rule below.
+1. **`karpathy-guidelines`** — load once at session start so every edit this session is surgical, simple, and goal-verified (see the coding-behavior rule below).
 2. **`t4-agent-memory`** — read the memory vault index and the open-work ledger (this is what survives a context reset). Then read the specific GitHub issue you're picking up.
 3. Route the task through the map above.
 
@@ -66,14 +67,15 @@ At the start of any session in a T4 repo, before picking up work:
 - **PRD → issues → PR** — never a PR without a referenced issue; issues are the source of truth (`t4-dev-workflow`).
 - **Bilingual is tracker-only, Thai mirrors English exactly** — issue/PRD/PR bodies; not chat/reports; identifiers stay English (`t4-dev-workflow`).
 - **TDD is mandatory**; **verify every frontend change end-to-end** (unit tests can't see real layout/hydration).
-- **Non-standard framework version → read the vendored docs first**, not prior knowledge.
+- **Root cause before fix** — reproduce, trace the failing path, name the cause with evidence (`file:line`) *before* proposing or applying a fix. An untraced fix is a guess (`/debug-mantra`).
+- **Non-standard framework version → read the vendored docs first**, not memory.
 - **Bun** is the default package manager (`bun.lock`, `bunx`).
-- **Records stay a reliable index** — `file:line`, commit SHAs, validated-only, blameless (`t4-engineering-records`).
+- **Records stay a reliable index** — `file:line`, commit SHAs, validated-only (`t4-engineering-records`).
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — think before coding, simplest thing that works, surgical diffs tracing to the request, verifiable success criteria (loaded once at session start).
-- **Some rules are hook-enforced** — the `PreToolUse` gate hard-blocks a PR with no issue, dangerous git, and a failed `verify` (details: `t4-dev-workflow`). Hooks raise the floor, not replace judgment skills.
+- **Some rules are hook-enforced** — the `PreToolUse` gate hard-blocks a PR with no issue, dangerous git, and a failed `verify` (see `t4-dev-workflow`). Hooks raise the floor, not replace judgment.
 - **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker (`ready-for-human` label / issue body / ledger), or a recommendation you already wrote answers the question, *act* — don't stop to ask it. Interrupt only for a genuinely unresolved decision that's truly the developer's, and prefer parking + one digest over a mid-run question. Re-asking what you can answer yourself is the "sticking" anti-pattern (see `t4-afk`).
 
 ## When NOT to use
 
-A non-T4 project (the bilingual rule, label vocabulary, and memory layout are team-specific). A throwaway prototype with no issues/memory. For those, use the general skills directly.
+A non-T4 project (the bilingual rule, labels, and memory layout are team-specific), or a throwaway prototype with no issues/memory — use the general skills directly.
