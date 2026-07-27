@@ -15,7 +15,7 @@ bad() { echo "  FAIL: $1"; fail=$((fail+1)); }
 has() { if grep -qF -- "$2" "$1"; then ok "$3"; else bad "$3"; fi; }
 
 echo "templates present:"
-for f in t4-verify.yml t4-verify-monorepo.yml t4-e2e.yml t4-deploy.yml; do
+for f in t4-verify.yml t4-verify-monorepo.yml t4-e2e.yml t4-deploy.yml t4-codeql.yml dependabot.yml; do
   [ -f "$CI/$f" ] && ok "$f exists" || bad "$f is missing"
 done
 [ -f "$DOC" ] && ok "ci-cd-layer.md exists" || bad "ci-cd-layer.md is missing"
@@ -63,6 +63,22 @@ echo "provisional checks name their exit condition:"
 has "$CI/t4-e2e.yml" "FLIP CONDITION"      "e2e template states how it stops being advisory"
 has "$DOC" "exit condition"                "doc requires an exit condition for provisional/quarantined checks"
 has "$DOC" "cites a tracking issue"        "doc carries the quarantine discipline"
+
+echo "supply-chain layer: gate vs alert is decided, not left implied:"
+has "$DOC" "Alerts are not gates"            "doc separates a blocking gate from an alert"
+has "$DOC" "never bypassed"                  "push protection: no bypass"
+has "$DOC" "rotate the credential"           "the response to a blocked push is rotation, not bypass"
+has "$DOC" "never exemptable by argument"    "push protection is tied to the non-exemptable class"
+has "$DOC" "by nature, not by argument"      "Dependabot PRs vs the issue gate is decided explicitly"
+has "$DOC" "GitHub Advanced Security"        "CodeQL's private-repo cost is stated, not implied"
+# CodeQL's matrix expands the check name; a ruleset written from the job key hangs.
+has "$CI/t4-codeql.yml" "not \`analyze\`"    "codeql template warns the matrix renames the check"
+has "$CI/t4-codeql.yml" "security-events: write" "codeql has the permission it needs to upload results"
+if grep -Eq '^\s+groups:' "$CI/dependabot.yml"; then
+  ok "dependabot template groups updates (ungrouped spam trains rubber-stamping)"
+else
+  bad "dependabot template does not group updates"
+fi
 
 echo "gate hardening:"
 has "$CI/t4-verify.yml" "contents: read"        "verify runs with least-privilege permissions"

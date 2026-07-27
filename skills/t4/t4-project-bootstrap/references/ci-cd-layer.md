@@ -131,6 +131,51 @@ Both of these keep a gate meaningful when part of the suite isn't ready. Both ar
 
 The reason to bother, stated the way MangaDock states it: *a perpetually-red gate gets ignored, which is worse than none.* That is the failure this whole layer is trying to avoid — not an unfixed test, but a team that has learned to merge past red.
 
+## Supply chain and secrets — a different class of gate
+
+Everything above catches *code that doesn't do what it should*. None of it catches a vulnerable transitive dependency, a credential committed by accident, or an injection path in code that passes every test. Those controls are **configuration, not code**, which is exactly why they get skipped: nothing fails when they're absent.
+
+**Gate vs alert — decide which each one is, deliberately:**
+
+| Control | Type | Blocks a merge? |
+|---|---|---|
+| **Push protection** | **gate**, and the earliest one | Blocks the **push** — before the secret is in history at all |
+| **CodeQL / code scanning** | alert by default | Only if you add its job to `required_status_checks`, or turn on code-scanning merge protection |
+| **Dependabot alerts** | alert, never a gate | No. It notifies; a human or a cadence has to act |
+| **Dependabot version PRs** | ordinary PRs | They pass the same required checks as anything else |
+
+**Alerts are not gates.** An alert is invisible unless someone looks. If nobody owns the Security tab on a stated cadence, alerts accumulate into a dashboard that proves the repo is being watched while nobody is watching it. Either give it an owner and a cadence, or make it blocking — don't leave it in between and count it as coverage.
+
+### Enabling them
+
+Public repos get secret scanning and push protection on by default. A private repo gets nothing by default:
+
+```bash
+gh api --method PATCH repos/{owner}/{repo} --input - <<'JSON'
+{ "security_and_analysis": {
+    "secret_scanning":                    { "status": "enabled" },
+    "secret_scanning_push_protection":    { "status": "enabled" },
+    "secret_scanning_validity_checks":    { "status": "enabled" },
+    "secret_scanning_non_provider_patterns": { "status": "enabled" }
+} }
+JSON
+gh api --method PUT repos/{owner}/{repo}/vulnerability-alerts          # Dependabot alerts
+gh api --method PUT repos/{owner}/{repo}/automated-security-fixes      # Dependabot security PRs
+gh api repos/{owner}/{repo} --jq .security_and_analysis                # verify, don't assume
+```
+
+Then copy `references/ci/dependabot.yml` → `.github/dependabot.yml`, and `references/ci/t4-codeql.yml` → `.github/workflows/t4-codeql.yml`.
+
+**CodeQL cost, stated plainly:** free on public repos; on a private repo it needs GitHub Advanced Security (paid, per active committer). If you don't have it, delete the workflow rather than leaving a permanently-failing one, and fall back to what *is* free — `actions/dependency-review-action` on PRs (blocks a PR that introduces a known-vulnerable dependency), the security rules in the repo's linter, and `/security-review` on every boundary-crossing change (which the T4 pipeline already mandates).
+
+### Where these collide with the T4 rules
+
+Three interactions an agent will otherwise improvise. They are decided here:
+
+- **A Dependabot PR has no issue, and that's fine.** The PRD → issues → PR rule exists so human/agent work has tracked state; a bot PR is created server-side and never passes through the agent's Bash tool, so the `PreToolUse` gate never fires on it either. Treat it as an exception **by nature, not by argument** — and don't let it become precedent for skipping an issue on your own work. It still passes every required check; that is what makes merging it safe.
+- **A push blocked by push protection is never bypassed.** *"It's only a test key"* is the reason that will occur to you, and it is wrong: a credential that reached a commit is already exposed to anyone who gets the object, and the bypass is permanent and logged. The action is **rotate the credential, then remove it from the commit** — not the bypass link. This is a safety boundary, so it is one of the rules that is **never exemptable by argument** (`t4-dev-workflow` → skipping a rule requires proof).
+- **A vulnerability alert is work, so it gets tracked like work.** An alert you act on becomes an issue (or a ledger row) like anything else — otherwise the fix lands with no record of why, and `t4-engineering-records` loses the trail. An alert you deliberately *don't* act on gets a stated reason, same as closing an issue.
+
 ## When you can't have required checks
 
 Private repos on the free plan can't enforce rulesets. Then the fallback is the local gate:
