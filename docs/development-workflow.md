@@ -47,6 +47,9 @@ graph TD
     subgraph T1["Tier 1 — soft / ask"]
       B["SessionStart dispatcher (self-trigger),<br/>gh pr merge → ask ให้ยืนยัน review"]
     end
+    subgraph T05["Tier 0.5 — git pre-push (ผูกทุก agent)"]
+      G["ตรวจ issue ref ซ้ำ, บล็อก dirty tree/build artifact<br/>คุม Codex/Gemini/คน ที่ hook ของ Claude ไม่เห็น"]
+    end
     subgraph T3["Tier 3 — การันตีตัวจริง"]
       C["CI required-check + branch protection<br/>(คุมการ merge บนเว็บของคนได้ด้วย)"]
     end
@@ -58,6 +61,7 @@ graph TD
 |---|---|---|
 | **0 hard** | `PreToolUse` gate — PR-ต้องมี-issue, git อันตราย, **verify ที่ hook รันเอง** | บังคับจริง (ปลอมไม่ได้เพราะ hook รันเทสต์เอง) |
 | **1 soft** | dispatcher ที่ inject ตอน SessionStart (route-first + red-flags), `gh pr merge` → `ask` (ข้ามด้วย marker `autoMerge`/`afk` ตอน AFK) | ยกโอกาสทำตามให้สูงขึ้น แต่ model ยังข้ามได้ |
+| **0.5 hard (agent-agnostic)** | git `pre-push` — ตรวจ issue ref จาก branch/commit/PR body, บล็อก tree ที่สกปรกเกินงบและ build artifact | คุม **ทุก** agent + คนบน clone นั้น (`PreToolUse` เห็นแค่คำสั่งที่ Claude รัน) แต่ opt-in ต่อ clone และ `--no-verify` ได้ |
 | **3 real** | CI required-check + branch protection | การันตีสูงสุด — อยู่นอกมือ agent, คุมคน merge บนเว็บได้ |
 
 **Tier 3 ประกอบด้วยอะไรบ้าง** (ติดตั้งโดย `t4-project-bootstrap` → `references/ci-cd-layer.md`):

@@ -46,10 +46,11 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 5. **Install the workflow layer** from `t4-dev-workflow` (`docs/agents/{workflow,issue-tracker,triage-labels}.md`) — replace `<ORG>/<REPO>`, the E2E/verify command, the label vocabulary.
 6. **Install the hooks layer** from `references/hooks-layer.md` — copy the marker (`.claude/t4.json`), the `.claude/hooks/` scripts + `run-hook.cmd`, merge the hook entries into `.claude/settings.json`, and write `using-t4.snapshot.md`. This keeps a session on the rails: session-start injects `using-t4`, a per-turn reminder re-anchors it, and a `PreToolUse` gate blocks a PR with no issue and dangerous git. **Arm the local ship gate** by setting `.claude/t4.json` `"verify"` to the repo's *fast* command (lint + typecheck + unit + build). Tell the user what the gate will block.
 7. **Install the CI/CD layer** from `references/ci-cd-layer.md` — the workflows in `references/ci/` into `.github/workflows/`, then make `lint`/`typecheck`/`test`/`build` **required checks** on `main` and disallow direct pushes. Do this in the same pass as step 6: a repo with the local gate and no CI has the *appearance* of enforcement with none of the guarantee. Where a ruleset isn't available, set `.claude/t4.json` `"requireGreenCI": true` as the (weaker) fallback. Add `t4-deploy.yml` only if the repo deploys.
-8. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
-9. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
-10. **Verify placeholders are gone** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
-11. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
+8. **Install the guards layer** from `references/guards-layer.md` — copy `references/guards/` into `<repo>/.githooks/`, tell the user to run `git config core.hooksPath .githooks`, and wire the same two scripts into the CI gate. This is the tier that binds Codex/Gemini/humans; the Claude hooks in step 6 do not.
+9. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
+10. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
+11. **Verify placeholders are gone** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
+12. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
 
 ## Reference files
 
@@ -57,6 +58,7 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 - **`references/se-deliverables.md`** — the optional 7-phase Software-Engineering deliverable set + UML outline (formal delivery only).
 - **`references/hooks-layer.md`** + **`references/hooks/`** — the workflow-hooks layer (path A): the `.claude/t4.json` marker, the `.claude/hooks/` scripts + `run-hook.cmd`, and the `settings.json` hook entries. Session-start / prompt-reminder / PreToolUse-gate keep a session on the rails. The scripts are byte-identical to the `xeno-skills` plugin's `hooks/` (a repo test enforces the sync).
 - **`references/ci-cd-layer.md`** + **`references/ci/`** — the server-side gate: `t4-verify.yml` (lint · typecheck · test · build as separate required checks), `t4-e2e.yml` (the slow suite, kept out of the local `verify`), `t4-deploy.yml` (CD gated on a green verify), plus the ruleset commands that make them required and block direct pushes to `main`. This is the layer that also covers a human merging on the web.
+- **`references/guards-layer.md`** + **`references/guards/`** — the agent-agnostic tier: a git `pre-push` hook running `check-issue-ref` and `check-tree-budget`. The Claude `PreToolUse` gate only sees commands Claude runs; these bind every agent and human on the clone, and the same scripts go into CI.
 
 ## The non-negotiable team rules
 
@@ -77,5 +79,5 @@ These are the rules the skeletons carry; know them so you don't dilute them.
 - **Carrying sibling-project domain content across.** Strip every manga/cache/MIT/wallet word. Grep before you commit.
 - **Duplicating a sibling skill's skeleton here.** Bootstrap installs those files but the skeletons + discipline live in `t4-agent-memory` / `t4-engineering-records` / `t4-dev-workflow`. Reference, don't copy.
 - **Weakening the bilingual rule** to match an older repo's narrower version — upgrade to the team standard.
-- **Leaving `<PLACEHOLDER>` tokens or a stale `<ORG>/<REPO>`.** Step 10 exists for this.
+- **Leaving `<PLACEHOLDER>` tokens or a stale `<ORG>/<REPO>`.** Step 11 exists for this.
 - **Installing the hooks layer and skipping the CI layer.** The local gate only binds commands the agent runs; without required checks the repo *looks* enforced and isn't.

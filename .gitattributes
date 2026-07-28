@@ -16,3 +16,6 @@ skills/t4/t4-project-bootstrap/references/hooks/t4-session-start   text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/t4-prompt-reminder text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/t4-gate            text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/run-hook.cmd       text eol=lf
+
+# Guard scripts are executed by git as POSIX sh — CRLF breaks the shebang.
+skills/t4/t4-project-bootstrap/references/guards/*  text eol=lf
