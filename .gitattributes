@@ -5,6 +5,13 @@ hooks/t4-prompt-reminder text eol=lf
 hooks/t4-gate            text eol=lf
 hooks/run-hook.cmd       text eol=lf
 tests/**/*.sh            text eol=lf
+
+# using-t4 is INJECTED verbatim into every session and measured against a byte
+# budget (tests/hooks/test-dispatcher-content.sh). Unpinned, a Windows checkout
+# gives it CRLF, and JSON-escaping the injection spends four bytes per line
+# ending instead of two — silently costing ~2 bytes per line of budget that the
+# guard, run on an LF working copy, never sees.
+skills/t4/using-t4/SKILL.md  text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/t4-session-start   text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/t4-prompt-reminder text eol=lf
 skills/t4/t4-project-bootstrap/references/hooks/t4-gate            text eol=lf

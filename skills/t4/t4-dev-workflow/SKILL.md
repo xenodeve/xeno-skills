@@ -15,11 +15,35 @@ When planning or implementing a feature, follow this order:
 
 1. **`/grill-me`** — stress-test the concept interview-style before committing to it.
 2. **`/grill-with-docs`** — challenge the plan against existing ADRs in `docs/adr/`; this also lazily produces domain docs (`CONTEXT.md` / ADRs) when a term or decision actually resolves.
-3. **`/to-prd`** — turn the grilled plan into a PRD (one PRD per epic).
-4. **`/to-issues`** — break the PRD into GitHub issues with triage labels (one issue per deliverable).
-5. **`/tdd`** — implement test-first (red → green → refactor).
+3. **Survey the change sites** — enumerate *every* place the change touches **before** writing the plan (below). A PRD written without this plans the change you imagined, not the one the repo needs.
+4. **`/to-prd`** — turn the grilled plan into a PRD (one PRD per epic), carrying the survey as its change inventory.
+5. **`/to-issues`** — break the PRD into GitHub issues with triage labels (one issue per deliverable).
+6. **`/tdd`** — implement test-first (red → green → refactor).
 
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
+
+## Survey the change sites before writing the plan
+
+Most "surprise cases" aren't surprises — they're **sites the plan never knew about**. They surface mid-implementation, when the cheapest moment to have found them has already passed, and they arrive as scope growth (which under AFK is a 🛑 park). The survey is the step that converts them from surprises into line items.
+
+**Do it after the concept is settled (`/grill-me`) and before `/to-prd`** — surveying a concept that's still moving is wasted, and planning without it is guessing.
+
+**What to enumerate — don't stop at the obvious file:**
+
+- **Every occurrence of the thing you're changing**, not the first one. `rg` for the symbol, the string, the config key, the route, the error message. **Duplicates are the classic miss:** the same list, rule, or constant written in two files drifts the moment you update one — this repo's own pipeline is described in both `SKILL.md` and `references/workflow-artifacts.md`, and a change to one alone is a defect.
+- **Both sides of every mirror.** Bilingual doc pairs (`*.md` / `*.en.md`), a doc and its diagram, a script and its copy in another delivery path, a template and the test that guards it.
+- **Callers, not just the definition.** Who consumes this? What breaks if its shape changes?
+- **Tests and fixtures** that assert on what you're changing — including a test whose *string literals* encode the old wording.
+- **Docs that state the current behavior.** A README sentence describing what you're about to change is a change site; leaving it is how docs drift.
+- **Config, CI, and generated artifacts** that reference the thing by name.
+
+**Output: a change inventory** — a flat list of `path` → *what changes there* → *how you'll verify it*. Put it in the PRD (`references/workflow-artifacts.md` has the block) and in the issue. It becomes the implementation checklist and, later, the reviewer's map.
+
+**Say what the survey couldn't reach.** "I searched `rg '<symbol>'` across `skills/` and `docs/`; anything reached by dynamic name construction wouldn't appear" is an honest boundary and belongs in the plan. An unstated search boundary reads as completeness you didn't verify (`No verdict before evidence`, below).
+
+**Cost check:** the survey is minutes of `rg`; the alternative is finding site #4 after the PR is open, when the fix is a re-plan. It scales down — a one-file change gets a one-line survey — but it doesn't get skipped, and skipping it needs the same proof any other rule does.
+
+*The high-risk refactor protocol's "Inventory first" is this same step applied to behavior rather than files — do both when a refactor is in scope.*
 
 ## No verdict before evidence (don't state it as settled until it is)
 
@@ -145,7 +169,7 @@ Everything else — TDD discipline, `/simplify`, the *depth* of a review — sta
 
 Ordinary TDD covers most changes. A refactor of a **large or load-bearing module** — a "god object", a critical seam, a monolith you're decomposing — needs more, because the risk is *silent behavior change during relocation*. When you're moving/extracting code in such a module, follow this (distilled from the MangaDock characterization ADRs):
 
-1. **Inventory first.** List the behavioral variants and landmines the module actually has (known divergences, edge cases) before moving anything — you only preserve what you've named.
+1. **Inventory first.** List the behavioral variants and landmines the module actually has (known divergences, edge cases) before moving anything — you only preserve what you've named. (This is the *behavioral* half of the change-site survey above; a refactor needs both.)
 2. **Characterize before you move.** Add characterization tests that pin the *current* output (quirks included) at the seam **first**. Refactor only behind green characterization — it's the net that catches a relocation that changed behavior.
 3. **One seam per commit.** Extract one boundary at a time, each commit output-equivalent (ideally byte-identical). A reviewer or a diff can verify one seam; a ten-seam commit hides a regression.
 4. **Never mix relocation with a behavior fix.** Move in one commit, fix in another — otherwise "did the move change anything?" is unanswerable.
@@ -196,4 +220,5 @@ See `references/workflow-artifacts.md` for: `docs/agents/{workflow,issue-tracker
 - **A Thai body that summarizes instead of mirrors.** The rule is same-depth mirror, not a digest.
 - **Closing an issue silently.** Always state the reason + evidence.
 - **Fixing the symptom you saw first.** Name the root cause with evidence before proposing or applying a fix — see above.
+- **Planning from the first file you opened.** Survey every change site before the PRD; the sites you didn't look for become mid-implementation "surprises".
 - **Translating code identifiers into Thai.** Identifiers stay English; the Thai explains around them.
