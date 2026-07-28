@@ -22,7 +22,8 @@ Agent ในรีโปแบบ agent-primary พังได้สองแ�
 graph LR
     Idea["ไอเดีย / งาน"] --> Grill["/grill-me<br/>ซักค้านแนวคิด"]
     Grill --> GrillDocs["/grill-with-docs<br/>ชนแผนกับ ADR"]
-    GrillDocs --> PRD["/to-prd<br/>PRD (1 ต่อ epic)"]
+    GrillDocs --> Survey["สำรวจจุดที่ต้องแก้<br/>change inventory"]
+    Survey --> PRD["/to-prd<br/>PRD (1 ต่อ epic)"]
     PRD --> Issues["/to-issues<br/>GitHub issues<br/>(1 ต่อ deliverable)"]
     Issues --> TDD["/tdd<br/>red → green"]
     TDD --> PR["PR<br/>(อ้าง issue)"]

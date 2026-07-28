@@ -86,10 +86,12 @@ When the worklist is done or the run bound is hit:
 | Rationalization | Reality |
 |---|---|
 | "Dev's away, I'll just power through the ambiguity." | Ambiguity is a **park**, not a coin-flip. A wrong guess unattended costs more than a parked item. |
+| "Skipping the test/review step is fine for this one — no one's waiting on it." | Skipping a rule needs a **checkable proof** it doesn't apply, not a judgment call (`t4-dev-workflow`). AFK removes the reviewer who would have caught a bad exemption, so the bar goes **up** here, not down — and the proof goes in the landing digest. |
 | "It's a security file but the change is tiny." | Blast radius, not diff size, decides. `auth`/`wallet`/`unlock` = park regardless of size. |
 | "It's a pure/behavior-preserving rename, so it's in the may-decide-alone column." | The execute column's refactor allowance stops at boundary modules. A rename in `wallet`/`auth`/`unlock` parks — "pure" is the reviewer's call to confirm, and AFK removed the reviewer. |
 | "I'll grep to prove it's internal-only, then rename it." | The grep is you reviewing your own boundary change unattended. Park it; the developer confirms "internal-only" in 20 seconds on return. |
 | "Looks done, I'll close the issue." | Close only with evidence (commit/test/impact). No human is checking behind you — the evidence is the check. |
+| "I'll write it up as fixed; it almost certainly is." | The digest is the *only* report of an unattended run, so an unverified verdict in it is indistinguishable from a verified one. Mark each item **verified** (with the artifact) or **hypothesis**; "tests not run" is a complete line (`t4-dev-workflow`). |
 | "I'll commit this red and fix it next item." | Never leave the tree broken. Revert to green and park; the returning dev must land on green. |
 | "This item needs a bit more than the issue said — I'll just widen it." | Scope growth is a park. Note the extra work as new tracked work; don't absorb it silently. |
 | "One notification per item so they see progress." | One digest at the end (or on a real decision). Per-item pings defeat AFK. |
