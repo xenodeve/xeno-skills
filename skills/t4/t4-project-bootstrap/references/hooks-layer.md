@@ -12,6 +12,8 @@ Agents fail two ways in a T4 repo: they **don't invoke the skill** at all, and t
 | `t4-prompt-reminder` | `UserPromptSubmit` | Injects a short rails reminder every turn | **Reduces** mid-session drift (soft) |
 | `t4-gate` | `PreToolUse` (`Bash`) | **Blocks** `gh pr create` with no referenced issue; blocks dangerous git (`reset --hard`, force-push, `clean -f`, `branch -D`) | **Enforces** the discrete, checkable rules (hard) |
 
+**These are Claude Code hooks.** They fire on Claude's tool events, so they bind Claude and nothing else — a repo that also runs Codex or Gemini has agents that never meet this gate, and neither does a human pushing from the same clone. `guards-layer.md` moves the checkable rules into git, where everyone meets them; install both.
+
 Hooks that *inject context* are reminders — the model can still ignore them. Only the `PreToolUse` **deny** is a hard wall, and only for conditions a script can check. Fuzzy discipline (TDD order, bilingual quality) stays a soft nudge. Do not oversell this to the user.
 
 ## Files this installs into the target repo

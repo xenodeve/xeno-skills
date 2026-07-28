@@ -161,6 +161,7 @@ In a repo with the T4 hooks installed (`t4-project-bootstrap` → `references/ho
 - **Ship gate (`/verify`)** — before `gh pr merge` (merge is the ship point; not the iterative `create`), the gate **runs the repo's `verify` command itself** (`.claude/t4.json` `"verify"` — keep it fast; e2e belongs in CI) and denies on failure. The server-side CI required-check + branch protection is the real guarantee (it also covers a human merging on the web).
 - **Before merge** — `gh pr merge` **asks** you to confirm `/code-review` + `/scrutinize` ran — unless `.claude/t4.json` sets `"autoMerge"`/`"afk"` (an unattended run under standing authorization), which skips the ask; the `verify` deny still holds.
 - **Dangerous git** (`reset --hard`, force-push, `clean -f`, `branch -D`) is **denied**.
+- **Agent-agnostic guards** — the `PreToolUse` gate only sees commands *Claude* runs, so a repo running Codex/Gemini (or a human) pushes past it. A git **pre-push** hook re-checks the issue reference and blocks a large dirty tree or committed build artifacts, binding every agent on the clone (`t4-project-bootstrap` → `references/guards-layer.md`). Opt-in per clone and `--no-verify`-able, so the same scripts run in CI where they aren't.
 
 Everything else — TDD discipline, `/simplify`, the *depth* of a review — stays agent discipline, reinforced by the session-start dispatcher (the injected `using-t4` map). Hooks can raise the cost of skipping a judgment skill but can't verify the reasoning; only checkable actions are hard-enforced.
 

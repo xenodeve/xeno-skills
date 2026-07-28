@@ -47,6 +47,9 @@ graph TD
     subgraph T1["Tier 1 — soft / ask"]
       B["SessionStart dispatcher (self-trigger),<br/>gh pr merge → ask to confirm review"]
     end
+    subgraph T05["Tier 0.5 — git pre-push (binds every agent)"]
+      G["re-checks the issue ref, blocks a dirty tree / build artifacts<br/>covers Codex/Gemini/humans the Claude hook never sees"]
+    end
     subgraph T3["Tier 3 — the real guarantee"]
       C["CI required-check + branch protection<br/>(also covers a human merging on the web)"]
     end
@@ -58,6 +61,7 @@ graph TD
 |---|---|---|
 | **0 hard** | `PreToolUse` gate — PR-needs-issue, dangerous git, **verify the hook runs itself** | Real (un-forgeable — the hook runs the tests) |
 | **1 soft** | dispatcher injected at SessionStart (route-first + red-flags), `gh pr merge` → `ask` (skipped by an `autoMerge`/`afk` marker for AFK runs) | Raises the odds of compliance; the model can still skip |
+| **0.5 hard (agent-agnostic)** | git `pre-push` — issue ref from branch/commit/PR body, blocks an over-budget dirty tree and build artifacts | Binds **every** agent + human on the clone (`PreToolUse` only sees commands Claude runs); opt-in per clone and `--no-verify`-able |
 | **3 real** | CI required-check + branch protection | Top guarantee — outside the agent, covers human web-merges |
 
 ---
