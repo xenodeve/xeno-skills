@@ -23,11 +23,25 @@ REPOA="$TMP/repoa"; mkdir -p "$REPOA/.claude"; printf '{"t4":true,"autoMerge":tr
 REPOAF="$TMP/repoaf"; mkdir -p "$REPOAF/.claude"; printf '{"t4":true,"verify":"exit 1","autoMerge":true}\n' > "$REPOAF/.claude/t4.json"
 REPOAFK="$TMP/repoafk"; mkdir -p "$REPOAFK/.claude"; printf '{"t4":true,"afk":true}\n' > "$REPOAFK/.claude/t4.json"
 REPOFV="$TMP/repofv"; mkdir -p "$REPOFV/.claude"; printf '{"t4":true,"verify":"echo BROKEN_XYZ; exit 1"}\n' > "$REPOFV/.claude/t4.json"
+REPOCI="$TMP/repoci"; mkdir -p "$REPOCI/.claude"; printf '{"t4":true,"requireGreenCI":true}\n' > "$REPOCI/.claude/t4.json"
+REPOCIA="$TMP/repocia"; mkdir -p "$REPOCIA/.claude"; printf '{"t4":true,"requireGreenCI":true,"autoMerge":true}\n' > "$REPOCIA/.claude/t4.json"
 printf 'PR body\nCloses #7\n' > "$TMP/withref.md"
 printf 'PR body\njust some text\n'   > "$TMP/noref.md"
 
+# Stub `gh` so the CI check is testable offline: it echoes a marker and exits
+# with $GH_STUB_EXIT (gh pr checks: 0 = all green, 1 = a check failed, 8 = pending).
+STUB="$TMP/bin"; mkdir -p "$STUB"
+cat > "$STUB/gh" <<'STUBEOF'
+#!/usr/bin/env bash
+echo "GH_STUB_CALLED $*"
+exit "${GH_STUB_EXIT:-0}"
+STUBEOF
+chmod +x "$STUB/gh"
+
 bashj() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"cwd":"x"}' "$1"; }
 run()  { ( cd "$1" && printf '%s' "$2" | bash "$HOOK" ); }
+# Same as run(), but with the stub `gh` first on PATH and a forced stub exit code.
+runci() { ( cd "$1" && export PATH="$STUB:$PATH" GH_STUB_EXIT="$2"; printf '%s' "$3" | bash "$HOOK" ); }
 
 echo "PR-needs-issue:"
 allowed "$(run "$REPO" "$(bashj 'gh pr create --title x --body Closes #12')")"        "allow: PR with #12 inline"
@@ -74,6 +88,17 @@ allowed "$(run "$REPOAFK" "$(bashj 'git reset --hard HEAD')")"          "allow: 
 allowed "$(run "$REPOAFK" "$(bashj 'git clean -fd')")"                  "allow: clean -fd under afk (drop in-flight untracked)"
 denied  "$(run "$REPOAFK" "$(bashj 'git push --force origin main')")"   "deny:  force-push still blocked even under afk"
 denied  "$(run "$REPO"    "$(bashj 'git reset --hard HEAD')")"          "deny:  reset --hard still blocked without afk"
+
+echo "CI ship gate (opt-in \"requireGreenCI\": every check must be green before merge):"
+asked   "$(runci "$REPOCI"  0 "$(bashj 'gh pr merge 3 --squash')")" "ask:   merge allowed when CI is green"
+denied  "$(runci "$REPOCI"  1 "$(bashj 'gh pr merge 3 --squash')")" "deny:  merge blocked when a check is FAILING"
+denied  "$(runci "$REPOCI"  8 "$(bashj 'gh pr merge 3 --squash')")" "deny:  merge blocked when a check is still PENDING"
+allowed "$(runci "$REPOCI"  1 "$(bashj 'gh pr create --title x --body Closes #12')")" "allow: CI check does not gate PR create"
+asked   "$(runci "$REPO"    1 "$(bashj 'gh pr merge 3 --squash')")" "ask:   red CI is a no-op when requireGreenCI is unset"
+denied  "$(runci "$REPOCIA" 1 "$(bashj 'gh pr merge 3 --squash')")" "deny:  autoMerge/afk cannot bypass a red CI"
+out_ci="$(runci "$REPOCI" 1 "$(bashj 'gh pr merge 3 --squash')")"
+case "$out_ci" in *GH_STUB_CALLED*) ok "CI check output is in the deny reason";; *) bad "CI output swallowed (no GH_STUB_CALLED)";; esac
+case "$out_ci" in *"pr checks 3"*) ok "CI check targets the PR number from the merge command";; *) bad "CI check did not pass the PR number through";; esac
 
 echo "verify diagnostics (failure output surfaced, not swallowed):"
 out_fv="$(run "$REPOFV" "$(bashj 'gh pr merge 3 --squash')")"

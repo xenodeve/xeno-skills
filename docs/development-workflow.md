@@ -59,6 +59,17 @@ graph TD
 | **1 soft** | dispatcher ที่ inject ตอน SessionStart (route-first + red-flags), `gh pr merge` → `ask` (ข้ามด้วย marker `autoMerge`/`afk` ตอน AFK) | ยกโอกาสทำตามให้สูงขึ้น แต่ model ยังข้ามได้ |
 | **3 real** | CI required-check + branch protection | การันตีสูงสุด — อยู่นอกมือ agent, คุมคน merge บนเว็บได้ |
 
+**Tier 3 ประกอบด้วยอะไรบ้าง** (ติดตั้งโดย `t4-project-bootstrap` → `references/ci-cd-layer.md`):
+
+| ส่วน | ไฟล์ | บทบาท |
+|---|---|---|
+| Quality gate | `.github/workflows/t4-verify.yml` | แยกเป็น 4 job — `lint` · `typecheck` · `test` · `build` — ทุกตัวเป็น **required check** บน `main` ชื่อ check บอกได้ทันทีว่าอะไรพัง |
+| Slow suite | `t4-e2e.yml` | e2e/browser แยกออกจาก `verify` ในเครื่อง (issue #13) เริ่มแบบ advisory แล้วค่อยเลื่อนเป็น required เมื่อนิ่ง |
+| CD | `t4-deploy.yml` | deploy หลัง `T4 verify` เขียวบน `main` เท่านั้น (`workflow_run` ไม่ใช่ `push`), checkout `head_sha` ที่ผ่าน, ใช้ GitHub Environment เป็นด่านอนุมัติของคน |
+| Branch ruleset | `gh api ... /rulesets` | ห้าม push ตรงเข้า `main`, ห้าม force-push/ลบ branch, ต้อง branch อัปเดตก่อน merge (`strict`), review thread ต้องถูก resolve |
+
+**ข้อจำกัดที่ต้องพูดตรง ๆ:** รีโป private บนแพลนฟรีบังคับ ruleset ไม่ได้ → ใช้ `.claude/t4.json` `"requireGreenCI": true` แทน ซึ่งทำให้ hook รัน `gh pr checks` ก่อน merge แล้ว deny ถ้ามี check แดงหรือค้าง — **อ่อนกว่า ruleset** เพราะคุมได้แค่คำสั่งที่ agent รันผ่าน hook คน merge บนเว็บยังรอด
+
 ---
 
 ## 4. อะไรถูกบังคับ vs. อะไรเป็นวินัย
