@@ -15,9 +15,10 @@ When planning or implementing a feature, follow this order:
 
 1. **`/grill-me`** — stress-test the concept first (interview-style)
 2. **`/grill-with-docs`** — challenge the plan against existing ADRs in `docs/adr/`
-3. **`/to-prd`** — create a PRD from the grilled plan (one PRD per epic)
-4. **`/to-issues`** — break the PRD into GitHub issues on `<ORG>/<REPO>` with triage labels (one issue per deliverable)
-5. **`/tdd`** — implement test-first, then make the tests pass
+3. **Survey the change sites** — enumerate every place the change touches, before the plan exists (see the skill)
+4. **`/to-prd`** — create a PRD from the grilled plan (one PRD per epic), carrying the survey as its change inventory
+5. **`/to-issues`** — break the PRD into GitHub issues on `<ORG>/<REPO>` with triage labels (one issue per deliverable)
+6. **`/tdd`** — implement test-first, then make the tests pass
 
 Hard ordering: **PRD → issues → PR**. Never open a PR without a referenced issue.
 
@@ -123,6 +124,16 @@ If the repo requires bilingual PRDs, duplicate the whole block under a `<!-- lan
 
 ## Problem Statement
 <The concrete pain today: what's broken, slow, missing, or costly, and why it matters as the product scales.>
+
+## Change Inventory
+<Output of the change-site survey — every place this touches, found BEFORE this plan was written.
+A site missing here becomes a mid-implementation "surprise" and scope growth.>
+
+| Path | What changes there | How it's verified |
+|---|---|---|
+| `<path/to/file>` | <the specific edit> | <test / command / manual check> |
+
+**Search boundary:** <what you searched and how — e.g. `rg '<symbol>' skills/ docs/` — and what that search would NOT reach.>
 
 ## Goals
 - <Measurable outcome 1>
