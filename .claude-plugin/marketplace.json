@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "xeno-skills",
-      "description": "T4 operating skills + multi-agent + karpathy guidelines, with SessionStart/UserPromptSubmit/PreToolUse hooks that keep a session on the T4 rails.",
+      "description": "T4 operating skills + multi-agent + web/UI design + karpathy guidelines, with SessionStart/UserPromptSubmit/PreToolUse hooks that keep a session on the T4 rails.",
       "version": "0.1.0",
       "source": "./",
       "author": { "name": "xenodeve" }

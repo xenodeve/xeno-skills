@@ -16,6 +16,7 @@ Skills อยู่ภายใต้ `skills/`:
 
 - `multi-agent/` — การ orchestrate CLI ของ AI หลายตัวให้ทำงานร่วมกัน
 - `t4/` — มาตรฐานการทำงานแบบ agent-primary ของทีม T4 (entry map, bootstrap, memory, records, workflow)
+- `design/` — ตระกูล skill ออกแบบเว็บ/UI (setup, rules, audit, psychology) พร้อมคลัง reference
 - `karpathy-guidelines/` — guardrails เชิงพฤติกรรมสำหรับการเขียนโค้ด (T4 โหลดอัตโนมัติตอนเริ่ม session)
 
 แต่ละ skill เป็น directory ของตัวเอง มี `SKILL.md` (พร้อม YAML frontmatter — `name` และ `description`) และไฟล์ reference ที่แนบมา
@@ -79,6 +80,16 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 ### Coding behavior
 
 - **[karpathy-guidelines](./skills/karpathy-guidelines/SKILL.md)** — guardrails เชิงพฤติกรรมที่ลดข้อผิดพลาดที่ LLM มักทำตอนเขียนโค้ด (คิดก่อนเขียน, ทำให้ง่ายที่สุด, แก้แบบ surgical, ตั้งเกณฑ์ success ที่ตรวจสอบได้) กลั่นจาก[ข้อสังเกตของ Andrej Karpathy](https://x.com/karpathy/status/2015883857489522876) `using-t4` โหลดตัวนี้อัตโนมัติครั้งเดียวตอนเริ่ม session ใน T4 repo — จึงใช้ควบคู่กับตระกูล T4 ได้ทันที (MIT, ให้เครดิต Karpathy)
+
+### Design (เว็บ/UI)
+
+ตระกูล skill ด้านการออกแบบเว็บ กลั่นจากคลังวิดีโอของ Chase AI, Flux Academy (Ran Segall), Chris McCoy, Kole Jain และ Satori Graphics โดย `design` เป็นตัวประสานที่ route ไปยังอีกสี่ตัว (transcript ต้นทางอยู่ใน `skills/design/references/` — เครดิตเป็นของผู้สร้างวิดีโอแต่ละราย)
+
+- **[design](./skills/design/SKILL.md)** — ตัวประสานของตระกูล route งานออกแบบไปยัง skill ที่ถูกต้อง
+- **[design-setup](./skills/design/design-setup/SKILL.md)** — กรอบการ setup + prototype เว็บแบบ 0→1 ครบวงจร: preflight check, decision gate, การแยกโค้ดทดลอง, prompt 4 ส่วน, ลำดับ build 3 เฟส และการปิดท้ายด้วยการ commit token
+- **[design-rules](./skills/design/design-rules/SKILL.md)** — กฎ micro-UI ระดับ CSS/Tailwind: typography (tracking -2%, สเกล Major Third 1.25x, line-height 150%), สมดุลสี 60-30-10, กริด 12/8/4 คอลัมน์, จังหวะ spacing 8pt, ปุ่ม 4 สถานะ และระบบ LIFT กับ 6 ระดับของ visual flow
+- **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion
+- **[design-psychology](./skills/design/design-psychology/SKILL.md)** — จิตวิทยา UX/conversion: 3-Brain Persona (Survival/Emotional/Rational), mental model ของ layout, การหักแพตเทิร์นแบบ MAYA, cognitive chunking (กฎ 3-4 ชิ้นของ working memory) และ Luxury White Space
 
 ## ที่เกี่ยวข้อง
 
