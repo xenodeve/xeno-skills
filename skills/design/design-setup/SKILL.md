@@ -185,7 +185,7 @@ Once the design is approved by the user, execute this finalization checklist:
 ## 📚 9. Source Video References & Transcripts
 
 For complete untruncated transcripts and raw video research:
-* 📄 [01_chase_ai_anti_slop_web_design.md](file:///d:/Github/xeno-skills/skills/design-references/01_chase_ai_anti_slop_web_design.md) — Chase AI
-* 📄 [05_chris_mccoy_5_web_design_skills.md](file:///d:/Github/xeno-skills/skills/design-references/05_chris_mccoy_5_web_design_skills.md) — Self-Made Web Designer
-* 📄 [06_chris_mccoy_6_habits_of_design_legends.md](file:///d:/Github/xeno-skills/skills/design-references/06_chris_mccoy_6_habits_of_design_legends.md) — Self-Made Web Designer
-* 📄 Full Reference Index: [README.md](file:///d:/Github/xeno-skills/skills/design-references/README.md)
+* 📄 [01_chase_ai_anti_slop_web_design.md](../references/01_chase_ai_anti_slop_web_design.md) — Chase AI
+* 📄 [05_chris_mccoy_5_web_design_skills.md](../references/05_chris_mccoy_5_web_design_skills.md) — Self-Made Web Designer
+* 📄 [06_chris_mccoy_6_habits_of_design_legends.md](../references/06_chris_mccoy_6_habits_of_design_legends.md) — Self-Made Web Designer
+* 📄 Full Reference Index: [README.md](../references/README.md)
