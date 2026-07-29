@@ -85,7 +85,7 @@ A family of skills distilled project-agnostic from the T4 team's mature repos (M
 
 A web-design skill family distilled from the video libraries of Chase AI, Flux Academy (Ran Segall), Chris McCoy, Kole Jain and Satori Graphics, with `design` as the coordinator routing to the other four (source transcripts live in `skills/design/references/` — credit belongs to each video's creator).
 
-- **[design](./skills/design/SKILL.md)** — The family coordinator; routes a design task to the right skill below.
+- **[design](./skills/design/design/SKILL.md)** — The family coordinator; routes a design task to the right skill below.
 - **[design-setup](./skills/design/design-setup/SKILL.md)** — End-to-end 0→1 web setup and prototyping: preflight checks, decision gates, exploratory-code isolation, 4-part prompts, a 3-phase build sequence, and token-commit finalization.
 - **[design-rules](./skills/design/design-rules/SKILL.md)** — Micro-UI rules at the CSS/Tailwind level: typography (-2% tracking, Major Third 1.25x scale, 150% body line-height), 60-30-10 color balance, 12/8/4 column grids, 8pt spacing rhythm, 4-state buttons, and the LIFT system with its 6 levels of visual flow.
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — UI and portfolio review via the 30-Second First Impression Test and the LIFT system: instant clarity, visual hierarchy, trust signals, conversion readiness.

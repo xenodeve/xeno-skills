@@ -34,6 +34,23 @@ done <<< "$skills"
 [ -z "$badmeta" ] && ok "all carry name + description frontmatter" || bad "missing frontmatter:$badmeta"
 [ -z "$badname" ] && ok "every declared name matches its directory" || bad "name/dir mismatch:$badname"
 
+echo "no skill is nested inside another skill (npx skills would never find it):"
+# skills@1.5.x stops descending the moment a directory has its own SKILL.md
+# (dist/cli.mjs: `if (await tryAddSkillAt(childDir) || !walkDeep) continue;`).
+# A family directory must therefore NOT be a skill itself, or its children are
+# invisible to the installer — which is exactly how 4 design skills shipped
+# unusable.
+nested=""
+while IFS= read -r f; do
+  parent="$(dirname "$(dirname "$f")")"
+  [ -f "$parent/SKILL.md" ] && nested="$nested $f"
+done <<< "$skills"
+[ -z "$nested" ] && ok "no SKILL.md sits inside another skill's directory" || bad "undiscoverable (nested):$nested"
+
+echo "no machine-specific absolute paths in shipped skill content:"
+abs="$(grep -rln 'file:///' skills/ 2>/dev/null)"
+[ -z "$abs" ] && ok "no file:/// links (they break on every machine but the author's)" || bad "absolute file:/// links in: $abs"
+
 echo "every skill family is documented in BOTH READMEs:"
 missing=""
 for fam in $(find skills -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort); do

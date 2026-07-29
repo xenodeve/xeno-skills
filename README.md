@@ -85,7 +85,7 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 ตระกูล skill ด้านการออกแบบเว็บ กลั่นจากคลังวิดีโอของ Chase AI, Flux Academy (Ran Segall), Chris McCoy, Kole Jain และ Satori Graphics โดย `design` เป็นตัวประสานที่ route ไปยังอีกสี่ตัว (transcript ต้นทางอยู่ใน `skills/design/references/` — เครดิตเป็นของผู้สร้างวิดีโอแต่ละราย)
 
-- **[design](./skills/design/SKILL.md)** — ตัวประสานของตระกูล route งานออกแบบไปยัง skill ที่ถูกต้อง
+- **[design](./skills/design/design/SKILL.md)** — ตัวประสานของตระกูล route งานออกแบบไปยัง skill ที่ถูกต้อง
 - **[design-setup](./skills/design/design-setup/SKILL.md)** — กรอบการ setup + prototype เว็บแบบ 0→1 ครบวงจร: preflight check, decision gate, การแยกโค้ดทดลอง, prompt 4 ส่วน, ลำดับ build 3 เฟส และการปิดท้ายด้วยการ commit token
 - **[design-rules](./skills/design/design-rules/SKILL.md)** — กฎ micro-UI ระดับ CSS/Tailwind: typography (tracking -2%, สเกล Major Third 1.25x, line-height 150%), สมดุลสี 60-30-10, กริด 12/8/4 คอลัมน์, จังหวะ spacing 8pt, ปุ่ม 4 สถานะ และระบบ LIFT กับ 6 ระดับของ visual flow
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion

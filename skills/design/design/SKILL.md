@@ -65,4 +65,4 @@ When building or overhauling a web design, the agent automatically executes acro
 
 ## 📚 Transcript Reference Library
 
-Access full, untruncated research transcripts for all 8 YouTube videos in [references/README.md](file:///d:/Github/xeno-skills/skills/design/references/README.md).
+Access full, untruncated research transcripts for all 8 YouTube videos in [references/README.md](../references/README.md).
