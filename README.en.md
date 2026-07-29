@@ -16,6 +16,7 @@ Skills live under `skills/`:
 
 - `multi-agent/` — orchestrating multiple AI CLIs together
 - `t4/` — the T4 team's agent-primary operating standard (entry map, bootstrap, memory, records, workflow)
+- `design/` — the web/UI design skill family (setup, rules, audit, psychology) plus its reference library
 - `karpathy-guidelines/` — behavioral guardrails for writing code (T4 auto-loads it at session start)
 
 Each skill is its own directory containing a `SKILL.md` (with YAML frontmatter — `name` and `description`) and any bundled reference files.
@@ -79,6 +80,16 @@ A family of skills distilled project-agnostic from the T4 team's mature repos (M
 ### Coding behavior
 
 - **[karpathy-guidelines](./skills/karpathy-guidelines/SKILL.md)** — Behavioral guardrails that reduce the mistakes LLMs commonly make when writing code (think before coding, keep it simplest, make surgical changes, define verifiable success criteria), distilled from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876). `using-t4` auto-loads this once at session start in a T4 repo — so it runs alongside the T4 family out of the box (MIT, credits Karpathy).
+
+### Design (web / UI)
+
+A web-design skill family distilled from the video libraries of Chase AI, Flux Academy (Ran Segall), Chris McCoy, Kole Jain and Satori Graphics, with `design` as the coordinator routing to the other four (source transcripts live in `skills/design/references/` — credit belongs to each video's creator).
+
+- **[design](./skills/design/SKILL.md)** — The family coordinator; routes a design task to the right skill below.
+- **[design-setup](./skills/design/design-setup/SKILL.md)** — End-to-end 0→1 web setup and prototyping: preflight checks, decision gates, exploratory-code isolation, 4-part prompts, a 3-phase build sequence, and token-commit finalization.
+- **[design-rules](./skills/design/design-rules/SKILL.md)** — Micro-UI rules at the CSS/Tailwind level: typography (-2% tracking, Major Third 1.25x scale, 150% body line-height), 60-30-10 color balance, 12/8/4 column grids, 8pt spacing rhythm, 4-state buttons, and the LIFT system with its 6 levels of visual flow.
+- **[design-audit](./skills/design/design-audit/SKILL.md)** — UI and portfolio review via the 30-Second First Impression Test and the LIFT system: instant clarity, visual hierarchy, trust signals, conversion readiness.
+- **[design-psychology](./skills/design/design-psychology/SKILL.md)** — UX and conversion psychology: 3-Brain Persona alignment (Survival/Emotional/Rational), mental-model layout familiarity, MAYA pattern breaks, cognitive chunking (the 3-4 item working-memory rule), and Luxury White Space.
 
 ## Related
 
