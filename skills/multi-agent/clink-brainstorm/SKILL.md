@@ -101,6 +101,14 @@ Because the lanes are metered separately on **both**, spending a house lane cost
 
 **Refill cadence matters as much as pool size.** Cursor meters **monthly**, with no 5-hour or weekly rolling window — so a burst cannot trip a short-window wall mid-round, and its practical headroom exceeds a rolling-window client's even when the bars look comparably full. Its house lane (Cursor Models) is also allocated the larger share of its two. Clients on rolling windows have to be paced across a long loop; Cursor does not.
 
+**Cursor's Max Mode is persisted state that `clink` can neither set nor see.** Max Mode raises the context ceiling to the model's maximum (up to ~1M tokens) and bills at token rates. There is **no CLI flag** for it: it is toggled by `/max-mode` inside an *interactive* `cursor-agent` session and stored in `~/.cursor/cli-config.json` (`maxMode`, mirrored at `model.maxMode`), so every headless `-p` run — every clink call included — silently inherits whatever that file last said. Left on, ordinary rounds become token-billed ones against the foreign lane, and nothing in the call or its response reveals why. Check it before a long session:
+
+```
+(Get-Content ~/.cursor/cli-config.json | ConvertFrom-Json).maxMode    # want: False
+```
+
+Brainstorm prompts are a few KB, so the context ceiling almost never earns its cost here — leave it off, and reach for it only if a single probe is genuinely context-bound. Note this is a **different axis** from the `-max` suffix in a model id (`…-low` / `-medium` / `-high` / `-xhigh` / `-max`), which is the effort tier and is safe to select per call.
+
 The rule that falls out: **prefer each client's house lane, treat both foreign lanes as scarce** — never route a model through a client that carries it only in the foreign lane when another client has it in-house. And when a round is *bursty* — a wide fan-out, or a loop-until-dry that could run many rounds — lean the volume onto Cursor, which cannot wall mid-loop, and spend the rolling-window clients on the calls that most need them.
 
 | Family you want | Ask | Why |
