@@ -31,7 +31,7 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 
 Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indices (2026-07) + a local benchmark. Scores: **Coding Index / Agentic Index**.
 
-> **Scale note — do not mix the two scales in this skill.** The `71–77` / `45–54` figures in the table below are the **Coding Index / Agentic Index**, an older sub-index. The `32–59` figures in the GPT-5.6 ladder further down are the **AA Intelligence Index v4.1**, a composite of nine evals where the frontier is ≈ 60. A number from one is not comparable to a number from the other, and averaging or ranking across them produces a false ordering. Higher is better on both — that is all they share. ([research](../../../docs/research/2026-07-16-model-effort-capability-matrix.md), scale note)
+> **Scale note — do not mix the two scales in this skill.** The `71–77` / `45–54` figures in the table below are the **Coding Index / Agentic Index**, an older sub-index. The `32–59` figures in the GPT-5.6 ladder further down are the **AA Intelligence Index v4.1**, a composite of nine evals where the frontier is ≈ 60. A number from one is not comparable to a number from the other, and averaging or ranking across them produces a false ordering. Higher is better on both — that is all they share. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md`, scale note — in the `xeno-skills` repo. **Research is not shipped with the installed skill**, so the figures reproduced here are the reader's copy of record, not a link to follow.)*
 
 | Agent (`cli_name`) | Backend | Coding | Agentic | Delegate to it… | Guardrail |
 |---|---|---|---|---|---|
@@ -108,7 +108,7 @@ Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml
 
 ### The GPT-5.6 ladder — and the cap on it
 
-Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. These are AA Intelligence Index v4.1 scores at AA's cost-per-task. **Codex is subscription-flat, so `$` is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. ([research](../../../docs/research/2026-07-16-model-effort-capability-matrix.md))
+Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. These are AA Intelligence Index v4.1 scores at AA's cost-per-task. **Codex is subscription-flat, so `$` is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md` in the `xeno-skills` repo, not shipped here.)*
 
 | Model | low | medium | high | xhigh | max |
 |---|---|---|---|---|---|
@@ -121,8 +121,9 @@ Effort is the knob most likely to be set wrongly, because the cost of setting it
 
 | Work | Model | Effort |
 |---|---|---|
-| Routine coding — the default for nearly everything | `gpt-5.6-luna` | `high`–`xhigh` |
-| A leaf that genuinely needs more than Luna's ceiling of 51 | `gpt-5.6-sol` | **`high` is the ceiling, used sparingly** |
+| Routine coding — the default for nearly everything | `gpt-5.6-luna` | **`high`** — one value, not a range |
+| Same leaf, after `high` came back wrong or thin | `gpt-5.6-luna` | `xhigh` |
+| A leaf whose failure shows it needs more than Luna's ceiling of 51 | `gpt-5.6-sol` | **`high` is the ceiling, used sparingly** |
 
 **`max` is off the table on both.** This is an instruction, not a derived optimum — do not reverse-engineer a rate to argue around it.
 
@@ -132,7 +133,7 @@ What the numbers say, and why the cap lands there:
 - **`xhigh`→`max` on Sol is +1 point for a near-doubled cost** (58→59, $0.68→$1.04). Sol's whole ladder is +4, +2.5, +2, +1 while cost triples from `medium`. That last rung is what the cap removes.
 - **Luna is the most cost-efficient at every effort** (825 index-pts/$ at low, 243 at max — 2–4× Sol), and its **ceiling is 51**. A leaf needing more than that is the one case for Sol, and the cap exists to make that a decision instead of a default.
 - **`terra` and `gpt-5.5` are struck through because they are strictly dominated.** Sol(high) 56 @ $0.45 beats Terra(max) 55 @ $0.55 on both axes; Sol(medium) 53.5 @ $0.31 beats 5.5-high 53 @ $0.60. There is no task for which either is the right answer.
-- **Efficiency only matters under quota pressure.** For a genuine one-off hard leaf when you are nowhere near the cap, pick the intelligence the task needs. Luna's edge is a *bulk* and *quota-conservation* argument, not a claim that it is as capable.
+- **Efficiency only matters under quota pressure — but that buys you the *model*, never the tier.** With plenty of allowance left, a genuine one-off hard leaf is a reason to move `luna` → `sol`. It is **not** a reason to go past the effort cap: `xhigh`→`max` is +1 point for a near-doubled burn, which is a bad trade at any budget. Luna's edge is a bulk and quota-conservation argument, not a claim that it is as capable.
 
 Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, Sol's `low`/`medium` figures are interpolated rather than published, and a model can trail on a specific axis while leading the composite — for agentic tool-loops check Terminal-Bench, not the composite. Re-fetch before leaning on a 1–2 point gap.
 
