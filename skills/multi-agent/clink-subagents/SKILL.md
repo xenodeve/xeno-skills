@@ -18,7 +18,7 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 **Delegate** a subtask that is:
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it.
-- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time.
+- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** measured 2026-07-31 on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s. Budget minutes for anything that has to read a repo, and note that the PAL tool call backgrounds itself at 120s.
 - Good fits: a well-specified function/module, a mechanical refactor across a known site, a bulk format/transform, a first-draft you'll review, focused external-doc research/summarization.
 
 **Never delegate** (keep it yourself):
@@ -31,9 +31,11 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 
 Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indices (2026-07) + a local benchmark. Scores: **Coding Index / Agentic Index**.
 
+> **Scale note — do not mix the two scales in this skill.** The `71–77` / `45–54` figures in the table below are the **Coding Index / Agentic Index**, an older sub-index. The `32–59` figures in the GPT-5.6 ladder further down are the **AA Intelligence Index v4.1**, a composite of nine evals where the frontier is ≈ 60. A number from one is not comparable to a number from the other, and averaging or ranking across them produces a false ordering. Higher is better on both — that is all they share. ([research](../../../docs/research/2026-07-16-model-effort-capability-matrix.md), scale note)
+
 | Agent (`cli_name`) | Backend | Coding | Agentic | Delegate to it… | Guardrail |
 |---|---|---|---|---|---|
-| **`codex`** | GPT-5.6 (Sol/Terra/Luna) | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, focused code review, in-place edits of a known file | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. |
+| **`codex`** | GPT-5.6 — **`sol` and `luna` only**, both verified callable; **skip `terra` and `gpt-5.5`, they are dominated** (see the ladder below) | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, focused code review, in-place edits of a known file | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. **Model and effort are not free choices here** — there is a standing cap in the ladder section, and a read-heavy review runs **400–530s**, not the ~30s bootstrap figure above. |
 | **`antigravity`** | Gemini 3.x (`agy`) | 68–70 (ok) | **21–37 (weak)** ⚠️ | ONLY simple, **single-shot**, single-file, trivially-verifiable **artifact** tasks — a pure function, boilerplate, one format/transform, a focused lookup | **Weak at multi-step agentic** — never give it work where a wrong early step compounds. **Headless it could once *write* files but not *run* anything** (command tools auto-denied) — re-verify before relying on that, it has moved: a headless file read now succeeds, and `role: codereviewer` returns a real severity-graded review rather than the permission error it used to. Still prefer **artifact mode** for anything you must trust, and verify yourself. Chatty: appends a `<SUMMARY>` block even when told "output only X" — strip it. **Fragile in a way unrelated to models:** every run does an eligibility check that fetches your Google profile picture, so a transient network failure to `googleusercontent.com` exits 1 mid-session with `Eligibility check failed` — retry rather than debug. |
 | **`cursor`** | Widest roster of any client — Grok 4.5, Composer 2.5, Kimi K3 / K2.7 Code, GLM 5.2, Opus/Sonnet/Fable, GPT-5.x, Gemini | varies by model | **untested here** | Leaves where the *model family* is the point — a foreign-prior second opinion, or a lineage no other client carries (xAI / Moonshot / Zhipu) | **Not on the local ladder below** — treat any given model's agentic reliability as unknown until you test it yourself. **On Windows, confirm its config overrides `env.SHELL` before delegating anything that must touch a file** (see gotchas) — a bash `SHELL` inherited from the caller kills every tool silently and it degrades to a text-only responder. Floor latency ~25–30s even for a one-line prompt. Its quota splits in a way that changes routing — see economics. |
 | **you (orchestrator)** | e.g. Claude Opus 4.8 | ~74 | ~47 | — | Decompose, integrate, verify. Delegate the leaves, own the tree. |
@@ -102,7 +104,37 @@ This [PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional 
 | **`cursor`** (Cursor's `cursor-agent`) | ✅ `--model <id>` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ no separate flag — effort is **baked into the model id**, and **the ladder is per-model, not a fixed set** — do not assume a suffix exists (see below) | `-p` here is a **boolean** flag, so unlike `agy --print` it does **not** swallow `--model` — no ordering hazard. The `-max` suffix is the effort tier, **not** Cursor's Max Mode — that is separate persisted state, see gotchas. |
 | **`claude-9arm`** (Claude Code → a gateway model, e.g. Qwen) | ✅ `--model` (last-wins) — **limited to what the gateway serves** | ❌ **no-op** — not a `claude`/gateway flag (this Qwen gateway has only thinking on/off, no graded effort) | Activate by copying `claude-9arm.json.example` → `.json` with your `claude.exe` + `--settings`/`--model`. |
 
-Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`). Effort has steep diminishing returns — `medium`/`high` is the sweet spot; reserve `max`/`xhigh` for the hardest leaf.
+Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`).
+
+### The GPT-5.6 ladder — and the cap on it
+
+Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. These are AA Intelligence Index v4.1 scores at AA's cost-per-task. **Codex is subscription-flat, so `$` is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. ([research](../../../docs/research/2026-07-16-model-effort-capability-matrix.md))
+
+| Model | low | medium | high | xhigh | max |
+|---|---|---|---|---|---|
+| **`gpt-5.6-sol`** | 49.5 ($0.20) | 53.5 ($0.31) | **56 ($0.45)** | 58 ($0.68) | 59 ($1.04) |
+| **`gpt-5.6-luna`** | 33 ($0.04) | 38 ($0.05) | **46 ($0.09)** | **49 ($0.10)** | 51 ($0.21) |
+| ~~`gpt-5.6-terra`~~ | 40.5 ($0.10) | 45.5 ($0.15) | 49 ($0.24) | 51.5 ($0.33) | 55 ($0.55) |
+| ~~`gpt-5.5`~~ | 43.5 ($0.20) | 50.5 ($0.35) | 53 ($0.60) | 55 ($0.85) | — |
+
+**Standing cap (owner's rule, set 2026-07-31 — tighter than the table alone implies):**
+
+| Work | Model | Effort |
+|---|---|---|
+| Routine coding — the default for nearly everything | `gpt-5.6-luna` | `high`–`xhigh` |
+| A leaf that genuinely needs more than Luna's ceiling of 51 | `gpt-5.6-sol` | **`high` is the ceiling, used sparingly** |
+
+**`max` is off the table on both.** This is an instruction, not a derived optimum — do not reverse-engineer a rate to argue around it.
+
+What the numbers say, and why the cap lands there:
+
+- **Luna at `xhigh` (49) ≈ Sol at `low` (49.5) for half the burn** ($0.10 vs $0.20). On routine work, buy the tier on the small model rather than the model.
+- **`xhigh`→`max` on Sol is +1 point for a near-doubled cost** (58→59, $0.68→$1.04). Sol's whole ladder is +4, +2.5, +2, +1 while cost triples from `medium`. That last rung is what the cap removes.
+- **Luna is the most cost-efficient at every effort** (825 index-pts/$ at low, 243 at max — 2–4× Sol), and its **ceiling is 51**. A leaf needing more than that is the one case for Sol, and the cap exists to make that a decision instead of a default.
+- **`terra` and `gpt-5.5` are struck through because they are strictly dominated.** Sol(high) 56 @ $0.45 beats Terra(max) 55 @ $0.55 on both axes; Sol(medium) 53.5 @ $0.31 beats 5.5-high 53 @ $0.60. There is no task for which either is the right answer.
+- **Efficiency only matters under quota pressure.** For a genuine one-off hard leaf when you are nowhere near the cap, pick the intelligence the task needs. Luna's edge is a *bulk* and *quota-conservation* argument, not a claim that it is as capable.
+
+Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, Sol's `low`/`medium` figures are interpolated rather than published, and a model can trail on a specific axis while leading the composite — for agentic tool-loops check Terminal-Bench, not the composite. Re-fetch before leaning on a 1–2 point gap.
 
 **Cursor's ladders are per-model — derive them, don't guess.** There is no fixed tier set and no structured catalog to query: `serverConfigCache` in `~/.cursor/cli-config.json` holds only backend URLs, and the real catalog is buried in a minified 3.7 MB bundle. The one machine-readable source is `cursor-agent --list-models`, where the knobs are encoded in the id suffixes. [`references/cursor-params.py`](../clink-brainstorm/references/cursor-params.py) peels the suffix vocabulary off each id and regroups; run it whenever Cursor ships new models. A measured run gave **193 ids → 31 base models**, and the ladders are genuinely irregular:
 
