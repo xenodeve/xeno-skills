@@ -117,21 +117,36 @@ Effort is the knob most likely to be set wrongly, because the cost of setting it
 | ~~`gpt-5.6-terra`~~ | 40.5 ($0.10) | 45.5 ($0.15) | 49 ($0.24) | 51.5 ($0.33) | 55 ($0.55) |
 | ~~`gpt-5.5`~~ | 43.5 ($0.20) | 50.5 ($0.35) | 53 ($0.60) | 55 ($0.85) | — |
 
-**Standing cap (owner's rule, set 2026-07-31 — tighter than the table alone implies):**
+### Pick by task difficulty — this table is the answer
 
-| Work | Model | Effort |
-|---|---|---|
-| Routine coding — the default for nearly everything | `gpt-5.6-luna` | **`high`** — one value, not a range |
-| Same leaf, after `high` came back wrong or thin | `gpt-5.6-luna` | `xhigh` |
-| A leaf whose failure shows it needs more than Luna's ceiling of 51 | `gpt-5.6-sol` | **`high` is the ceiling, used sparingly** |
+Read down until a row describes your leaf, then stop. **Set both `model` and `reasoning_effort` explicitly on every codex call** — the config default is `sol` at `medium`, which is two rungs above where most work belongs.
 
-**`max` is off the table on both.** This is an instruction, not a derived optimum — do not reverse-engineer a rate to argue around it.
+| Your leaf | `model` | `reasoning_effort` | Index | Burn |
+|---|---|---|---|---|
+| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33 | $0.04 |
+| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38 | $0.05 |
+| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46 | $0.09 |
+| **Routine with a real edge case** — tricky input, a first-pass review, a summarisation you will check | `gpt-5.6-luna` | `xhigh` | 49 | $0.10 |
+| **Hard** — subtle correctness, an adversarial review that must not miss, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.5 | $0.31 |
+| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 56 | $0.45 |
+| Anything above that | — | — | — | **capped: `xhigh` and `max` are not available on either model** |
 
-What the numbers say, and why the cap lands there:
+`$` is AA's cost-per-task. **Codex is subscription-flat, so it is a proxy for weekly quota burn, not money** — the whole point of the table is that the left column costs 4–10× less than the right one for work that does not need the right one.
 
-- **Luna at `xhigh` (49) ≈ Sol at `low` (49.5) for half the burn** ($0.10 vs $0.20). On routine work, buy the tier on the small model rather than the model.
-- **`xhigh`→`max` on Sol is +1 point for a near-doubled cost** (58→59, $0.68→$1.04). Sol's whole ladder is +4, +2.5, +2, +1 while cost triples from `medium`. That last rung is what the cap removes.
-- **Luna is the most cost-efficient at every effort** (825 index-pts/$ at low, 243 at max — 2–4× Sol), and its **ceiling is 51**. A leaf needing more than that is the one case for Sol, and the cap exists to make that a decision instead of a default.
+**Escalate one row at a time, only after a real failure.** Not because the leaf *feels* hard — that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
+
+**Never `gpt-5.6-terra`, and never `gpt-5.5`.** Neither is on the efficient frontier at any effort, which is why they are struck through above:
+
+- Terra `low` 40.5 @ $0.10 loses to **Luna `high` 46 @ $0.09** — higher *and* cheaper.
+- Terra `high` 49 @ $0.24 loses to **Luna `xhigh` 49 @ $0.10** — same score, 2.4× the burn.
+- Terra `max` 55 @ $0.55 loses to **Sol `high` 56 @ $0.45** — higher *and* cheaper.
+- GPT-5.5 `high` 53 @ $0.60 loses to **Sol `medium` 53.5 @ $0.31**.
+
+**Sol `low` is off the table too, for the same reason:** 49.5 @ $0.20 against Luna `xhigh`'s 49 @ $0.10 — half a point for double the burn. The frontier under the cap is exactly the six rows above.
+
+Why the cap removes the top rungs: Sol's ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` ($0.31 → $1.04). The final rung buys **one index point for a near-doubled burn**. Luna is 2–4× more efficient than Sol at every tier (825 index-pts/$ at `low`, 243 at `max`), which is why the first four rows are all Luna.
+
+The cap is an owner's instruction (set 2026-07-31), and it is tighter than the raw numbers alone would justify — a hard enough leaf could argue for `sol`/`max` on capability. Do not reverse-engineer a rate to make that argument.
 - **`terra` and `gpt-5.5` are struck through because they are strictly dominated.** Sol(high) 56 @ $0.45 beats Terra(max) 55 @ $0.55 on both axes; Sol(medium) 53.5 @ $0.31 beats 5.5-high 53 @ $0.60. There is no task for which either is the right answer.
 - **Efficiency only matters under quota pressure — but that buys you the *model*, never the tier.** With plenty of allowance left, a genuine one-off hard leaf is a reason to move `luna` → `sol`. It is **not** a reason to go past the effort cap: `xhigh`→`max` is +1 point for a near-doubled burn, which is a bad trade at any budget. Luna's edge is a bulk and quota-conservation argument, not a claim that it is as capable.
 
