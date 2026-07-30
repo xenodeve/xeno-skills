@@ -114,8 +114,8 @@ Effort is the knob most likely to be set wrongly, because the cost of setting it
 |---|---|---|---|---|---|
 | **`gpt-5.6-sol`** | 49.5 ($0.20) | 53.5 ($0.31) | **56 ($0.45)** | 58 ($0.68) | 59 ($1.04) |
 | **`gpt-5.6-luna`** | 33 ($0.04) | 38 ($0.05) | **46 ($0.09)** | **49 ($0.10)** | 51 ($0.21) |
-| ~~`gpt-5.6-terra`~~ | 40.5 ($0.10) | 45.5 ($0.15) | 49 ($0.24) | 51.5 ($0.33) | 55 ($0.55) |
-| ~~`gpt-5.5`~~ | 43.5 ($0.20) | 50.5 ($0.35) | 53 ($0.60) | 55 ($0.85) | — |
+
+`gpt-5.6-terra` and `gpt-5.5` are deliberately absent — see the skip rule below.
 
 ### Pick by task difficulty — this table is the answer
 
@@ -137,14 +137,7 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 
 **Escalate one row at a time, only after a real failure.** Not because the leaf *feels* hard — that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
 
-**Never `gpt-5.6-terra`, and never `gpt-5.5`.** Neither is on the efficient frontier at any effort, which is why they are struck through above:
-
-- Terra `low` 40.5 @ $0.10 loses to **Luna `high` 46 @ $0.09** — higher *and* cheaper.
-- Terra `high` 49 @ $0.24 loses to **Luna `xhigh` 49 @ $0.10** — same score, 2.4× the burn.
-- Terra `max` 55 @ $0.55 loses to **Sol `high` 56 @ $0.45** — higher *and* cheaper.
-- GPT-5.5 `high` 53 @ $0.60 loses to **Sol `medium` 53.5 @ $0.31**.
-
-**Sol `low` is off the table too, for the same reason:** 49.5 @ $0.20 against Luna `xhigh`'s 49 @ $0.10 — half a point for double the burn. The frontier under the cap is exactly the six rows above.
+**Never `gpt-5.6-terra`, never `gpt-5.5`, and never Sol `low`.** None is on the efficient frontier at any effort, so they are left out of the table entirely rather than listed as options. Three comparisons settle it: Terra's *best* rung, `max` 55 @ $0.55, loses to **Sol `high` 56 @ $0.45** on both axes; 5.5 `high` 53 @ $0.60 loses to **Sol `medium` 53.5 @ $0.31**; and Sol `low` 49.5 @ $0.20 loses to **Luna `xhigh` 49 @ $0.10** — half a point for double the burn. Every lower Terra rung falls the same way (Terra `low` 40.5 @ $0.10 against Luna `high` 46 @ $0.09 — higher *and* cheaper). The six rows above are the whole frontier under the cap.
 
 Why the cap removes the top rungs: Sol's ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` ($0.31 → $1.04). The final rung buys **one index point for a near-doubled burn**. Luna is 2–4× more efficient than Sol at every tier (825 index-pts/$ at `low`, 243 at `max`), which is why the first four rows are all Luna.
 
