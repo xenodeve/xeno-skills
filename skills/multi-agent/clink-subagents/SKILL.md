@@ -98,10 +98,25 @@ This [PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional 
 |---|---|---|---|
 | **`codex`** | ✅ `-m <model>` — **validated** (invalid model → hard 400 error) | ✅ `-c model_reasoning_effort=` — `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) | Full support. This account exposes `gpt-5.6-sol`, `gpt-5.6-luna`, `gpt-5.5`. |
 | **`antigravity`** | ✅ `--model "<label>"` — **fail-closed** (invalid → exit 1 + catalog) | ➖ no separate flag — effort is **baked into the model label** (`(Low/Medium/High)`, `(Thinking)`) | agy's `--model` **must precede `--print`** (value-taking flag) or it's silently swallowed → default model; the fork's runner handles ordering. See gotchas. |
-| **`cursor`** (Cursor's `cursor-agent`) | ✅ `--model <id>` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-high`, `glm-5.2`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ no separate flag — effort is **baked into the model id** (`-low` / `-medium` / `-high` / `-xhigh` / `-max`) | Authoritative list: `cursor-agent --list-models`. `-p` here is a **boolean** flag, so unlike `agy --print` it does **not** swallow `--model` — no ordering hazard. The `-max` suffix is the effort tier, **not** Cursor's Max Mode — that is separate persisted state, see gotchas. |
+| **`cursor`** (Cursor's `cursor-agent`) | ✅ `--model <id>` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ no separate flag — effort is **baked into the model id**, and **the ladder is per-model, not a fixed set** — do not assume a suffix exists (see below) | `-p` here is a **boolean** flag, so unlike `agy --print` it does **not** swallow `--model` — no ordering hazard. The `-max` suffix is the effort tier, **not** Cursor's Max Mode — that is separate persisted state, see gotchas. |
 | **`claude-9arm`** (Claude Code → a gateway model, e.g. Qwen) | ✅ `--model` (last-wins) — **limited to what the gateway serves** | ❌ **no-op** — not a `claude`/gateway flag (this Qwen gateway has only thinking on/off, no graded effort) | Activate by copying `claude-9arm.json.example` → `.json` with your `claude.exe` + `--settings`/`--model`. |
 
 Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`). Effort has steep diminishing returns — `medium`/`high` is the sweet spot; reserve `max`/`xhigh` for the hardest leaf.
+
+**Cursor's ladders are per-model — derive them, don't guess.** There is no fixed tier set and no structured catalog to query: `serverConfigCache` in `~/.cursor/cli-config.json` holds only backend URLs, and the real catalog is buried in a minified 3.7 MB bundle. The one machine-readable source is `cursor-agent --list-models`, where the knobs are encoded in the id suffixes. [`references/cursor-params.py`](../clink-brainstorm/references/cursor-params.py) peels the suffix vocabulary (`-thinking`, `-low|medium|high|xhigh|max`, `-fast`) off each id and regroups; run it whenever Cursor ships new models. A measured run gave **193 ids → 43 base models**, and the ladders are genuinely irregular:
+
+| base model | effort ladder | ctx | thinking | fast |
+|---|---|---|---|---|
+| `claude-opus-5` · `claude-opus-4-8` · `claude-opus-4-7` | low < medium < high < xhigh < max | 1M | yes | yes |
+| `gpt-5.6-sol` · `gpt-5.6-terra` · `gpt-5.6-luna` | low < medium < high < xhigh < max | 1M | — | yes |
+| `claude-fable-5` · `claude-sonnet-5` | low < medium < high < xhigh < max | 1M | yes | — |
+| `gpt-5.3-codex` · `gpt-5.2` | low < high < xhigh (**no medium**) | — | — | yes |
+| `cursor-grok-4.5` · `gemini-3.6-flash` | low < medium < high (**tops out at high**) | — | — | grok only |
+| `kimi-k3` | low < high < max (**skips medium and xhigh**) | — | — | — |
+| `glm-5.2` | high < max (**starts at high**) | — | — | — |
+| `composer-2.5` · `claude-4.5-opus` · `gemini-3.1-pro` | none | — | varies | varies |
+
+Two traps that fall out of this: reasoning-off is a **separate base id**, not a rung (`gpt-5.6-sol-none`, `gpt-5.5-none`, `gpt-5.4-mini-none`); and several models have no ladder at all, so a `-high` you invented will simply not resolve.
 
 **Config-based selection (still valid):** pin `-m`/`--model`/`-c` in a client's `additional_args` (every call) or a role's `role_args`, or define multiple pinned clients (`codex-high.json`, `codex-fast.json`) selected via `cli_name`. **Restart PAL after any config edit** (cached at server start).
 
