@@ -75,7 +75,7 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 |---|---|---|
 | `codex` | ✅ `-m` — e.g. `gpt-5.6-sol`, `gpt-5.5` (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) |
 | `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
-| `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-high`, `composer-2.5`, `gpt-5.6-sol-xhigh`. Authoritative list: `cursor-agent --list-models` | ➖ baked into the model id (`-low` / `-high` / `-xhigh`) |
+| `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ baked into the model id, **ladder differs per model** — derive it with [`references/cursor-params.py`](references/cursor-params.py) rather than assuming a suffix exists |
 | `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
 
 Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
@@ -84,6 +84,7 @@ Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` 
 - **Escalate effort on the round that matters, not every call.** Run a cheap first round (`low`/`medium`) to surface positions; then for the **adversarial round** or the final consequential call, push codex to `high`/`max`. The depth lands exactly where the loop needs it.
 - **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
 - **Steep diminishing returns on effort** — `medium`/`high` is the value sweet spot; reserve `max`/`xhigh` for the single hardest probe. Don't blanket-`max` a 3-agent × 3-round loop (it's a multi-minute, quota-heavy operation for little marginal signal).
+- **Don't assume a higher tier buys accuracy — measure it on your own tasks.** A same-prompt A/B on `cursor-grok-4.5-low` vs `-high` (two probes: a 6-step modular-arithmetic chain, and "list every defect a caller could hit" on a function that sorts its argument in place) produced **no observable difference**: both tiers got the arithmetic right, both led their defect list with the in-place mutation, and latency overlapped (46–55s either way). Note the ceiling that test was working against — Grok 4.5's ladder stops at `high`, so it was the shortest ladder available. Treat the result as scoped: *no difference on mid-difficulty work at the top of a 3-rung ladder*, not evidence the knob is inert. The house-lane models are exactly the ones with short ladders, so a test that would actually separate the tiers costs the foreign lane.
 - These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
 
 ## Quota routing — pick the client by whose allowance it spends
