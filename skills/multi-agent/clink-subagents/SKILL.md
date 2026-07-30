@@ -5,7 +5,7 @@ description: Delegate a well-scoped chunk of WORK (implementation, refactor, bul
 
 # clink-subagents
 
-> **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected, with `clink` configured for `codex` and `antigravity` (see `conf/cli_clients/*.json`; Antigravity needs the [xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server) fork for its ConPTY driver on Windows). This skill is an orchestration layer on top of `mcp__pal__clink` — it does nothing standalone.
+> **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected, with `clink` configured for `codex` and `antigravity`, and optionally `cursor` (see `conf/cli_clients/*.json`; Antigravity needs the [xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server) fork for its ConPTY driver on Windows, and the same fork ships the `cursor` preset). This skill is an orchestration layer on top of `mcp__pal__clink` — it does nothing standalone.
 >
 > **Companion, not overlap:** [`clink-brainstorm`](../clink-brainstorm/SKILL.md) fans a *question* out to many agents to gather *opinions*. **This skill delegates *work* to be *done* and *returned*.** Want a second opinion → brainstorm. Want a subtask executed → here.
 
@@ -35,6 +35,7 @@ Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indi
 |---|---|---|---|---|---|
 | **`codex`** | GPT-5.6 (Sol/Terra/Luna) | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, focused code review, in-place edits of a known file | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. |
 | **`antigravity`** | Gemini 3.x (`agy`) | 68–70 (ok) | **21–37 (weak)** ⚠️ | ONLY simple, **single-shot**, single-file, trivially-verifiable **artifact** tasks — a pure function, boilerplate, one format/transform, a focused lookup | **Weak at multi-step agentic** — never give it work where a wrong early step compounds. **In headless it can *write* files but cannot *run* anything** (any command tool auto-denies) — so use **artifact mode** and run/verify yourself; never ask it to "run the tests". Chatty: appends a `<SUMMARY>` block even when told "output only X" — strip it. |
+| **`cursor`** | Widest roster of any client — Grok 4.5, Composer 2.5, Kimi K3 / K2.7 Code, GLM 5.2, Opus/Sonnet/Fable, GPT-5.x, Gemini | varies by model | **untested here** | Leaves where the *model family* is the point — a foreign-prior second opinion, or a lineage no other client carries (xAI / Moonshot / Zhipu) | **Not on the local ladder below** — treat any given model's agentic reliability as unknown until you test it yourself. Floor latency ~25–30s even for a one-line prompt. Its quota splits in a way that changes routing — see economics. |
 | **you (orchestrator)** | e.g. Claude Opus 4.8 | ~74 | ~47 | — | Decompose, integrate, verify. Delegate the leaves, own the tree. |
 
 Rule of thumb: **Codex for the hard leaf, Antigravity for the trivial leaf, you for the tree.** If a task needs more than one dependent step of judgment, it isn't a leaf — don't delegate it (least of all to Antigravity).
@@ -55,7 +56,7 @@ So **"cheaper" = fewer of *your* tokens**, and delegation wins whenever `(what y
 
 **The subagent's *returned* text is *your* tokens.** Constrain it hard ("return ONLY X"):
 - `codex` obeys + is terse (5-bullet summary of an 8k-token file came back ~240 tok; a `NO BUGS FOUND` review, ~15).
-- `antigravity` appends a `<SUMMARY>` block anyway (~+60% ingest) — strip it.
+- `antigravity` appends a `<SUMMARY>` block anyway (~+60% ingest) — strip it. **`cursor` does the same** (verified live: it appended one to a prompt that said "reply with exactly …"), so strip both.
 - A read-heavy `codex` **review** once echoed its whole transcript back = **91k chars ≈ 23k of your tokens**. For read-heavy delegations, say "return findings only, not the files."
 
 **Pick the back-end by latency × intelligence × subscription-quota you'll spend — never by its token count** (free or flat). Unlimited menial bulk you don't want to bill to a subscription → the local model (slower, less smart). Must be *right* → `codex` (top intelligence *and* tersest = also cheapest on your pool). The ~130k-token harness overhead a fresh local `claude-9arm -p` call reloads each time is **free compute** — it costs you only latency, nothing metered.
@@ -65,6 +66,16 @@ So **"cheaper" = fewer of *your* tokens**, and delegation wins whenever `(what y
 - **non-Google pool** — `GPT-OSS 120B` + `Claude Sonnet 4.6` + `Claude Opus 4.6` share this one, and it **burns noticeably faster** than the Google side.
 
 So routing `antigravity` to a Claude/GPT route (e.g. for a non-OpenAI second opinion) is fine *occasionally*, but it drains the non-Google allowance quickly; keep bulk/repeated antigravity work on the cheaper Gemini pool and spend the Claude/GPT route only when a different vendor's judgment is the point.
+
+**Cursor splits the same way** — Cursor Pro shows the two as separate bars:
+- **Cursor Models** — *only* `cursor-grok-4.5-*` and `composer-2.5`. Overflow beyond the limit spills into the Other Models quota or on-demand spend.
+- **Other Models** — everything else it carries (Opus/Sonnet/Fable, GPT-5.x, Gemini, Kimi, GLM). Burns noticeably faster, and overflow goes straight to on-demand spend.
+
+**Both clients follow one pattern: a cheap in-house lane (Google on `agy`, Grok/Composer on `cursor`) and a faster-draining foreign lane, metered as separate pools.** Spending a house lane therefore costs its foreign lane nothing, which gives you *two* independent cheap delegation lanes — bulk Gemini work on `agy` and bulk Grok/Composer work on `cursor` do not compete — plus `codex` on its own subscription as a third. Reserve both foreign lanes for the calls where a different vendor's judgment is the actual point.
+
+**Cursor's allowance is monthly — no 5-hour or weekly rolling window.** That makes it the right home for *bursty* delegation: a wide parallel fan-out, or a long loop, cannot hit a short-window wall part-way through and strand the batch. Its house lane also carries the larger of its two allocations. Where a client meters on a rolling window you have to pace a long run; on Cursor you don't — so push repeated bulk volume there and save the rolling-window clients for the leaves that specifically need them.
+
+Net routing across all clients: **Gemini via `agy`** (in-house there) · **Grok / Composer via `cursor`** (in-house there) · **GPT-5.x via `codex`** (own subscription, plus a real effort knob) · **Kimi K3 / GLM 5.2 via `cursor`** only when a foreign prior is the actual point. Never pick a client merely because it carries the model — pick it by which allowance the call draws down, preferring whichever client carries that model in-house.
 
 ## How to delegate (the call)
 
@@ -87,6 +98,7 @@ This [PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional 
 |---|---|---|---|
 | **`codex`** | ✅ `-m <model>` — **validated** (invalid model → hard 400 error) | ✅ `-c model_reasoning_effort=` — `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) | Full support. This account exposes `gpt-5.6-sol`, `gpt-5.6-luna`, `gpt-5.5`. |
 | **`antigravity`** | ✅ `--model "<label>"` — **fail-closed** (invalid → exit 1 + catalog) | ➖ no separate flag — effort is **baked into the model label** (`(Low/Medium/High)`, `(Thinking)`) | agy's `--model` **must precede `--print`** (value-taking flag) or it's silently swallowed → default model; the fork's runner handles ordering. See gotchas. |
+| **`cursor`** (Cursor's `cursor-agent`) | ✅ `--model <id>` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-high`, `glm-5.2`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ no separate flag — effort is **baked into the model id** (`-low` / `-high` / `-xhigh`) | Authoritative list: `cursor-agent --list-models`. `-p` here is a **boolean** flag, so unlike `agy --print` it does **not** swallow `--model` — no ordering hazard. |
 | **`claude-9arm`** (Claude Code → a gateway model, e.g. Qwen) | ✅ `--model` (last-wins) — **limited to what the gateway serves** | ❌ **no-op** — not a `claude`/gateway flag (this Qwen gateway has only thinking on/off, no graded effort) | Activate by copying `claude-9arm.json.example` → `.json` with your `claude.exe` + `--settings`/`--model`. |
 
 Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`). Effort has steep diminishing returns — `medium`/`high` is the sweet spot; reserve `max`/`xhigh` for the hardest leaf.
@@ -127,7 +139,8 @@ Snapshots that calibrated the rubric — **synthetic** plus **real tasks in a li
 ## Gotchas
 
 - **clink client config is cached at PAL server start.** Editing `conf/cli_clients/*.json` (e.g. changing a model or args) has no effect until PAL is restarted — don't conclude a change failed before restarting.
-- **`command` must resolve from PAL's process env**, not just your shell. If a clink call errors "not found", use the absolute path to the exe in the config. The bare `gemini` CLI is **retired** → use `antigravity`.
+- **`command` must resolve from PAL's process env**, not just your shell. If a clink call errors "not found", use the absolute path to the exe in the config. The bare `gemini` CLI is **retired** → use `antigravity`. Note the env is snapshotted at process start: if an installer adds a directory to `PATH` *after* PAL (or your shell) launched, the running process still won't see it — check `PATH` at the User/Machine level before concluding the binary is missing, and restart rather than hardcoding a path.
+- **A config `command` goes through POSIX-mode `shlex.split()`, which eats backslashes.** An absolute Windows path written the natural way (`"C:\\Users\\me\\tool\\x.cmd"` in JSON) is silently mangled to `C:Usersmetoolx.cmd` and fails as "not found in PATH" — the error names the mangled string, which is the tell. If you must hardcode a path, write it with **forward slashes**: `"C:/Users/me/tool/x.cmd"`. Applies to every clink client.
 - **Harmless Codex noise:** its stderr often shows `rmcp … DELETE returned HTTP 404 session` — ignore it; check `return_code` and the content instead.
 - **Antigravity's `codereviewer` role can no-op in headless.** It may invoke a command tool that headless mode auto-denies (`jetski: no output produced … required the "command" permission`) and return that error *instead of* a review — with `return_code: 0`, so check the **content**, not just the code. Safe fix: use `role: default` for Antigravity (its plain-Q&A path doesn't hit this), or grant that one tool a scoped allow-rule in the CLI's own settings. Codex's `codereviewer` role is unaffected.
 - **Antigravity `--model` must come BEFORE `--print`.** `agy`'s `--print` is a **value-taking** flag (it consumes the next token as the prompt), so `agy --print --model "X" "<prompt>"` swallows `--model` as the prompt → agy runs with an empty model and **silently falls back to its default** (always reports *Gemini 3.5 Flash* regardless of what you asked). Correct order: `agy --model "X" --print "<prompt>"` (live-verified). This fork's Antigravity runner already emits that order and fails closed on a non-zero exit; if you hand-build an `agy` command, mind the order and check the exit code (an unsupported model exits `1` with a catalog).

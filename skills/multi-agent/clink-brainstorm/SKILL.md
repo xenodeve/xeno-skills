@@ -1,6 +1,6 @@
 ---
 name: clink-brainstorm
-description: Fan out a question to multiple independent AI agents (Gemini/Antigravity, OpenAI/Codex, and optionally a third model of your choice) through PAL's clink tool, then synthesize their answers into one recommendation. Use for multi-agent brainstorming, getting a second/third opinion on a design or plan, sanity-checking a decision across model families, or when the user says "ask the other AIs", "brainstorm with multiple models", or "get other perspectives".
+description: Fan out a question to multiple independent AI agents (Gemini/Antigravity, OpenAI/Codex, Cursor, and optionally a further model of your choice) through PAL's clink tool, then synthesize their answers into one recommendation. Use for multi-agent brainstorming, getting a second/third opinion on a design or plan, sanity-checking a decision across model families, or when the user says "ask the other AIs", "brainstorm with multiple models", or "get other perspectives".
 ---
 
 # clink-brainstorm
@@ -13,7 +13,8 @@ Drive 3+ independent AI agents on the **same well-specified question**, then syn
 
 This skill assumes [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server) is installed and connected as an MCP server, with its `clink` tool configured for at least two independent CLI agents. Out of the box, upstream PAL ships `gemini`, `claude`, and `codex` presets in `conf/cli_clients/`.
 
-If you want the two extra agents referenced below:
+If you want the extra agents referenced below:
+- **`cursor`** (Cursor's headless `cursor-agent`) needs no new code at all — `BaseCLIAgent` already pipes the prompt over stdin and appends `--model`, which is exactly its interface. It is a `constants.py` entry plus a config file, both shipped in the fork below. Fixed args are `-p --trust --output-format text`: `--trust` is mandatory or a non-interactive run in an unseen directory aborts with *"Workspace Trust Required"*, and its JSON shape is not Claude Code's so `claude_json` cannot parse it.
 - **`antigravity`** (Google's Gemini-CLI successor, `agy`) needs a small platform-specific fix — plain piped subprocesses get empty output from `agy` unless it's driven through a real pseudo-console. A ready-made fix (Windows, via `pywinpty`) lives in [this PAL fork](https://github.com/xenodeve/pal-mcp-server) — see its `CHANGES-FORK.md`.
 - **A third model behind an alternate gateway** (this doc uses `claude-9arm` as a running example — Claude Code CLI pointed at a non-Anthropic OpenAI-compatible backend via `--settings`/`--model`) is just a config file, no code — see the same fork's `conf/cli_clients/claude-9arm.json.example`. Swap in whatever gateway you actually use; the pattern is generic.
 
@@ -23,8 +24,9 @@ None of this is required to use the skill — two or three agents from any mix o
 
 | Call | Backend model | Cognitive lens | Mechanism | Typical latency |
 |---|---|---|---|---|
-| `mcp__pal__clink(cli_name="antigravity")` | Gemini (via Google's `agy` CLI) | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
+| `mcp__pal__clink(cli_name="antigravity")` | Gemini via Google's `agy`. Roster: Gemini 3.6 / 3.5 Flash (High\|Medium\|Low), **Gemini 3.1 Pro (High\|Low)**, plus Claude Sonnet/Opus 4.6 (Thinking) and GPT-OSS 120B | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
 | `mcp__pal__clink(cli_name="codex")` | OpenAI Codex | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s |
+| `mcp__pal__clink(cli_name="cursor")` | Cursor's `cursor-agent` — the widest roster of any client: **Grok 4.5** (xAI), **Composer 2.5**, **Kimi K3 / K2.7 Code** (Moonshot), **GLM 5.2** (Zhipu), plus Opus/Sonnet/Fable, the GPT-5.x line, and Gemini | **Breadth-centric** — the only route to the xAI / Moonshot / Zhipu families | subprocess, `-p` + prompt over stdin | ~25-30s even for a trivial prompt |
 | `mcp__pal__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | **Logic-centric** — reasoning soundness, efficiency, logical consistency | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
 | `mcp__pal__chat(model=<your-provider-model>, ...)` | same model as above, direct PAL route — no clink | **Conceptual-centric** — broad ideas, theory, alternative approaches (non-agentic) | PAL's own provider call | usually faster, no CLI bootstrap overhead |
 | `mcp__pal__clink(cli_name="claude")` | Anthropic Claude | general | subprocess | upstream default preset |
@@ -72,16 +74,46 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 | Back-end | `model` (per call) | `reasoning_effort` (per call) |
 |---|---|---|
 | `codex` | ✅ `-m` — e.g. `gpt-5.6-sol`, `gpt-5.5` (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) |
-| `antigravity` | ✅ `--model "<label>"` — incl. **`Claude Opus 4.6 (Thinking)` / `Sonnet 4.6`** (a non-Google, non-OpenAI heavyweight route) | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
+| `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
+| `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-high`, `composer-2.5`, `gpt-5.6-sol-xhigh`. Authoritative list: `cursor-agent --list-models` | ➖ baked into the model id (`-low` / `-high` / `-xhigh`) |
 | `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
 
 Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
 
 **Brainstorm-specific use:**
 - **Escalate effort on the round that matters, not every call.** Run a cheap first round (`low`/`medium`) to surface positions; then for the **adversarial round** or the final consequential call, push codex to `high`/`max`. The depth lands exactly where the loop needs it.
-- **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. One strong round: `codex` → `gpt-5.6-sol`, `antigravity` → **`Claude Opus 4.6 (Thinking)`**, your gateway model via `claude-9arm` — three genuinely different families in one fan-out. (Caveat: antigravity's Claude/GPT routes drain the faster-burning non-Google quota — see `clink-subagents` token economics.)
+- **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
 - **Steep diminishing returns on effort** — `medium`/`high` is the value sweet spot; reserve `max`/`xhigh` for the single hardest probe. Don't blanket-`max` a 3-agent × 3-round loop (it's a multi-minute, quota-heavy operation for little marginal signal).
 - These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
+
+## Quota routing — pick the client by whose allowance it spends
+
+Most models are now reachable from **more than one client**. Choosing on availability alone quietly drains the scarcest pool first.
+
+**`antigravity` and `cursor` meter the same way: a cheap in-house lane and a faster-draining foreign lane, billed as two independent pools.**
+
+| Client | House lane (cheap) | Foreign lane (drains faster) |
+|---|---|---|
+| `antigravity` | Google — every Gemini model | non-Google — Claude Sonnet/Opus 4.6, GPT-OSS 120B |
+| `cursor` | Cursor Models — *only* `cursor-grok-4.5-*` and `composer-2.5` | Other Models — Opus/Sonnet/Fable, GPT-5.x, Gemini, Kimi, GLM |
+
+Because the lanes are metered separately on **both**, spending a house lane costs its foreign lane nothing. So Gemini on `agy` and Grok 4.5 on `cursor` are **two independent cheap lanes**, and with `codex` on its own subscription you have three before touching anything scarce. (On Cursor the separation is one-way rather than a wall: usage past the Cursor Models limit spills into the Other Models pool or on-demand spend.)
+
+**Refill cadence matters as much as pool size.** Cursor meters **monthly**, with no 5-hour or weekly rolling window — so a burst cannot trip a short-window wall mid-round, and its practical headroom exceeds a rolling-window client's even when the bars look comparably full. Its house lane (Cursor Models) is also allocated the larger share of its two. Clients on rolling windows have to be paced across a long loop; Cursor does not.
+
+The rule that falls out: **prefer each client's house lane, treat both foreign lanes as scarce** — never route a model through a client that carries it only in the foreign lane when another client has it in-house. And when a round is *bursty* — a wide fan-out, or a loop-until-dry that could run many rounds — lean the volume onto Cursor, which cannot wall mid-loop, and spend the rolling-window clients on the calls that most need them.
+
+| Family you want | Ask | Why |
+|---|---|---|
+| Gemini | `antigravity` | agy carries Gemini in-house; `cursor` carries the same models only in its foreign lane. |
+| Grok 4.5 · Composer 2.5 | `cursor` | Their own Cursor Models pool — the cheapest agentic lane you have. |
+| Kimi K3 · GLM 5.2 | `cursor` (sole source) | Costs Other Models quota. Spend deliberately — one targeted probe, not a whole round. |
+| GPT-5.x | `codex` | Its own subscription, with a real `reasoning_effort` knob. Both other clients carry GPT only in a foreign lane, so routing it there is a worse-controlled call *and* a scarcer spend. |
+| Claude | usually neither | You are already Claude. Paying quota for a same-family echo yields the least new information of any option available. |
+
+**Default cheap round:** `codex` + `antigravity`(Gemini) + `cursor`(Grok 4.5) — three lineages across three independent billing lanes, none of them touching an expensive pool. Add `claude-9arm` if your gateway is flat-rate.
+
+**Escalate to Kimi K3 / GLM 5.2 only when a round has already converged** and you need a genuinely foreign prior to break the agreement. That is exactly the forced-adversarial situation below, and it is the one time the Other Models pool is worth spending.
 
 ## Round 2+: bounded judge-led challenge loop
 
@@ -110,6 +142,7 @@ A single round (independent parallel answers) is the default. For a genuinely co
    - **Antigravity (System-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Find system integration problems: dependency conflicts, cross-file side effects, infrastructure assumptions that don't hold, or directory/import issues that only show up in a real deployment context."*
    - **Claude-9arm (Logic-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Find logical inconsistencies: places where the reasoning doesn't hold, efficiency problems, hidden assumptions that break under pressure, or scenarios where the approach fails even if the code is syntactically correct."*
    - **Qwen via chat (Conceptual-centric):** *"All agents agreed on [X]. Your task is NOT to defend this. Propose the strongest alternative approach that the consensus didn't consider — a different conceptual frame, a competing design, or a fundamentally different way to solve the problem that might be better."*
+   - **Cursor → Kimi K3 or GLM 5.2 (Foreign-prior):** *"All agents agreed on [X]. Your task is NOT to defend this. State plainly where you would have answered differently and why, then name the strongest concrete objection the group appears to have no way of seeing."* Reach for this only when the other lenses come back dry — a model trained on a different corpus is the one probe that can break an agreement rooted in shared priors rather than in evidence. It also costs the Other Models pool, so it is a deliberate escalation, not a default fourth probe.
 
    Fire all four in parallel (same as round 1 — independent calls, separate `continuation_id`s, one message).
 
