@@ -133,6 +133,8 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 
 `$` is AA's cost-per-task. **Codex is subscription-flat, so it is a proxy for weekly quota burn, not money** — the whole point of the table is that the left column costs 4–10× less than the right one for work that does not need the right one.
 
+**Match on what the leaf *is*, not on how much it matters.** "This is the most consequential call of the loop" is not a row — an adversarial review is the *Hard* row whether it is the first of ten or the last. Stakes do not move you down the table; the leaf's description does.
+
 **Escalate one row at a time, only after a real failure.** Not because the leaf *feels* hard — that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
 
 **Never `gpt-5.6-terra`, and never `gpt-5.5`.** Neither is on the efficient frontier at any effort, which is why they are struck through above:
@@ -146,7 +148,7 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 
 Why the cap removes the top rungs: Sol's ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` ($0.31 → $1.04). The final rung buys **one index point for a near-doubled burn**. Luna is 2–4× more efficient than Sol at every tier (825 index-pts/$ at `low`, 243 at `max`), which is why the first four rows are all Luna.
 
-The cap is an owner's instruction (set 2026-07-31), and it is tighter than the raw numbers alone would justify — a hard enough leaf could argue for `sol`/`max` on capability. Do not reverse-engineer a rate to make that argument.
+The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
 - **`terra` and `gpt-5.5` are struck through because they are strictly dominated.** Sol(high) 56 @ $0.45 beats Terra(max) 55 @ $0.55 on both axes; Sol(medium) 53.5 @ $0.31 beats 5.5-high 53 @ $0.60. There is no task for which either is the right answer.
 - **Efficiency only matters under quota pressure — but that buys you the *model*, never the tier.** With plenty of allowance left, a genuine one-off hard leaf is a reason to move `luna` → `sol`. It is **not** a reason to go past the effort cap: `xhigh`→`max` is +1 point for a near-doubled burn, which is a bad trade at any budget. Luna's edge is a bulk and quota-conservation argument, not a claim that it is as capable.
 
