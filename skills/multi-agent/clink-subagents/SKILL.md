@@ -7,7 +7,18 @@ description: Delegate a well-scoped chunk of WORK (implementation, refactor, bul
 
 > **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected, with `clink` configured for `codex` and `antigravity`, and optionally `cursor` (see `conf/cli_clients/*.json`; Antigravity needs the [xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server) fork for its ConPTY driver on Windows, and the same fork ships the `cursor` preset). This skill is an orchestration layer on top of `mcp__pal__clink` — it does nothing standalone.
 >
-> **Companion, not overlap:** [`clink-brainstorm`](../clink-brainstorm/SKILL.md) fans a *question* out to many agents to gather *opinions*. **This skill delegates *work* to be *done* and *returned*.** Want a second opinion → brainstorm. Want a subtask executed → here.
+## What this skill is, and what the other one is
+
+Two skills sit on `clink`. They are not variants of each other, and the distinction decides every routing choice below.
+
+| | What it is | What comes back |
+|---|---|---|
+| **`clink-subagents`** — this file | **`clink` used as your subagents.** You hand out chunks of the work and they come back done | **finished work** — an implementation, a refactor, a bulk transform, a first draft, a focused lookup |
+| [**`clink-brainstorm`**](../clink-brainstorm/SKILL.md) | **an engineering committee.** Several senior agents put on the *same* codebase review or the *same* plan, then you synthesize | **judgment** — what is wrong, what to build, which approach wins |
+
+**The consequence for routing, which is where this gets confused:** here you are buying **throughput on verifiable leaves**, so the small model at a cheap tier is usually the right answer and the difficulty table below is how you pick. There you are buying **reasoning**, so it is the reasoning model every time and the small model never appears. **Do not carry a model or effort setting from one skill into the other.**
+
+Want a subtask executed → here. Want a design judged or a codebase reviewed by a panel → brainstorm.
 
 ## The core idea
 
@@ -18,7 +29,7 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 **Delegate** a subtask that is:
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it.
-- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time.
+- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo.
 - Good fits: a well-specified function/module, a mechanical refactor across a known site, a bulk format/transform, a first-draft you'll review, focused external-doc research/summarization.
 
 **Never delegate** (keep it yourself):
@@ -31,9 +42,11 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 
 Grounded in **[Artificial Analysis](https://artificialanalysis.ai/models)** indices (2026-07) + a local benchmark. Scores: **Coding Index / Agentic Index**.
 
+> **Scale note — do not mix the two scales in this skill.** The `71–77` / `45–54` figures in the table below are the **Coding Index / Agentic Index**, an older sub-index. The `32–59` figures in the GPT-5.6 ladder further down are the **AA Intelligence Index v4.1**, a composite of nine evals where the frontier is ≈ 60. A number from one is not comparable to a number from the other, and averaging or ranking across them produces a false ordering. Higher is better on both — that is all they share. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md`, scale note — in the `xeno-skills` repo. **Research is not shipped with the installed skill**, so the figures reproduced here are the reader's copy of record, not a link to follow.)*
+
 | Agent (`cli_name`) | Backend | Coding | Agentic | Delegate to it… | Guardrail |
 |---|---|---|---|---|---|
-| **`codex`** | GPT-5.6 (Sol/Terra/Luna) | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, focused code review, in-place edits of a known file | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. |
+| **`codex`** | GPT-5.6 — **`sol` and `luna`**; **skip `terra` and `gpt-5.5`, they are dominated** (see the ladder below). Luna access is per-account and the research note says to verify it: an unavailable model hard-400s, so a failed `-m gpt-5.6-luna` call *is* the check | **71–77 (top tier)** | **45–54 (top tier)** | Harder self-contained coding, edge-case-y implementation, in-place edits of a known file. **Not reviews or design judgment — those are [`clink-brainstorm`](../clink-brainstorm/SKILL.md)** | Elite *model*, but its **agentic harness is the weaker link** — it can mishandle multi-step tool/state workflows. Give a tight spec; **verify the output**. **Model and effort are not free choices here** — there is a standing cap in the ladder section, and a read-heavy call runs **400–530s**, not the ~30s bootstrap figure above. |
 | **`antigravity`** | Gemini 3.x (`agy`) | 68–70 (ok) | **21–37 (weak)** ⚠️ | ONLY simple, **single-shot**, single-file, trivially-verifiable **artifact** tasks — a pure function, boilerplate, one format/transform, a focused lookup | **Weak at multi-step agentic** — never give it work where a wrong early step compounds. **Headless it could once *write* files but not *run* anything** (command tools auto-denied) — re-verify before relying on that, it has moved: a headless file read now succeeds, and `role: codereviewer` returns a real severity-graded review rather than the permission error it used to. Still prefer **artifact mode** for anything you must trust, and verify yourself. Chatty: appends a `<SUMMARY>` block even when told "output only X" — strip it. **Fragile in a way unrelated to models:** every run does an eligibility check that fetches your Google profile picture, so a transient network failure to `googleusercontent.com` exits 1 mid-session with `Eligibility check failed` — retry rather than debug. |
 | **`cursor`** | Widest roster of any client — Grok 4.5, Composer 2.5, Kimi K3 / K2.7 Code, GLM 5.2, Opus/Sonnet/Fable, GPT-5.x, Gemini | varies by model | **untested here** | Leaves where the *model family* is the point — a foreign-prior second opinion, or a lineage no other client carries (xAI / Moonshot / Zhipu) | **Not on the local ladder below** — treat any given model's agentic reliability as unknown until you test it yourself. **On Windows, confirm its config overrides `env.SHELL` before delegating anything that must touch a file** (see gotchas) — a bash `SHELL` inherited from the caller kills every tool silently and it degrades to a text-only responder. Floor latency ~25–30s even for a one-line prompt. Its quota splits in a way that changes routing — see economics. |
 | **you (orchestrator)** | e.g. Claude Opus 4.8 | ~74 | ~47 | — | Decompose, integrate, verify. Delegate the leaves, own the tree. |
@@ -102,7 +115,47 @@ This [PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional 
 | **`cursor`** (Cursor's `cursor-agent`) | ✅ `--model <id>` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ no separate flag — effort is **baked into the model id**, and **the ladder is per-model, not a fixed set** — do not assume a suffix exists (see below) | `-p` here is a **boolean** flag, so unlike `agy --print` it does **not** swallow `--model` — no ordering hazard. The `-max` suffix is the effort tier, **not** Cursor's Max Mode — that is separate persisted state, see gotchas. |
 | **`claude-9arm`** (Claude Code → a gateway model, e.g. Qwen) | ✅ `--model` (last-wins) — **limited to what the gateway serves** | ❌ **no-op** — not a `claude`/gateway flag (this Qwen gateway has only thinking on/off, no graded effort) | Activate by copying `claude-9arm.json.example` → `.json` with your `claude.exe` + `--settings`/`--model`. |
 
-Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`). Effort has steep diminishing returns — `medium`/`high` is the sweet spot; reserve `max`/`xhigh` for the hardest leaf.
+Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml`; others use their client `additional_args`).
+
+### The GPT-5.6 ladder — and the cap on it
+
+Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. These are AA Intelligence Index v4.1 scores at AA's cost-per-task. **Codex is subscription-flat, so `$` is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md` in the `xeno-skills` repo, not shipped here.)*
+
+| Model | low | medium | high | xhigh | max |
+|---|---|---|---|---|---|
+| **`gpt-5.6-sol`** | 49.5 ($0.20) | 53.5 ($0.31) | **56 ($0.45)** | 58 ($0.68) | 59 ($1.04) |
+| **`gpt-5.6-luna`** | 33 ($0.04) | 38 ($0.05) | **46 ($0.09)** | **49 ($0.10)** | 51 ($0.21) |
+
+`gpt-5.6-terra` and `gpt-5.5` are deliberately absent — see the skip rule below.
+
+### Pick by task difficulty — this table is the answer
+
+Read down until a row describes your leaf, then stop. **Set both `model` and `reasoning_effort` explicitly on every codex call** — the config default is `sol` at `medium`, which is two rungs above where most work belongs.
+
+| Your leaf | `model` | `reasoning_effort` | Index | Burn |
+|---|---|---|---|---|
+| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33 | $0.04 |
+| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38 | $0.05 |
+| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46 | $0.09 |
+| **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49 | $0.10 |
+| **Hard** — subtle correctness, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.5 | $0.31 |
+| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 56 | $0.45 |
+
+**The rungs outside the table, and why each is out:** `max` is off both models; `xhigh` exists on Luna only, never on Sol; and Sol `low` is excluded as a bad trade, not because it is dominated — 49.5 @ $0.20 against Luna `xhigh`'s 49 @ $0.10 is half an index point for twice the burn. Those four exclusions plus the six rows above are the complete set; there is no seventh option to reach for.
+
+**Reviews and judgment are not on this table at all.** Deciding whether code is correct, which design wins, or what is wrong with a plan is [`clink-brainstorm`](../clink-brainstorm/SKILL.md)'s job, and it uses `gpt-5.6-sol` for all of it. This table is for **work handed out to be done** — nothing on it is a substitute for a panel.
+
+`$` is AA's cost-per-task. **Codex is subscription-flat, so it is a proxy for weekly quota burn, not money** — the point of the table is that the Luna rows burn roughly **3× to 11× less** than the Sol rows ($0.04–$0.10 against $0.31–$0.45) for work that does not need Sol.
+
+**Pick the row by what the leaf *is*; escalate only after it actually failed.** Those are two separate steps and neither substitutes for the other. First selection is by description — stakes are not a row, and "this call really matters" moves you nowhere. Then, if that row came back wrong or thin, move down exactly one row and retry. Never open on a lower row because the leaf *feels* hard: that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
+
+**Never `gpt-5.6-terra` and never `gpt-5.5`** — every rung of both is strictly dominated, so they are left out of the table rather than listed as options. Terra's *best* rung, `max` 55 @ $0.55, loses to **Sol `high` 56 @ $0.45** on both axes; every lower Terra rung falls the same way (`low` 40.5 @ $0.10 against Luna `high` 46 @ $0.09 — higher *and* cheaper); and 5.5 `high` 53 @ $0.60 loses to **Sol `medium` 53.5 @ $0.31**.
+
+Why the cap removes Sol's top rungs: the ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` ($0.31 → $1.04). The final rung buys **one index point for about 1.5× the burn** ($0.68 → $1.04). And Luna returns **3.3× to 5.7× more index per unit of burn than Sol at the same tier** (825 vs 248 pts/$ at `low`, 490 vs 85 at `xhigh`, 243 vs 57 at `max`), which is why the first four rows are all Luna.
+
+The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
+
+Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, and Sol's `low`/`medium` figures are interpolated rather than published. Re-fetch before leaning on a 1–2 point gap.
 
 **Cursor's ladders are per-model — derive them, don't guess.** There is no fixed tier set and no structured catalog to query: `serverConfigCache` in `~/.cursor/cli-config.json` holds only backend URLs, and the real catalog is buried in a minified 3.7 MB bundle. The one machine-readable source is `cursor-agent --list-models`, where the knobs are encoded in the id suffixes. [`references/cursor-params.py`](../clink-brainstorm/references/cursor-params.py) peels the suffix vocabulary off each id and regroups; run it whenever Cursor ships new models. A measured run gave **193 ids → 31 base models**, and the ladders are genuinely irregular:
 

@@ -9,6 +9,19 @@ description: Fan out a question to multiple independent AI agents (Gemini/Antigr
 
 Drive 3+ independent AI agents on the **same well-specified question**, then synthesize the answers yourself into one recommendation. This is "manual consensus" — PAL's native `consensus` tool cannot mix clink CLI agents with its own model provider roster, so the orchestration is done by hand, here.
 
+## What this skill is, and what the other one is
+
+Two skills sit on `clink`. They are not variants of each other, and the distinction decides every routing choice below.
+
+| | What it is | What comes back |
+|---|---|---|
+| **`clink-brainstorm`** — this file | **an engineering committee.** Several senior agents put on the *same* codebase review or the *same* plan, then you synthesize | **judgment** — what is wrong, what to build, which approach wins |
+| [**`clink-subagents`**](../clink-subagents/SKILL.md) | **`clink` used as your subagents.** You hand out chunks of the work and they come back done | **finished work** — an implementation, a refactor, a bulk transform, a first draft, a focused lookup |
+
+**The consequence for routing, which is where this gets confused:** a panel's deliverable is reasoning, so **it takes the reasoning model every time** — `gpt-5.6-sol` at `medium`/`high`, and the small model that `clink-subagents` leans on has no place here. There you are buying throughput on verifiable leaves, which is a different purchase. **Do not carry a model or effort setting from one skill into the other.**
+
+Want a design judged or a codebase reviewed by a panel → here. Want a subtask executed → `clink-subagents`.
+
 ## Prerequisites
 
 This skill assumes [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server) is installed and connected as an MCP server, with its `clink` tool configured for at least two independent CLI agents. Out of the box, upstream PAL ships `gemini`, `claude`, and `codex` presets in `conf/cli_clients/`.
@@ -25,7 +38,7 @@ None of this is required to use the skill — two or three agents from any mix o
 | Call | Backend model | Cognitive lens | Mechanism | Typical latency |
 |---|---|---|---|---|
 | `mcp__pal__clink(cli_name="antigravity")` | Gemini via Google's `agy`. Roster: Gemini 3.6 / 3.5 Flash (High\|Medium\|Low), **Gemini 3.1 Pro (High\|Low)**, plus Claude Sonnet/Opus 4.6 (Thinking) and GPT-OSS 120B | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
-| `mcp__pal__clink(cli_name="codex")` | OpenAI Codex | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s |
+| `mcp__pal__clink(cli_name="codex")` | OpenAI Codex — **`gpt-5.6-sol` only here**, at `medium`/`high` | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s for a trivial prompt, but **400-530s for a read-heavy round** against a real repo (measured 2026-07-31, recorded in `xeno-skills` issue #55) — budget minutes, not seconds |
 | `mcp__pal__clink(cli_name="cursor")` | Cursor's `cursor-agent` — the widest roster of any client: **Grok 4.5** (xAI), **Composer 2.5**, **Kimi K3 / K2.7 Code** (Moonshot), **GLM 5.2** (Zhipu), plus Opus/Sonnet/Fable, the GPT-5.x line, and Gemini | **Breadth-centric** — the only route to the xAI / Moonshot / Zhipu families | subprocess, `-p` + prompt over stdin; on Windows genuinely agentic **only if its config overrides `env.SHELL`** — a bash `SHELL` inherited from the caller makes its tools fail silently and it degrades to a text-only responder (see `clink-subagents` gotchas) | ~25-30s even for a trivial prompt |
 | `mcp__pal__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | **Logic-centric** — reasoning soundness, efficiency, logical consistency | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
 | `mcp__pal__chat(model=<your-provider-model>, ...)` | same model as above, direct PAL route — no clink | **Conceptual-centric** — broad ideas, theory, alternative approaches (non-agentic) | PAL's own provider call | usually faster, no CLI bootstrap overhead |
@@ -73,7 +86,7 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 
 | Back-end | `model` (per call) | `reasoning_effort` (per call) |
 |---|---|---|
-| `codex` | ✅ `-m` — e.g. `gpt-5.6-sol`, `gpt-5.5` (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` (reasoning tokens scale with it) |
+| `codex` | ✅ `-m` — **`gpt-5.6-sol` for every brainstorm round** (the panel's output is reasoning; the small model is a `clink-subagents` instrument) (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` — **`medium` by default, `high` for the round that matters; `xhigh` and `max` are past the value cliff** |
 | `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
 | `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ baked into the model id, **ladder differs per model** — derive it with [`references/cursor-params.py`](references/cursor-params.py) rather than assuming a suffix exists |
 | `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
@@ -81,9 +94,13 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
 
 **Brainstorm-specific use:**
-- **Escalate effort on the round that matters, not every call.** Run a cheap first round (`low`/`medium`) to surface positions; then for the **adversarial round** or the final consequential call, push codex to `high`/`max`. The depth lands exactly where the loop needs it.
-- **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
-- **Steep diminishing returns on effort** — `medium`/`high` is the value sweet spot; reserve `max`/`xhigh` for the single hardest probe. Don't blanket-`max` a 3-agent × 3-round loop (it's a multi-minute, quota-heavy operation for little marginal signal).
+- **Codex here is `gpt-5.6-sol` at `medium`, escalating to `high` for the round that matters. Nothing below, nothing above.** `medium` (53.5) to surface positions; `high` (56) for the adversarial round or the final consequential call.
+
+  **Why there is no small-model option here.** This skill convenes a panel of engineers to review a codebase or judge a plan — **the deliverable is reasoning**, so it takes the reasoning model. `gpt-5.6-luna` is a `clink-subagents` instrument, for when clink is doing *work*; a round whose entire output is judgment has nothing to gain from it.
+
+  **Why the range stops at `high`.** Marginal index per unit of quota collapses past it. On Sol: `low`→`medium` buys **+4 for $0.11** (36 pts/$), `medium`→`high` buys **+2.5 for $0.14** (18 pts/$) — then `high`→`xhigh` buys +2 for $0.23 (9 pts/$), and `xhigh`→`max` buys **+1 for $0.36** (2.8 pts/$), **about a thirteenth the return of the first step**. Over a 3-round loop that is nine calls, and moving *the codex seat alone* from `medium` to `max` multiplies **its** burn by 3.4× ($0.31 → $1.04 per call) for +5.5 index points — the other seats are unaffected, so this is a codex-lane cost, not a loop-wide one. Figures from `docs/research/2026-07-16-model-effort-capability-matrix.md` in the skills repo; full ladder in `clink-subagents`.
+- **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol` at `medium`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
+- **Steep diminishing returns on effort, with numbers.** On `gpt-5.6-sol` the ladder is 53.5 → 56 → 58 → **59** across `medium`/`high`/`xhigh`/`max`, while quota burn more than triples ($0.31 → $1.04 of AA cost-proxy). The last rung is **+1 index point for about 1.5× the burn** ($0.68 → $1.04), which is why `medium`/`high` is the whole usable range and `xhigh`/`max` are capped out. Blanket-`max` on a 3-agent × 3-round loop is a multi-minute, quota-heavy operation for almost no marginal signal.
 - **Don't assume a higher tier buys accuracy — measure it on your own tasks.** A same-prompt A/B on `cursor-grok-4.5-low` vs `-high` (two probes: a 6-step modular-arithmetic chain, and "list every defect a caller could hit" on a function that sorts its argument in place) produced **no observable difference**: both tiers got the arithmetic right, both led their defect list with the in-place mutation, and latency overlapped (46–55s either way). Note the ceiling that test was working against — Grok 4.5's ladder stops at `high`, so it was the shortest ladder available. Treat the result as scoped: *no difference on mid-difficulty work at the top of a 3-rung ladder*, not evidence the knob is inert. The house-lane models are exactly the ones with short ladders, so a test that would actually separate the tiers costs the foreign lane.
 - These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
 
