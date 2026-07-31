@@ -9,6 +9,19 @@ description: Fan out a question to multiple independent AI agents (Gemini/Antigr
 
 Drive 3+ independent AI agents on the **same well-specified question**, then synthesize the answers yourself into one recommendation. This is "manual consensus" — PAL's native `consensus` tool cannot mix clink CLI agents with its own model provider roster, so the orchestration is done by hand, here.
 
+## What this skill is, and what the other one is
+
+Two skills sit on `clink`. They are not variants of each other, and the distinction decides every routing choice below.
+
+| | What it is | What comes back |
+|---|---|---|
+| **`clink-brainstorm`** — this file | **an engineering committee.** Several senior agents put on the *same* codebase review or the *same* plan, then you synthesize | **judgment** — what is wrong, what to build, which approach wins |
+| [**`clink-subagents`**](../clink-subagents/SKILL.md) | **`clink` used as your subagents.** You hand out chunks of the work and they come back done | **finished work** — an implementation, a refactor, a bulk transform, a first draft, a focused lookup |
+
+**The consequence for routing, which is where this gets confused:** a panel's deliverable is reasoning, so **it takes the reasoning model every time** — `gpt-5.6-sol` at `medium`/`high`, and the small model that `clink-subagents` leans on has no place here. There you are buying throughput on verifiable leaves, which is a different purchase. **Do not carry a model or effort setting from one skill into the other.**
+
+Want a design judged or a codebase reviewed by a panel → here. Want a subtask executed → `clink-subagents`.
+
 ## Prerequisites
 
 This skill assumes [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server) is installed and connected as an MCP server, with its `clink` tool configured for at least two independent CLI agents. Out of the box, upstream PAL ships `gemini`, `claude`, and `codex` presets in `conf/cli_clients/`.

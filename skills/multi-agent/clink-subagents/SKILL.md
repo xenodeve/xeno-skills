@@ -7,7 +7,18 @@ description: Delegate a well-scoped chunk of WORK (implementation, refactor, bul
 
 > **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected, with `clink` configured for `codex` and `antigravity`, and optionally `cursor` (see `conf/cli_clients/*.json`; Antigravity needs the [xenodeve/pal-mcp-server](https://github.com/xenodeve/pal-mcp-server) fork for its ConPTY driver on Windows, and the same fork ships the `cursor` preset). This skill is an orchestration layer on top of `mcp__pal__clink` — it does nothing standalone.
 >
-> **Companion, not overlap:** [`clink-brainstorm`](../clink-brainstorm/SKILL.md) fans a *question* out to many agents to gather *opinions*. **This skill delegates *work* to be *done* and *returned*.** Want a second opinion → brainstorm. Want a subtask executed → here.
+## What this skill is, and what the other one is
+
+Two skills sit on `clink`. They are not variants of each other, and the distinction decides every routing choice below.
+
+| | What it is | What comes back |
+|---|---|---|
+| **`clink-subagents`** — this file | **`clink` used as your subagents.** You hand out chunks of the work and they come back done | **finished work** — an implementation, a refactor, a bulk transform, a first draft, a focused lookup |
+| [**`clink-brainstorm`**](../clink-brainstorm/SKILL.md) | **an engineering committee.** Several senior agents put on the *same* codebase review or the *same* plan, then you synthesize | **judgment** — what is wrong, what to build, which approach wins |
+
+**The consequence for routing, which is where this gets confused:** here you are buying **throughput on verifiable leaves**, so the small model at a cheap tier is usually the right answer and the difficulty table below is how you pick. There you are buying **reasoning**, so it is the reasoning model every time and the small model never appears. **Do not carry a model or effort setting from one skill into the other.**
+
+Want a subtask executed → here. Want a design judged or a codebase reviewed by a panel → brainstorm.
 
 ## The core idea
 
