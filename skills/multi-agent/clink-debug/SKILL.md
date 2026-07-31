@@ -1,23 +1,25 @@
 ---
 name: clink-debug
-description: Sequence clink-subagents and clink-brainstorm into one evidence-carrying bug hunt, for a failure that has ALREADY survived a delegated pass. Enforces that no agent which produced a hypothesis may falsify or repair it, and defines the artifact that must pass between phases. Invoke deliberately when a bug is still open after one worker looked at it, when two agents disagree about a cause, or when a fix landed and the symptom came back. A bug nobody has looked at yet does NOT come here — it goes to clink-subagents with debug-mantra, which closes most of them.
+description: The single home for delegating a bug hunt to clink agents — read it before sending any failure to clink-subagents or clink-brainstorm, not only a bug that already survived a pass. It routes a small bug to one cheap worker and escalates only what survives, defines the evidence that must travel with it, and enforces that no agent which produced a hypothesis may falsify or repair it. Use when a bug is about to be delegated, is still open after a worker looked at it, has two agents disagreeing about its cause, or came back after a fix landed.
 ---
 
 # clink-debug
 
 > **Requires the same PAL MCP setup as [`clink-subagents`](../clink-subagents/SKILL.md) and [`clink-brainstorm`](../clink-brainstorm/SKILL.md).** This skill adds no new call shape — it sequences those two and constrains who may sit in which phase. Read whichever of them you are about to use for its own rules; this file does not repeat them.
 
-## Do not start here
+## Start cheap — most bugs end here
 
-**One worker plus `debug-mantra` closes most bugs.** That is [`clink-subagents`](../clink-subagents/SKILL.md), it costs one cheap call, and reaching past it is the most common way to waste an afternoon.
+**One worker plus `debug-mantra` closes most bugs.** Delegate it through [`clink-subagents`](../clink-subagents/SKILL.md), give the worker `debug-mantra` and `karpathy-guidelines`, and send it the **failing command with its actual output** — never a description of them, because a worker handed a description diagnoses the description.
 
-Come here only when one of these is true:
+**Do not convene a panel for this.** Three senior agents tracing a one-file failure burns three lanes to answer what one worker can, and it is the most common way to waste an afternoon. It also gets the care backwards: if the discipline only rides along with a panel, it reaches only bugs big enough to justify one — and **the small bug is the one people guess at.**
+
+Escalate past the cheap path only when one of these is true:
 
 - a delegated pass returned and **the bug is still open**
 - **two agents disagree about the cause**, or one produced a cause nobody reproduced
 - a fix landed, and **the symptom came back**
 
-If none of them is true, go back and run the cheap path first. What you learn there is the input this skill needs anyway.
+What the cheap pass produced is the input the rest of this file needs anyway, so nothing is wasted by starting there.
 
 ## What this file owns, and what it deliberately does not
 
@@ -42,6 +44,8 @@ It owns none of the debugging discipline itself. That is already written and is 
 | **Decide** — did it survive | **you.** Panel agreement is not verification | — |
 | **Repair** | `clink-subagents` with `tdd` | **fresh seat** |
 | **Close** — re-run the repro, then the suite | **you** | — |
+
+**Every seat in Observe and Falsify gets `debug-mantra`**, panel seats included. A panel asked to explain a failure without it returns confident causes nobody reproduced — and **the more seats agree on a wrong cause, the harder it is to reopen.** That is worse than no answer, because a plausible wrong cause ends the investigation.
 
 **Promote, Decide and Close never leave you.** They are the three points where a wrong answer becomes the premise of everything after it.
 
