@@ -88,6 +88,8 @@ So routing `antigravity` to a Claude/GPT route (e.g. for a non-OpenAI second opi
 
 **Cursor's allowance is monthly — no 5-hour or weekly rolling window.** That makes it the right home for *bursty* delegation: a wide parallel fan-out, or a long loop, cannot hit a short-window wall part-way through and strand the batch. Its house lane also carries the larger of its two allocations. Where a client meters on a rolling window you have to pace a long run; on Cursor you don't — so push repeated bulk volume there and save the rolling-window clients for the leaves that specifically need them.
 
+**One client can run several workers at once, on both of its pools.** `cli_name` names the **client**, not the model: several `clink` calls with the *same* `cli_name` and different `model` values, in one message, run in parallel. So a fan-out is not capped at one worker per configured client — `cursor`→Grok draws the house lane while `cursor`→Kimi K3 draws the foreign one, and both run at the same time instead of queueing on a single allowance. **Kimi K3 and GLM 5.2 share the same foreign pool**, so running both drains it twice; that is a deliberate spend, not free breadth.
+
 Net routing across all clients: **Gemini via `agy`** (in-house there) · **Grok / Composer via `cursor`** (in-house there) · **GPT-5.x via `codex`** (own subscription, plus a real effort knob) · **Kimi K3 / GLM 5.2 via `cursor`** only when a foreign prior is the actual point. Never pick a client merely because it carries the model — pick it by which allowance the call draws down, preferring whichever client carries that model in-house.
 
 ## How to delegate (the call)
