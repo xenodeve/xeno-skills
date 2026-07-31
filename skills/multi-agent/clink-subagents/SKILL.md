@@ -63,7 +63,7 @@ Measured 2026-07-16 (same tasks, a live repo). The back-ends are **billed differ
 
 - **You (the orchestrator)** are the only **metered, context-window-bound** token pool — the scarce one.
 - **`codex` / `antigravity` are subscription** — flat, **rate-limited**, not per-token-billed.
-- **A local model** (e.g. Qwen via `claude-9arm` — see the `qwen-agent` skill) is **unlimited + $0**: its tokens cost only electricity + latency.
+- **A local model** (e.g. Qwen via `claude-9arm` — see the `qwen-agent` skill) is **unlimited and free**: its tokens cost only electricity + latency.
 
 So **"cheaper" = fewer of *your* tokens**, and delegation wins whenever `(what you'd read + reason yourself) > (prompt + result you ingest + verification)`. Big-input / small-output / cheaply-verifiable → delegate. A 2-line edit in a file already in your context → do it yourself; the round-trip costs more of *your* tokens than the edit.
 
@@ -119,12 +119,14 @@ Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml
 
 ### The GPT-5.6 ladder — and the cap on it
 
-Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. These are AA Intelligence Index v4.1 scores at AA's cost-per-task. **Codex is subscription-flat, so `$` is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md` in the `xeno-skills` repo, not shipped here.)*
+Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. Scores are AA Intelligence Index v4.1; the figure in brackets is **AA cost-per-task in USD**. **Codex is subscription-flat, so that figure is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md` in the `xeno-skills` repo, not shipped here.)*
+
+> **Every amount in this file is deliberately written without a currency sign — do not add one back.** Loading a skill as a slash command with arguments performs shell-style positional substitution: a dollar sign followed by a digit is replaced by the corresponding word of those arguments. Written the natural way, the entire ladder below rendered as `ตัว.20` / `skill.04` in a live invocation — a plausible-looking table carrying no cost information at all, with nothing to signal it.
 
 | Model | low | medium | high | xhigh | max |
 |---|---|---|---|---|---|
-| **`gpt-5.6-sol`** | 49.5 ($0.20) | 53.5 ($0.31) | **56 ($0.45)** | 58 ($0.68) | 59 ($1.04) |
-| **`gpt-5.6-luna`** | 33 ($0.04) | 38 ($0.05) | **46 ($0.09)** | **49 ($0.10)** | 51 ($0.21) |
+| **`gpt-5.6-sol`** | 49.5 (0.20) | 53.5 (0.31) | **56 (0.45)** | 58 (0.68) | 59 (1.04) |
+| **`gpt-5.6-luna`** | 33 (0.04) | 38 (0.05) | **46 (0.09)** | **49 (0.10)** | 51 (0.21) |
 
 `gpt-5.6-terra` and `gpt-5.5` are deliberately absent — see the skip rule below.
 
@@ -134,24 +136,24 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 
 | Your leaf | `model` | `reasoning_effort` | Index | Burn |
 |---|---|---|---|---|
-| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33 | $0.04 |
-| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38 | $0.05 |
-| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46 | $0.09 |
-| **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49 | $0.10 |
-| **Hard** — subtle correctness, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.5 | $0.31 |
-| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 56 | $0.45 |
+| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33 | 0.04 |
+| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38 | 0.05 |
+| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46 | 0.09 |
+| **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49 | 0.10 |
+| **Hard** — subtle correctness, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.5 | 0.31 |
+| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 56 | 0.45 |
 
-**The rungs outside the table, and why each is out:** `max` is off both models; `xhigh` exists on Luna only, never on Sol; and Sol `low` is excluded as a bad trade, not because it is dominated — 49.5 @ $0.20 against Luna `xhigh`'s 49 @ $0.10 is half an index point for twice the burn. Those four exclusions plus the six rows above are the complete set; there is no seventh option to reach for.
+**The rungs outside the table, and why each is out:** `max` is off both models; `xhigh` exists on Luna only, never on Sol; and Sol `low` is excluded as a bad trade, not because it is dominated — 49.5 @ 0.20 against Luna `xhigh`'s 49 @ 0.10 is half an index point for twice the burn. Those four exclusions plus the six rows above are the complete set; there is no seventh option to reach for.
 
 **Reviews and judgment are not on this table at all.** Deciding whether code is correct, which design wins, or what is wrong with a plan is [`clink-brainstorm`](../clink-brainstorm/SKILL.md)'s job, and it uses `gpt-5.6-sol` for all of it. This table is for **work handed out to be done** — nothing on it is a substitute for a panel.
 
-`$` is AA's cost-per-task. **Codex is subscription-flat, so it is a proxy for weekly quota burn, not money** — the point of the table is that the Luna rows burn roughly **3× to 11× less** than the Sol rows ($0.04–$0.10 against $0.31–$0.45) for work that does not need Sol.
+**Burn** is AA cost-per-task in USD, and since codex is subscription-flat it is a proxy for weekly quota burn, not money — the point of the table is that the Luna rows burn roughly **3× to 11× less** than the Sol rows (0.04–0.10 against 0.31–0.45) for work that does not need Sol.
 
 **Pick the row by what the leaf *is*; escalate only after it actually failed.** Those are two separate steps and neither substitutes for the other. First selection is by description — stakes are not a row, and "this call really matters" moves you nowhere. Then, if that row came back wrong or thin, move down exactly one row and retry. Never open on a lower row because the leaf *feels* hard: that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
 
-**Never `gpt-5.6-terra` and never `gpt-5.5`** — every rung of both is strictly dominated, so they are left out of the table rather than listed as options. Terra's *best* rung, `max` 55 @ $0.55, loses to **Sol `high` 56 @ $0.45** on both axes; every lower Terra rung falls the same way (`low` 40.5 @ $0.10 against Luna `high` 46 @ $0.09 — higher *and* cheaper); and 5.5 `high` 53 @ $0.60 loses to **Sol `medium` 53.5 @ $0.31**.
+**Never `gpt-5.6-terra` and never `gpt-5.5`** — every rung of both is strictly dominated, so they are left out of the table rather than listed as options. Terra's *best* rung, `max` 55 @ 0.55, loses to **Sol `high` 56 @ 0.45** on both axes; every lower Terra rung falls the same way (`low` 40.5 @ 0.10 against Luna `high` 46 @ 0.09 — higher *and* cheaper); and 5.5 `high` 53 @ 0.60 loses to **Sol `medium` 53.5 @ 0.31**.
 
-Why the cap removes Sol's top rungs: the ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` ($0.31 → $1.04). The final rung buys **one index point for about 1.5× the burn** ($0.68 → $1.04). And Luna returns **3.3× to 5.7× more index per unit of burn than Sol at the same tier** (825 vs 248 pts/$ at `low`, 490 vs 85 at `xhigh`, 243 vs 57 at `max`), which is why the first four rows are all Luna.
+Why the cap removes Sol's top rungs: the ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` (0.31 → 1.04). The final rung buys **one index point for about 1.5× the burn** (0.68 → 1.04). And Luna returns **3.3× to 5.7× more index per unit of burn than Sol at the same tier** (825 vs 248 pts per cost unit at `low`, 490 vs 85 at `xhigh`, 243 vs 57 at `max`), which is why the first four rows are all Luna.
 
 The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
 
