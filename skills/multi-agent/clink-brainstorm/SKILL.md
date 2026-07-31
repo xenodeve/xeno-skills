@@ -139,6 +139,12 @@ The rule that falls out: **prefer each client's house lane, treat both foreign l
 | GPT-5.x | `codex` | Its own subscription, with a real `reasoning_effort` knob. Both other clients carry GPT only in a foreign lane, so routing it there is a worse-controlled call *and* a scarcer spend. |
 | Claude | usually neither | You are already Claude. Paying quota for a same-family echo yields the least new information of any option available. |
 
+**One client fills several seats — a panel's width is bounded by models, not by clients.** `cli_name` names the **client**, not the model. Several `clink` calls with the *same* `cli_name` and different `model` values, in one message, run in parallel. `cursor` alone reaches Grok 4.5, Composer 2.5, Kimi K3, GLM 5.2, the GPT-5.x line, Gemini and the Claude family; `antigravity` reaches every Gemini plus Claude Sonnet/Opus 4.6 and GPT-OSS 120B. **Grok 4.5 + Kimi K3 + GLM 5.2 is one message and three genuinely different lineages, all through `cursor`.**
+
+It compounds with the pool split above: `cursor`→Grok spends the house lane while `cursor`→Kimi K3 spends the foreign one, so **a single client draws on two independent pools in the same round.** The house-lane preference is unchanged — it still decides *which* client a given model should be reached through.
+
+**The caution that rides with it:** Kimi K3 and GLM 5.2 share the **same** foreign pool, so calling both in one round drains it twice rather than once from each of two. Spend a foreign lane when a different vendor's prior is the actual point, never to pad a seat count.
+
 **Default cheap round:** `codex` + `antigravity`(Gemini) + `cursor`(Grok 4.5) — three lineages across three independent billing lanes, none of them touching an expensive pool. Add `claude-9arm` if your gateway is flat-rate.
 
 **Escalate to Kimi K3 / GLM 5.2 only when a round has already converged** and you need a genuinely foreign prior to break the agreement. That is exactly the forced-adversarial situation below, and it is the one time the Other Models pool is worth spending.
