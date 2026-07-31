@@ -200,7 +200,7 @@ If your backends ride flat-rate subscriptions you're already paying for (rather 
 
 You can make a clink agent follow one of your own skill's rules for a task — useful when you want it held to the same discipline (a style guide, a refuse-gate, a checklist) rather than answering freely.
 
-**One standing default: when the round's question is *why is this broken*, every seat gets `debug-mantra`.** A panel asked to explain a failure without it returns confident causes nobody reproduced, and that is worse than no answer — a plausible wrong cause ends the investigation, and the more seats agree on it the harder it is to reopen. Send the **failing command and its actual output**, not a description of them; a seat handed a description diagnoses the description. Note that a small bug does not need a panel at all — one worker with the same skill is the cheaper instrument, and [`clink-subagents`](../clink-subagents/SKILL.md) covers that case.
+**If the round's question is *why is this broken*, stop and read [`clink-debug`](../clink-debug/SKILL.md) first.** It owns every rule about hunting a bug across these skills — which seats may sit in a falsification round, what evidence must reach them, and when a panel is the wrong instrument entirely. Convening one from here without it is how a panel returns a confident cause nobody reproduced.
 
 **Self-discovery is unreliable — don't rely on it.** Telling an agent "use the Skill tool to invoke X" produces inconsistent results because most clink agents have no skill system of their own that maps to yours:
 - Some agentic CLIs with full filesystem access may go find and read your skill file on their own initiative if asked to.
