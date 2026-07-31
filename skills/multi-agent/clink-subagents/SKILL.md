@@ -155,7 +155,7 @@ Why the cap removes Sol's top rungs: the ladder gains **+4, +2.5, +2, +1** acros
 
 The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
 
-Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, Sol's `low`/`medium` figures are interpolated rather than published, and a model can trail on a specific axis while leading the composite — for agentic tool-loops check Terminal-Bench, not the composite. Re-fetch before leaning on a 1–2 point gap.
+Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, and Sol's `low`/`medium` figures are interpolated rather than published. Re-fetch before leaning on a 1–2 point gap.
 
 **Cursor's ladders are per-model — derive them, don't guess.** There is no fixed tier set and no structured catalog to query: `serverConfigCache` in `~/.cursor/cli-config.json` holds only backend URLs, and the real catalog is buried in a minified 3.7 MB bundle. The one machine-readable source is `cursor-agent --list-models`, where the knobs are encoded in the id suffixes. [`references/cursor-params.py`](../clink-brainstorm/references/cursor-params.py) peels the suffix vocabulary off each id and regroups; run it whenever Cursor ships new models. A measured run gave **193 ids → 31 base models**, and the ladders are genuinely irregular:
 
