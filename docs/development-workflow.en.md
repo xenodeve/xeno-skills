@@ -94,3 +94,47 @@ graph TD
 - **B (native):** the repo is a Claude Code plugin (`.claude-plugin/` + `hooks/`) — installing it registers the hooks.
 - **A (universal):** `t4-project-bootstrap` writes the same hooks into each repo's committed `.claude/` — they travel via git without the plugin.
 - Both share a per-session lock to avoid double-injection; a byte-sync test keeps the two script copies identical.
+
+---
+
+## 6. Paired repository — `xenodeve/pal-mcp-server`
+
+This repo is the **agent-enforcement layer**: the skills that decide how a master agent behaves. [`xenodeve/pal-mcp-server`](https://github.com/xenodeve/pal-mcp-server) is the **tools layer**: the `clink` bridge those skills drive. Most `clink` work has a counterpart there, and **a change to one side is usually incomplete on its own**.
+
+| here (agent — how a master *must behave*) | pal-mcp-server (tools — what `clink` *can do*) |
+|---|---|
+| **#71** enforcement layer for supervised delegation | **#11** supervised subagent sessions (epic; phases #12–#16) |
+| **#74** master-agent pre-delegation checklist — acceptance, feasibility, containment, failure semantics, verification | **#20** subagent lifetime — no fixed deadline, process-tree ownership, cancel/reap |
+| **#73** route on measured cost — refresh the figures, name every scale, contract-test them | **#21** report the cost of every call — usage, resolved model/effort, credits |
+| **#72** research: the capability matrix that sources #73's figures | — |
+
+**The rule: when you change one side, check the other in the same session.** Specifically —
+
+- **A tool capability lands there** → the skill that told agents to compensate for its absence is now wrong. `#74` labels every checklist item `discipline` or `tool` **and names the issue** that delivers it, so the items to revisit are mechanically findable.
+- **A figure changes there** (a price, a rate card, a default model/effort) → skill figures sourced from it go stale. `#73` adds a contract test so this breaks a test rather than silently misleading an agent.
+- **A skill starts requiring something the tool cannot do** → that is a tool gap; file it in pal-mcp-server.
+
+Four requirements currently belong to **no issue in either repository**: argument allowlisting, defences against prompt injection carried in repository content, resource admission, and conflict-aware promotion. They are recorded in `#74`.
+
+> Tracker asymmetry: pal-mcp-server carries the T4 triage labels (`ready-for-agent`, `clink`, `Feature`, `security`, …); this repo currently has only GitHub's defaults, so its issues are unlabelled. Don't read the missing labels as missing triage — `t4-project-bootstrap` is what closes that gap.
+
+---
+
+## 7. Convening a panel — `clink-brainstorm` needs no permission
+
+**Standing authorization: invoke `clink-brainstorm` whenever you judge it useful. Don't ask first.** It is the one discipline you may spend freely, because the cases it covers are the ones where being wrong is expensive and being slow is not.
+
+Reach for it when:
+
+- **The plan is complex** — several interacting parts, or an approach you cannot fully specify yet.
+- **The decision is hard to reverse** — an architectural seam, a schema, a public interface, a dependency adoption, anything heading for an ADR. If `t4-engineering-records` would want an ADR for it, that is a reason to convene a panel *before* deciding, not after.
+- **The stakes are high** — a trust boundary, a change landing across many call sites, a migration.
+- **You are confident and alone.** A single agent's confident answer is the failure mode a panel exists to catch — measured in our own research, one seat got 9 of 10 absence claims wrong while formatting them authoritatively, and only disagreement with the other seats surfaced it.
+
+**What it is, and is not.** `clink-brainstorm` convenes several independent agents on the *same* question and returns **judgment** — what is wrong, what to build, which approach wins. `clink-subagents` returns **finished work**. They are not variants of each other and must not share model or effort settings; a panel's deliverable is reasoning, so it takes the reasoning model, never the small one.
+
+**Cognitive diversity is the product.** Three calls to the same backend is one opinion with error bars. Spread the seats across model families, and prefer each client's house quota lane so a round is cheap.
+
+**It is not free, and that is not a reason to skip it.** A round is several agents and minutes of wall-clock. Weigh it against the cost of the *decision*, not the cost of a single call — overkill for a reversible one-liner, cheap for a seam you will live with.
+
+**Synthesize, don't paste.** The answers are input to your judgment, not a vote to average. State where the seats converged, where they split, and which side you think is right — you hold the session context they do not. Then verify: convergence is evidence, not proof.
