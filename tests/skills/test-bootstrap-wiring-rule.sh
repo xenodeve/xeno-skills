@@ -40,6 +40,24 @@ has "$BS" "ask the user"                         "the procedure instructs an ask
 has "$BS" "record the answer"                    "the answer is written down in both directions"
 has "$BS" "not wired"                            "the unanswered default is stated explicitly"
 
+echo "the bootstrap hands the tracker/label/domain layer off instead of rebuilding it:"
+# using-t4 declares that T4 *reuses* pocock's tracker/label/domain conventions, and
+# the family's composition rule is to invoke the ecosystem skill rather than copy it.
+# The bootstrap was the one place that rebuilt those three files from a second set of
+# skeletons, so two skills carried seed templates for one decision.
+# Assert the HANDOFF, not a mention. The skill name also appears in step 2 (which
+# borrows its ask-flow), so grepping the bare name passes while step 5 still writes
+# the three files itself — a mutant proved exactly that before this line was tightened.
+has "$BS" "Invoke \`/setup-matt-pocock-skills\`" "step 5 hands the layer off, not merely names the skill"
+has "$BS" "T4 delta"                             "what T4 keeps on top of it is named as a delta"
+
+echo "the label vocabulary produces labels that exist:"
+# Neither skill created them. pocock's triage-labels.md is a mapping table that assumes
+# the labels are already there; T4's said "create lazily / proceed silently", which
+# combine into never. Measured: 8 of 19 documented labels existed in a bootstrapped repo.
+has "$BS" "gh label create"                      "the procedure creates labels, not only documents them"
+has "$BS" "report which were created"            "the outcome is reported, so a gap cannot be absorbed"
+
 echo
 echo "bootstrap-wiring-rule: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
