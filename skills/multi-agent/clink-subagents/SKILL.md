@@ -190,12 +190,15 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 | **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38.1 | 0.015 |
 | **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46.1 | 0.029 |
 | **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49.1 | 0.043 |
-| **Hard** — subtle correctness, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.6 | 0.514 |
+| **Hard, cheap lane first** — a leaf Luna returned wrong at `xhigh`. Try this before changing lane; it costs an eighth of the row below | `gpt-5.6-luna` | `max` | 51.2 | 0.066 |
+| **Hard** — subtle correctness, a leaf Luna returned wrong at **every** rung | `gpt-5.6-sol` | `medium` | 53.6 | 0.514 |
 | **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 55.9 | 0.771 |
 
 <!-- figures:end -->
 
-**The rungs outside the table, and why each is out.** `max` on both models and `xhigh` on Sol are removed by the owner's cap below, not by the arithmetic. Sol `low` is out on the arithmetic, and the reason has changed since this rule was written: Luna `max` now scores **higher** (51.2 against 49.4) at a **fifth of the burn** (0.066 against 0.307) and roughly **half the cost per point** (3.73 against 8.10), so Sol `low` is now strictly dominated rather than merely a bad trade. Those exclusions plus the six rows above are the complete set; there is no seventh option to reach for.
+**The rungs outside the table, and why each is out.** Sol's `xhigh` and `max` are removed by the owner's cap below, not by the arithmetic. Sol `low` is out on the arithmetic, and the reason has changed since this rule was written: Luna `max` now scores **higher** (51.2 against 49.4) at a **fifth of the burn** (0.066 against 0.307) and roughly **half the cost per point** (3.73 against 8.10), so Sol `low` is now strictly dominated rather than merely a bad trade. Those exclusions plus the seven rows above are the complete set; there is no eighth option to reach for.
+
+**Luna `max` was unlocked on 2026-08-04**, and the mechanism matters more than the row. The cap had been set from pre-cut prices; re-deriving it from current figures — which is what the cap is *for* — showed it no longer held on Luna's ladder, because the 80% cut of 2026-07-30 moved `max` from expensive to nearly free. The owner confirmed the unlock. **Sol's cap is unchanged and was re-derived the same way; it still holds.** This is the cap working as designed, not an exception to it.
 
 **Reviews and judgment are not on this table at all.** Deciding whether code is correct, which design wins, or what is wrong with a plan is [`clink-brainstorm`](../clink-brainstorm/SKILL.md)'s job, and it uses `gpt-5.6-sol` for all of it. This table is for **work handed out to be done** — nothing on it is a substitute for a panel.
 
@@ -210,7 +213,11 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 - **`gpt-5.5` is strictly dominated at every rung.** `low` 43.5 @ 8.63 loses to Luna `high` 46.1 @ 1.33; `medium` 50.4 @ 18.56 loses to Luna `max` 51.2 @ 3.73; `high` 53.1 @ 32.36 loses to Sol `medium` 53.6 @ 13.01 — each time on **both** index and cost per point.
 - **Terra is not dominated, and still never worth it.** Its best value is `low` at 3.83 per point, which is worse than *every* Luna rung (0.48 to 3.73). Where it edges anything, the edge is inside the noise: `xhigh` beats Luna `max` by **0.4 index points** for **6.5× the burn** (0.430 against 0.066), and `max` beats Sol `high` on value by 3.4% while scoring **lower** (55.0 against 55.9). Paying six times more for four tenths of a point is the trade this rule exists to refuse.
 
-Why the cap removes Sol's top rungs, recomputed from the figures above rather than inherited: across Sol's ladder the index gains **+4.1, +2.3, +1.8, +1.2** while the burn goes 0.307 → 1.862, a sixfold rise. Per unit of cost that is **20, 8.9, 4.5, 1.8** index points — the fourth step returns under a tenth of the first. `high` is where the return collapses, and that is where the cap sits. **The cap still holds on current numbers**, which is the point of recomputing it rather than trusting it.
+Why the cap removes Sol's top rungs, recomputed from the figures above rather than inherited: across Sol's ladder the index gains **+4.1, +2.3, +1.8, +1.2** while the burn goes 0.307 → 1.862, a sixfold rise. Per unit of cost that is **20, 8.9, 4.5, 1.8** index points — the fourth step returns under a tenth of the first. `high` is where the return collapses, and that is where the cap sits.
+
+**Luna's ladder does not collapse that way, which is why its `max` is now a row.** Its whole range costs 0.012 to 0.066, so the step Sol charges 0.695 for costs Luna 0.023. Climbing to Luna `max` is cheaper than *not* climbing on Sol, and it is why the escalation path now exhausts the cheap lane before changing lane at all.
+
+**The cap is still an owner's instruction and still not something to argue past.** It was loosened here by re-deriving it from current data — the procedure the cap itself prescribes — not by an agent judging a leaf hard enough to deserve a higher rung. That argument remains refused.
 
 The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
 
