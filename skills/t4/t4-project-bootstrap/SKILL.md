@@ -55,7 +55,9 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 4. **Install the memory layer** from `t4-agent-memory` (ledger, ship log, vault `Home.md` + note format). This is what makes the repo agent-durable.
 5. **Install the workflow layer.** Three of these files are not T4's to author: `using-t4` records that the tracker / label / domain-doc conventions are **reused** from the matt pocock ecosystem, and the family's rule is to hand the technique to the ecosystem skill rather than keep a second copy of it.
 
-   **Invoke `/setup-matt-pocock-skills`** for `docs/agents/{issue-tracker,triage-labels,domain}.md`. It owns the tracker choice (GitHub / GitLab / local markdown), the five canonical triage roles, and the single-vs-multi-context domain layout.
+   **Invoke `/setup-matt-pocock-skills`** for **`docs/agents/{issue-tracker,triage-labels}.md` only**. It owns the tracker choice (GitHub / GitLab / local markdown) and the five canonical triage roles — those five names are pocock's, and T4 uses them unchanged.
+
+   **`domain.md` is a name collision, not a shared file — do not hand it off.** pocock's `domain.md` is *consumer rules* ("how the skills should read `CONTEXT.md` and the ADRs"); T4's `docs/agents/domain.md` is the **domain glossary** ("what the words mean here"). Same path, different document. Letting that skill write it overwrites the glossary with a file about reading habits. If you want pocock's consumer rules as well, take them at a different path and say which is which.
 
    Then apply the **T4 delta** on top — the part pocock does not carry, and the only part this skill should be maintaining:
 
