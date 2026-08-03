@@ -95,14 +95,41 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 
 Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
 
+**Four scales are in play and none converts into another.** Ranking a number from one against a number from another produces a false ordering, so every figure here states its scale.
+
+| Scale | Where it appears | Can you act on it directly? |
+|---|---|---|
+| **Coding / Agentic sub-index** (older) | `clink-subagents`' routing rubric | no — comparative, and a different population |
+| **AA Intelligence Index v4.1** | the `Index` column below | no — comparative only |
+| **Coding Agent Index v1.3** | harness x model pairs, in [`clink-masteragent`](../clink-masteragent/SKILL.md) | no — a third population again |
+| **Subscription credits** | what a round actually costs your weekly cap | **yes — this is the only one you spend** |
+
+<!-- figures:start source=docs/research/data/aa-models-augmented.csv -->
+
+The rungs this skill routes to, and the two it refuses. `Index` is AA Intelligence
+Index v4.1; `Burn` is AA cost-per-task in USD, a proxy for quota burn since codex is
+subscription-flat; `Cost/pt` is the suite cost divided by the index, **lower is better
+value**. The source lives in the `xeno-skills` repo and is **not shipped with the
+installed skill**. The full ladder including the small model is in
+[`clink-subagents`](../clink-subagents/SKILL.md) — this table is the panel seat only.
+
+| Rung | Index | Burn | Cost/pt | Used here |
+|---|---|---|---|---|
+| `gpt-5.6-sol` `medium` | 53.6 | 0.514 | 13.01 | yes — to surface positions |
+| `gpt-5.6-sol` `high` | 55.9 | 0.771 | 20.75 | yes — the round that matters |
+| `gpt-5.6-sol` `xhigh` | 57.7 | 1.167 | 32.31 | no — past the value cliff |
+| `gpt-5.6-sol` `max` | 58.9 | 1.862 | 58.46 | no — past the value cliff |
+
+<!-- figures:end -->
+
 **Brainstorm-specific use:**
-- **Codex here is `gpt-5.6-sol` at `medium`, escalating to `high` for the round that matters. Nothing below, nothing above.** `medium` (53.5) to surface positions; `high` (56) for the adversarial round or the final consequential call.
+- **Codex here is `gpt-5.6-sol` at `medium`, escalating to `high` for the round that matters. Nothing below, nothing above.** The two rungs and the two refusals are in the table above; this bullet does not restate their values.
 
   **Why there is no small-model option here.** This skill convenes a panel of engineers to review a codebase or judge a plan — **the deliverable is reasoning**, so it takes the reasoning model. `gpt-5.6-luna` is a `clink-subagents` instrument, for when clink is doing *work*; a round whose entire output is judgment has nothing to gain from it.
 
-  **Why the range stops at `high`.** Marginal index per unit of quota collapses past it. On Sol: `low`→`medium` buys **+4 for 0.11** (36 pts per cost unit), `medium`→`high` buys **+2.5 for 0.14** (18 pts per cost unit) — then `high`→`xhigh` buys +2 for 0.23 (9 pts per cost unit), and `xhigh`→`max` buys **+1 for 0.36** (2.8 pts per cost unit), **about a thirteenth the return of the first step**. Over a 3-round loop that is nine calls, and moving *the codex seat alone* from `medium` to `max` multiplies **its** burn by 3.4× (0.31 → 1.04 per call) for +5.5 index points — the other seats are unaffected, so this is a codex-lane cost, not a loop-wide one. Figures from `docs/research/2026-07-16-model-effort-capability-matrix.md` in the skills repo; full ladder in `clink-subagents`.
+  **Why the range stops at `high`.** Read it off the `Cost/pt` column above, where lower is better: 13.01 at `medium`, 20.75 at `high`, then 32.31 and 58.46. **Value halves twice over the two rungs the cap refuses** — `max` costs about 4.5× as much per index point as `medium` and buys 5.3 points. Over a 3-round loop that is nine calls, and moving *the codex seat alone* from `medium` to `max` multiplies **its** burn by 3.6× — the other seats are unaffected, so this is a codex-lane cost, not a loop-wide one.
 - **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol` at `medium`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
-- **Steep diminishing returns on effort, with numbers.** On `gpt-5.6-sol` the ladder is 53.5 → 56 → 58 → **59** across `medium`/`high`/`xhigh`/`max`, while quota burn more than triples (0.31 → 1.04 of AA cost-proxy). The last rung is **+1 index point for about 1.5× the burn** (0.68 → 1.04), which is why `medium`/`high` is the whole usable range and `xhigh`/`max` are capped out. Blanket-`max` on a 3-agent × 3-round loop is a multi-minute, quota-heavy operation for almost no marginal signal.
+- **Steep diminishing returns on effort.** The four rungs in the table span 5.3 index points while the burn rises more than threefold, and the last rung alone costs about 60% more than the one below it for roughly a point. That is why `medium`/`high` is the whole usable range and `xhigh`/`max` are capped out. Blanket-`max` on a 3-agent × 3-round loop is a multi-minute, quota-heavy operation for almost no marginal signal.
 - **Don't assume a higher tier buys accuracy — measure it on your own tasks.** A same-prompt A/B on `cursor-grok-4.5-low` vs `-high` (two probes: a 6-step modular-arithmetic chain, and "list every defect a caller could hit" on a function that sorts its argument in place) produced **no observable difference**: both tiers got the arithmetic right, both led their defect list with the in-place mutation, and latency overlapped (46–55s either way). Note the ceiling that test was working against — Grok 4.5's ladder stops at `high`, so it was the shortest ladder available. Treat the result as scoped: *no difference on mid-difficulty work at the top of a 3-rung ladder*, not evidence the knob is inert. The house-lane models are exactly the ones with short ladders, so a test that would actually separate the tiers costs the foreign lane.
 - These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
 

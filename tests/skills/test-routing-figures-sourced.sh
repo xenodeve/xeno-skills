@@ -23,6 +23,7 @@ CHECKER="$REPO_ROOT/docs/research/scripts/check-figures-sourced.sh"
 ROSTER="
 skills/multi-agent/clink-masteragent/SKILL.md
 skills/multi-agent/clink-subagents/SKILL.md
+skills/multi-agent/clink-brainstorm/SKILL.md
 "
 
 pass=0 fail=0
