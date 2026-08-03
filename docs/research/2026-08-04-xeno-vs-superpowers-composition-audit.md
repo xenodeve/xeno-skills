@@ -175,20 +175,31 @@ three ecosystems. Line 51 then lists `test-driven-development` and `systematic-d
 superpowers' representative skills. So TDD has two named owners and debugging has two named owners,
 four lines apart, with nothing saying which wins. An agent reading the map cannot route.
 
-The proposed fix is a **citation lock**, mechanical and in priority order:
+**The two decision seats proposed opposite rules, and that split is the most useful output of the
+panel** — it means the answer is a real choice, not a discoverable fact.
 
-1. If a T4 skill **names one skill or slash-command** for the capability, that owner is exclusive —
-   do not also invoke the sibling.
-2. Otherwise, if the capability is a step in pocock's grill → spec → tickets → implement flow → pocock.
-3. Otherwise → superpowers, per the map's own *"for non-T4 how to work, prefer
-   `superpowers:using-superpowers`"*.
-4. xeno owns team-specific decisions only, and is **never** a second technique owner.
+**Seat A — citation lock.** Priority order: (1) if a T4 skill *names* one skill or slash-command for
+the capability, that owner is exclusive; (2) else if it is a step in pocock's grill → spec → tickets
+flow → pocock; (3) else → superpowers; (4) xeno is never a second technique owner. Applied: TDD locks
+to `/tdd` (pocock), debugging to `/debug-mantra` (9arm), skill-writing to superpowers. The line-51
+table then becomes the bug and must cite the locked owners.
 
-Applied: TDD locks to `/tdd`, debugging locks to `/debug-mantra`, skill-writing falls to rule 3 and
-locks to superpowers' `writing-skills`. Under that rule the line-51 table is the bug and must cite the
-locked owners instead.
+**Seat B — output-class ownership.** (1) If the output is a T4-consumed flow artifact or a
+tracker/domain mutation — PRD, issues, labels, domain docs → pocock; (2) otherwise, if it defines *how
+engineering work is performed* → superpowers; (3) xeno may add preconditions and postconditions but
+must fully qualify one upstream skill and never restate its algorithm. Applied: TDD **and** debugging
+both go to superpowers, and the competing 9arm and pocock routes are removed.
 
-The known cost, and it is real: an install that has superpowers but not pocock gets a dead `/tdd`
+They agree on skill-writing and on rule 3. They disagree on TDD and debugging, and the disagreement is
+not cosmetic — Seat A preserves what xeno currently cites, Seat B overrides it on the grounds that
+technique belongs to the "how to work" ecosystem by definition.
+
+**Seat B also supplied the argument that makes this substantive rather than a naming question:**
+superpowers includes refactor *inside* the red-green-refactor cycle; pocock explicitly excludes it
+("refactoring is not part of the loop"). Picking an owner for TDD therefore picks a different loop, not
+a different label for the same one. Whoever decides D2 is deciding that too, and should say so.
+
+The known cost of Seat A, and it is real: an install with superpowers but not pocock gets a dead `/tdd`
 pointer. That argues for the drift-detection manifest proposed in the pocock audit covering **both**
 upstreams, not for leaving the map ambiguous.
 
@@ -209,8 +220,14 @@ The practical rule this suggests: **state the hypothesis before the search, so t
 cheap and visible.** An audit that only reports what it found cannot tell you what it expected and
 failed to find, and that difference is where the calibration lives.
 
-**One dissent is recorded rather than resolved.** A decision seat pushed back on the axis report's
-claim that `karpathy-guidelines` restates TDD, calling it overstated against the file contents — the
-goal-driven examples are edit hygiene, not a test-first procedure. Both readings are defensible from
-the same lines. It is left open here because deciding it would change what gets deleted, and that is
-§6's business, not the survey's.
+**Two dissents are recorded rather than resolved**, and both are left open deliberately.
+
+One seat pushed back on the axis report's claim that `karpathy-guidelines` restates TDD, calling it
+overstated against the file contents — the goal-driven examples are edit hygiene, not a test-first
+procedure. Both readings are defensible from the same lines.
+
+The larger one is the D2 split above. **In the pocock audit the two seats converged and that was
+treated as signal; here they diverged, and that is signal too** — it locates the one question in this
+audit that evidence cannot settle, because both rules are internally consistent and pick different
+winners from the same files. An audit whose seats never disagree has either asked something easy or
+framed the question so that only one answer fits.
