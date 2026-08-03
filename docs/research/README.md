@@ -12,6 +12,11 @@ this library composes with the ecosystems it sits on top of. One dated file per 
 - [2026-07-16 — Subagent vs self: token economics](2026-07-16-subagent-vs-self-token-economics.md) —
   the two-pool cost model (your metered tokens vs free-local / flat-subscription); when delegating
   actually saves your tokens.
+- [2026-08-04 — xeno-skills × obra/superpowers composition audit](2026-08-04-xeno-vs-superpowers-composition-audit.md)
+  — the same check against the second ecosystem, at `44c9b2d`. Against pocock the defects were mostly
+  duplication; against superpowers they are mostly **contradiction** — nine places where the two give
+  opposite instructions, two of them enforced mechanically by the T4 gate. Also: the hooks-collision
+  hypothesis, stated up front and **disproved**.
 - [2026-08-04 — xeno-skills × mattpocock/skills composition audit](2026-08-04-xeno-vs-mattpocock-composition-audit.md)
   — whether this library actually hands technique off to the ecosystem it claims to sit on, checked
   against `mattpocock/skills` at `2ab9580`. Finds self-contradictions, five direct conflicts with
