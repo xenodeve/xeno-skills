@@ -213,11 +213,20 @@ The second seat also rejected both earlier arbitration rules outright, in terms 
 four that judges an owner by what it obliges an agent to do rather than by who wrote it or who was
 cited first.
 
-It also named the strongest objection to its own answer: `diagnosing-bugs` forbids hypothesis-building
-before a fast agent-runnable loop exists, which can stall a production-only failure that cannot be
-reproduced locally. **That is precisely the case xeno's current text permits and pocock forbids** — the
-contradiction recorded in the superpowers audit — so choosing this owner also settles that, in the
-stricter direction.
+It also named what it took to be the strongest objection to its own answer: `diagnosing-bugs` forbids
+hypothesis-building before a fast agent-runnable loop exists, which would stall a production-only
+failure that cannot be reproduced locally.
+
+**That objection is wrong, and it was checked afterwards rather than at the time — the same error this
+audit set out to catch.** `diagnosing-bugs` carries a section headed *"When you genuinely cannot build
+a loop"*: stop and say so explicitly, list what you tried, and ask the user for **(a)** access to an
+environment that reproduces it, **(b)** a captured artifact — HAR, log dump, core dump, timestamped
+recording — or **(c)** permission to add temporary production instrumentation. It does not stall; it
+**stops into a human gate with three concrete asks**, which is the shape of `t4-afk`'s own park note.
+
+So the cost of choosing this owner is much lower than the panel believed, and the contradiction with
+xeno's current text — which permits continuing as a hypothesis — resolves in the stricter direction at
+almost no operational cost.
 
 So the arbitration question now has four candidate rules and three different winners from the same
 files. That is the argument for deciding the rule first and the owner second, rather than settling it
