@@ -59,12 +59,22 @@ Each is a rule one library states and the other forbids or inverts.
 | 5 | How many hypotheses? | **Form a single hypothesis** | (pocock rebuts with 3–5 ranked; xeno takes neither side) |
 | 6 | Is refactor part of the TDD loop? | **Yes**, it is a cycle phase | xeno's pipeline says "red → green → refactor" while naming the skill `tdd`, which is pocock's — and pocock says refactoring is **not** part of the loop |
 | 7 | Validation depth | `defense-in-depth`: validate at **every** layer, don't stop at one | `karpathy-guidelines`: *"No error handling for impossible scenarios"*, and `/simplify` fires after every change |
-| 8 | May a branch be deleted? | `finishing-a-development-branch` runs `git branch -D` | xeno's gate **denies** `branch -D`, even under `"afk"` |
+| 8 | May a branch be deleted? | `finishing-a-development-branch` runs `git branch -D` — **but only on the discard path** (`:156`); its normal merge path uses `git branch -d` (`:110`), which xeno permits | xeno's gate **denies** `branch -D`, even under `"afk"` — while telling the caller *"Use `-d`, or run it yourself"* |
 | 9 | Who decides the merge? | integration is the human's call — present the menu and wait | `"autoMerge"`/`"afk"` skips the confirmation ask |
 
-Numbers 8 and 9 are the sharpest, because they are **mechanical**: xeno's `PreToolUse` gate will deny a
-command that a superpowers skill instructs the agent to run. The agent is told to do something and then
-blocked from doing it, with no message explaining that two libraries disagree.
+Number 9 is the sharpest, because it is **mechanical**: xeno's `PreToolUse` gate changes who decides a
+merge, against a skill that says the decision is the human's.
+
+**Number 8 was overstated in the first draft of this document and is corrected here.** Checked against
+both files afterwards: superpowers' normal merge path uses `git branch -d`, which xeno's gate permits;
+only its explicit *discard* path uses `-D`, and that path already requires the user to type the word
+"discard" before it runs. xeno's deny message even directs the caller to `-d` or to run it themselves —
+which is what a human-confirmed discard is. **So the happy path does not collide at all**, and the
+collision that remains sits behind a human gate on both sides.
+
+The correction matters beyond this row: the `branch -D` case was the concrete example used to argue
+that these conflicts are live rather than theoretical. It is a weaker example than it looked, and the
+argument needs number 9 to carry it.
 
 ---
 
