@@ -29,7 +29,7 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 **Delegate** a subtask that is:
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it.
-- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo.
+- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo. **Past two minutes Claude Code stops blocking on it: the call is moved to a background task, you are handed a task id, and the result arrives as a notification.** So the wait is bounded at ~2 minutes, not at the length of the call — see the rule below, which is about what you do with the rest of it.
 - **Proven to have run** — *only for a delegation whose result depends on a command having executed*: a test run, a build, a lint, anything whose report is worthless if the tool silently no-opped. **Make the worker return a sentinel it can only produce by running the thing**, and check it came back:
 
   > *"Before anything else, run `<the command>` and paste its FIRST and LAST line verbatim, plus the exit code. If you cannot execute commands, reply exactly `TOOLCHAIN_DEAD` and stop."*
@@ -114,6 +114,20 @@ Net routing across all clients: **Gemini via `agy`** (in-house there) · **Grok 
 ## How to delegate (the call)
 
 `mcp__pal__clink(prompt, cli_name, role?, continuation_id?, images?)`
+
+**A backgrounded call is not a reason to wait — this is the expensive half.** The two-minute block is fixed: the threshold lives in the harness and you have no control while a call is blocked. What follows it is entirely yours, and it is where the time actually goes. Measured, same host and same tool, opposite outcomes:
+
+- A session on 2026-08-04 had a `codex` call backgrounded at 120s, picked up unrelated work, and took the result as a notification at **188s**. No idle time at all.
+- Another showed **`Waiting for task`** with the call *already* in the background panel while the turn ran **3m 4s → 4m 17s**. The idle stretch was longer than the block that preceded it.
+
+Nothing in the harness differed. **The moment a call is backgrounded, take the next piece of work — the notification will find you.**
+
+**Waiting is sometimes correct, and this is not a discipline problem.** If the next step genuinely depends on the answer, filler work is worse than waiting — say so and wait. The observed variance tracks *whether independent work existed*, not effort: a brainstorm round idles least because firing N agents in parallel guarantees something else is in flight. **So the lever is the shape of the turn, not a reminder to be diligent** — which is what the two rules below are for.
+
+Two consequences worth putting in the plan rather than discovering:
+
+- **Fire the whole batch in one message.** N independent delegations sent together **pay that block once**, not N times, because they run concurrently and background together. Three sequential calls cost three blocks; three parallel calls cost one.
+- **Order the turn so the block lands where it is free.** Do the local work first — reading files, grepping, checking git — and **fire the batch last**. Then the two minutes elapse when you had nothing pending anyway.
 
 1. **Self-contained prompt.** The agent has **zero** context from your conversation. Put *everything* in the prompt: absolute paths, the exact I/O contract, constraints, and an explicit "return ONLY X" / "edit in place, don't ask". Vague prompt → it guesses.
 2. **Pick a mode:**
