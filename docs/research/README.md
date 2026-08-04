@@ -12,6 +12,11 @@ this library composes with the ecosystems it sits on top of. One dated file per 
 - [2026-07-16 — Subagent vs self: token economics](2026-07-16-subagent-vs-self-token-economics.md) —
   the two-pool cost model (your metered tokens vs free-local / flat-subscription); when delegating
   actually saves your tokens.
+- [2026-08-04 — xeno-skills × pbakaus/impeccable composition audit](2026-08-04-xeno-vs-impeccable-composition-audit.md)
+  — the fourth ecosystem, which the first three audits did not know existed. Refutes the "design/* is
+  genuine delta" conclusion, but not the way a grep suggested: impeccable saw those numerics and
+  **declined** them. Also the `PRODUCT.md` collision, a UI trigger that does nothing, and the only
+  test suite among the four that asserts on behaviour rather than text.
 - [2026-08-04 — xeno-skills × thananon/9arm-skills composition audit](2026-08-04-xeno-vs-9arm-composition-audit.md)
   — the third ecosystem, at `a1fc303`. The smallest library and the most cited: `/scrutinize` earns it,
   `/debug-mantra` does not (it is `diagnosing-bugs` compressed — same random hex in the example). Also:
