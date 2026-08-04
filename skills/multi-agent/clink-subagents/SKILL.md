@@ -120,7 +120,9 @@ Net routing across all clients: **Gemini via `agy`** (in-house there) · **Grok 
 - A session on 2026-08-04 had a `codex` call backgrounded at 120s, picked up unrelated work, and took the result as a notification at **188s**. No idle time at all.
 - Another showed **`Waiting for task`** with the call *already* in the background panel while the turn ran **3m 4s → 4m 17s**. The idle stretch was longer than the block that preceded it.
 
-Nothing in the harness differed. **The moment a call is backgrounded, take the next piece of work — the notification will find you.** If you have genuinely nothing else to do, say so and stop; sitting on an open call is not progress.
+Nothing in the harness differed. **The moment a call is backgrounded, take the next piece of work — the notification will find you.**
+
+**Waiting is sometimes correct, and this is not a discipline problem.** If the next step genuinely depends on the answer, filler work is worse than waiting — say so and wait. The observed variance tracks *whether independent work existed*, not effort: a brainstorm round idles least because firing N agents in parallel guarantees something else is in flight. **So the lever is the shape of the turn, not a reminder to be diligent** — which is what the two rules below are for.
 
 Two consequences worth putting in the plan rather than discovering:
 

@@ -42,6 +42,11 @@ echo "the mirror does not drift — clink-brainstorm fires in parallel too:"
 has "$BRAIN" "is not a reason to wait"  "clink-brainstorm carries the same consequence at its own parallel step"
 
 echo
+echo "waiting is allowed where it is correct, so the rule is not 'always be busy':"
+has "$SUB" "Waiting is sometimes correct" "a dependent next step is a legitimate reason to wait"
+has "$SUB" "the shape of the turn, not a reminder" "the lever is how the turn is built, not diligence"
+
+echo
 echo "the evidence is named, so this reads as measured rather than preferred:"
 has "$SUB" "188s"                       "the session that kept working is cited"
 has "$SUB" "Waiting for task"           "and the one that did not"
