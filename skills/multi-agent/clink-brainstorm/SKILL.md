@@ -61,7 +61,7 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 ## How to run a brainstorm round
 
 1. **Write one precise question/proposal** — the same exact prompt goes to every agent. Vague or drifting prompts make answers incomparable. State the question, relevant constraints, and what kind of answer you want (recommendation, critique, risk list, etc.) — these agents have **zero context from your conversation**, so include everything they need to answer standalone (paths, prior decisions, what's already been tried).
-2. **Fire agents in parallel** — put multiple tool calls in a single message (independent calls, no shared state) rather than sequentially. Sequential stacks latencies; parallel is bounded by the slowest single agent.
+2. **Fire agents in parallel** — put multiple tool calls in a single message (independent calls, no shared state) rather than sequentially. Sequential stacks latencies; parallel is bounded by the slowest single agent. **And a round past two minutes is moved to a background task, at which point it is not a reason to wait** — start synthesising what has already returned, or take other work; the notification will find you. A panel fired in one message pays that block once for the whole round.
    - **Codebase question** (needs real file access — see the `chat` vs agentic split above) — use your agentic clink agents, not `chat`:
      ```
      mcp__pal__clink(prompt=Q, cli_name="antigravity")
