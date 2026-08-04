@@ -13,9 +13,9 @@ The T4 team runs its repos **agent-primary** — the coding agent is the main de
 
 ## Route first — before you respond
 
-Before you answer, ask a clarifying question, explore, edit, or run any tool: check the map below and invoke the matching skill. **Uncertainty is a reason to consult the map, not skip it** — but a leaf skill fires on its own explicit trigger, not a hunch (don't invoke `security-review` because a line contains "token"). Announce **"Using `<skill>` to `<purpose>`"**, then invoke — announcing is not the work.
+Before you answer, ask, explore, edit, or run any tool: check the map and invoke the matching skill. **Uncertainty is a reason to consult the map, not skip it** — but a leaf skill fires on its own explicit trigger, not a hunch (don't invoke `security-review` because a line contains "token"). Announce **"Using `<skill>` to `<purpose>`"**, then invoke — announcing is not the work.
 
-**Re-route at every phase boundary.** A check at task start does **not** discharge a later trigger: after writing code → `simplify`; before merge → `code-review` + `scrutinize`; touched auth/secret → `security-review`; implementation done → `verify`. A parent skill (`t4-dev-workflow`) **does not discharge** its leaves (`tdd`, `verify`, …).
+**Re-route at every phase boundary.** A check at task start does **not** discharge a later trigger: wrote code → `simplify`; before merge → `code-review` + `scrutinize`; touched auth/secret → `security-review`; done → `verify`. A parent skill (`t4-dev-workflow`) **does not discharge** its leaves (`tdd`, `verify`, …).
 
 **Red flags — these thoughts mean STOP and route:**
 
@@ -30,6 +30,7 @@ Before you answer, ask a clarifying question, explore, edit, or run any tool: ch
 | "Obviously it's X — just fix it" | Obvious ≠ traced. Find the root cause first. |
 | "It should work — call it fixed" | Should ≠ does. Name the evidence or hedge. |
 | "Let me look around first" | Route first — the skill tells you HOW to look. |
+| "I'll let them decide whether it's worth it" | Offering a skip IS a skip. Report the cost, then comply. |
 
 ## The map — route by what you're doing
 
@@ -52,7 +53,7 @@ The `t4-*` skills sit **on top of** three general ecosystems — not alternative
 | **matt pocock** (`mattpocock/skills`) | `/setup-matt-pocock-skills` (installs + configures tracker/labels/domain layout) | **the flow the T4 pipeline is built on** — grill→spec→tickets, plus the tracker/label/domain-doc conventions T4 reuses | `grilling` (`/grill-me`), `to-prd`, `to-issues`, `domain-modeling`, `code-review` |
 | **9arm** (`thananon/9arm-skills`) | `npx skills add thananon/9arm-skills` | debugging + adversarial review discipline + cheap delegation | `debug-mantra`, `post-mortem`, `scrutinize`, `qwen-agent` |
 
-**Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the tracker rules) and **hand off the technique** to the ecosystem skill — `t4-engineering-records` decides a bug needs a post-mortem, then invokes `/post-mortem`. For non-T4 *how to work*, prefer `superpowers:using-superpowers`.
+**Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the tracker rules) and **hand off the technique** to the ecosystem skill. For non-T4 *how to work*, prefer `superpowers:using-superpowers`.
 
 ## Session-start protocol
 
@@ -80,7 +81,7 @@ At the start of any session in a T4 repo, before picking up work:
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — simplest thing that works, surgical diffs tracing to the request, verifiable success criteria.
 - **Some rules are machine-enforced** — the `PreToolUse` gate + a git pre-push guard block a PR with no issue, dangerous git, a failed `verify` (`t4-dev-workflow`). They raise the floor, not replace judgment.
-- **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker (label / issue body / ledger), or your own earlier recommendation answers it, *act*. Interrupt only for a genuinely unresolved decision that's the developer's — prefer parking + one digest. Re-asking what you can answer yourself is the "sticking" anti-pattern (`t4-afk`).
+- **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker, your own earlier recommendation, or a plan that **assigns the decision to you** ("for the implementer") answers it, *act*. Interrupt only for a genuinely unresolved decision that's the developer's — park + one digest. Re-asking what you can answer is "sticking" (`t4-afk`).
 
 ## When NOT to use
 

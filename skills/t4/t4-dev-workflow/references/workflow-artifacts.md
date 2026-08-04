@@ -84,15 +84,13 @@ Infer the repo from `git remote -v` — `gh` does this automatically inside a cl
 ```markdown
 # Triage Labels
 
-The skills speak in five canonical triage roles. This file maps them to the repo's label strings.
+**The five canonical roles and their mapping table come from `/setup-matt-pocock-skills`** — invoke it
+rather than reproducing them here. This repository kept a near-verbatim copy of that table for a
+while, which is two seed templates for one decision and exactly the drift the survey rule above
+warns about.
 
-| Role | Label in our tracker | Meaning |
-| ---- | -------------------- | ------- |
-| `needs-triage`    | `needs-triage`    | Maintainer needs to evaluate this issue |
-| `needs-info`      | `needs-info`      | Waiting on the reporter for more information |
-| `ready-for-agent` | `ready-for-agent` | Fully specified, ready for an AFK agent |
-| `ready-for-human` | `ready-for-human` | Requires human implementation |
-| `wontfix`         | `wontfix`         | Will not be actioned |
+What follows is the **T4 delta**: the groups pocock does not carry. Append them to the file that
+skill writes.
 
 ## Optional label groups (add as the tracker grows)
 
@@ -100,6 +98,10 @@ The skills speak in five canonical triage roles. This file maps them to the repo
 - **Type** — one or more: `Bug`, `tech-debt`, `security`, `Optimization`, `Cleanup`, `Feature`, `Test`.
 - **Severity** — one per Bug/Security: `critical`, `Major`, `Minor`.
 - **Lifecycle** — `Latent` (exists in code, not yet manifested), `Dormant` (real but deprioritised).
+
+**A `security` issue must carry `critical` or `Major`.** And the vocabulary is not installed until the
+labels exist: create them with `gh label create` and report what was created, what was already there,
+and what you skipped. A documented vocabulary with no labels behind it reads as configured and is not.
 
 ## Conventions
 

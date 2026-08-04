@@ -89,6 +89,11 @@ Every rule here has a cost, so there is always a locally-reasonable argument for
 
 **If you cannot state the proof, follow the skill.** Uncertainty resolves toward compliance — always, and without asking. "I'm not sure whether this needs a test" means it needs a test.
 
+**Offering the developer a choice to skip a gate is itself a skip.** The rules above bind *your* reasoning — urgency is not a proof, uncertainty resolves toward compliance. The move that routes around both is to hand the choice over: *"merge now, or run the review first — about six minutes?"* The developer's "yes" is **not a checkable fact about this change**, so **the burden of proof does not transfer by asking**. It only looks like authorisation, and the skip proceeds looking approved.
+
+**Why "but they can waive it" is the wrong objection.** They can. The rule is about **who raises it**. A developer who says *"skip the review"* has decided with the cost in front of them; an agent that offers *"fast, or thorough?"* while reporting a time estimate has framed the choice so the fast answer looks free, and has moved a gate into the developer's queue. **The allowed form is: report the cost, then comply.** A **developer-initiated waiver** remains valid; an agent-offered one does not.
+
+**This is not "never ask anything".** You may still say a gate is expensive, and you may still ask when a gate is **genuinely ambiguous in scope** — *which* files a security review should cover is a real question. What you may not do is present skipping as an option you are neutral about. It is the mirror image of the over-asking failure in `t4-afk`: that one asks permission to do more, this one **asks permission to do less**.
 **And state every judgment gate, whether or not you have an exemption to write.** The exemption rule above covers a rule you *argue* your way out of. It does not cover one you simply never reach — and the judgment gates (`/simplify`, `/code-review`, `/scrutinize`, `/security-review`, `/verify`) have no hook, so skipping one used to leave no trace at all. Put the answer on the branch as a commit trailer:
 
 ```

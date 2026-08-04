@@ -75,3 +75,37 @@ T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a ve
 One line per item in the digest, and the same line as a commit trailer on the branch so `check-gate-ledger` can block a push that omits a gate. **`not-run` is a legal answer** — write it with the reason beside it. The form exists because silence about a gate is indistinguishable from having passed it, and a digest that merely *lists* what ran expresses an omission by writing less.
 
 - **Landing digest** enforces one-notification discipline (per-item pings defeat the point of AFK) and forces the done/parked/unreached accounting that keeps issues honest.
+
+## Worked examples — four escalations that should not have happened
+
+All four occurred in one session on 2026-08-03, **with the developer present** — not AFK at all. The
+guidance existed and had been consulted in every case. The developer's reply was
+*"ไม่ใช่ว่าเราทำการ prd และตัดสินใจไปหมดแล้วหรอ"* — didn't we already do the PRD and decide all this?
+
+**1 — A decision the plan explicitly delegated.** `pal-mcp-server#22` says *"Whether existing callers
+are given a grace period is the one open question **for the implementer**."* The agent read "open
+question", filed the slice `needs-info`, and wrote *"an unattended agent must not pick the answer"* —
+which inverts the sentence. The plan was handing the call over; it was received as withholding it.
+**Fill the park sentence and it collapses:** blank one cannot be filled, because the plan does say.
+
+**2 — New information appearing to reopen a settled decision.** `pal-mcp-server#23` specifies four
+fields including *"a placeholder for cost that this slice leaves absent"*. A reviewer objected that the
+placeholder locks in nothing. The agent kept the field — correctly — and then escalated the objection
+anyway. **Record it, keep the decision, escalate only on an invalidated premise.** The premise here was
+that a later slice fills the field; the objection did not touch it.
+
+**3 — A dependency mis-framed as a choice.** `xeno-skills#75` was escalated as *"compare against the
+prose research doc, or against the generated matrix? I lean matrix."* The parent PRD's **change
+inventory** already answered it in a table row: *"Produced by #72; this PRD consumes it as the figure
+source."* There was no choice — there was an unmet dependency on #72. The agent had read the issue; the
+answer was in a structured section its own summary had dropped. **This is the case for re-reading
+rather than recalling.**
+
+**4 — Ordinary unstarted work counted as a blocked decision.** `pal-mcp-server#20` and `xeno-skills#74`
+were reported as *"not split yet — splitting either is a scope decision"*. Splitting a PRD into issues
+is `/to-issues`. Listing work-bound items beside genuine blockers makes the queue look decision-bound
+when it is not.
+
+**The pattern across all four:** none was a guess-versus-ask judgement call. Each had an answer already
+written down, in a place the agent had already looked. What was missing was a test that must be
+*passed* rather than a list that can be *consulted* — which is why the park sentence exists.

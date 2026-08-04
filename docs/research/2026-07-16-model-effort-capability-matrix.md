@@ -1,3 +1,19 @@
+> # ⚠️ SUPERSEDED — do not route from this document
+>
+> **Its cost figures predate the price change of 2026-07-30**, which cut `gpt-5.6-luna`
+> by 80% and `gpt-5.6-terra` by 20%. Every cost-proxy figure below therefore overstates
+> Luna's burn several-fold, which inverts the advice this document exists to give.
+> It also went stale in four separate ways before anyone noticed, and was only noticed
+> because an unrelated investigation happened to check (`xeno-skills#73`).
+>
+> **Current figures live in `docs/research/data/aa-models-augmented.csv`**, which is the
+> source the clink skills' figures blocks name and the contract test validates against.
+> The prose replacement is `xeno-skills#72` and is not written yet — until it is, the
+> structured export is the record, and the skills carry the reader's copy.
+>
+> Kept for provenance: an argument made from these numbers before 2026-07-30 was
+> reasonable at the time, and deleting the document would make that unverifiable.
+
 # Model × Effort capability matrix — our clink/local stack (2026-07-16)
 
 Research to inform a future **pal-mcp-server** change (exposing model/effort per call).

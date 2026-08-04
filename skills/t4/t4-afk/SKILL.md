@@ -29,8 +29,29 @@ AFK fails in **two** directions, not one. Over-guessing past a real decision is 
 - **The tracker / ledger / an issue says what to do.** The `ready-for-human` label, an issue body, a park note, the open-work ledger — that *is* the worklist and its state. Reconcile to it; don't ask the developer to re-tell you what a query would answer (`gh issue list --label ready-for-human`).
 - **You already produced the recommendation.** A decision brief or a "recommend Option A" you wrote is a decision you may act on under standing authorization — build A. Do **not** re-surface it as "A, B, or C?". (If you're genuinely unsure enough to need them, you didn't have a recommendation.)
 - **A senior engineer wouldn't ask.** An obvious default, a naming choice, which of two equivalent implementations — pick it (North Star: the simplest) and move on.
+- **The plan names the question *and* names who answers it.** *"for the implementer"*, *"the implementer chooses"*, *"left to whoever builds it"* — these **are assignments, not deferrals**. A plan that hands you a call has decided it; reading "open question" and stopping inverts the sentence. Record your answer where the plan put the question, then build it.
+- **A reviewer disagrees with a settled spec.** Record the objection against the decision, **keep the decision**, and escalate only if the finding **invalidates the premise** the decision rested on. A subagent or a bot **disagreeing is not itself new information** about what the developer wants — it is one more opinion, and the spec already weighed opinions.
 
-**Only interrupt for a decision that is genuinely unresolved AND genuinely theirs** — an irreversible/boundary action, or an ambiguous requirement whose two readings produce materially different code — *and* that none of the above already answers. Then **park it** (note + move on); do not block the batch waiting on a reply. Collect every such item into the **one** end-of-run digest. A mid-run "is this ok?" when continuing is the plan is the tell you're sticking.
+**Re-read the plan's structured sections before you classify anything as undecided — do not recall them, and do not trust your own summary of them.** The change inventory, the acceptance criteria and the blocked-by list are where an answer most often sits, and a summary is exactly what drops a table row. Three of the four failures that produced this rule happened *after* the agent had read the issue.
+
+## The park test — a sentence you must be able to finish
+
+The list above is how you fill the blanks. **This is the test.** Before parking anything, complete it in writing:
+
+> *"This is unresolved because the plan does not say ___, and it is the developer's because ___."*
+
+- **If the first blank cannot be filled with a quotation from the plan**, the plan does say. Act.
+- **If the second cannot be filled with *irreversible*, *trust boundary*, or *the plan explicitly reserved it***, it is the implementer's call. Act.
+
+**Why this needs to be a test rather than advice, and why its bar drifts down on its own.** The two failure directions are not symmetric in how they *feel*. Guessing past a real decision produces a visible wrong artifact, and someone tells you. Over-asking produces a polite, well-organised list that looks like diligence — the cost is paid by the developer, in a turn spent rejecting it, and **it has no natural corrective signal** reaching the agent at all. So the bar for parking must be defended deliberately; nothing pushes it back up by itself. The guess side already has a hard test — the 🛑 table, *"the boundary test is the file's module, not the diff"*. This is the ask side's.
+
+**Its mirror image is a skip, not a stick.** Asking permission to do *less* — offering the developer a choice to skip a gate — is covered in `t4-dev-workflow`, and **nobody to ask is not licence**: an unattended run cannot obtain a waiver, so a gate it cannot pass parks the item rather than proceeding.
+
+**This section is not AFK-only.** It applies **whenever a plan exists, not only when the developer has stepped away** — every failure that produced it happened in an interactive session with the developer present, which is the likeliest reason a rule living here did not fire. `using-t4` carries the one-line version for ordinary work; this is the long form.
+
+**Only interrupt for a decision that is genuinely unresolved AND genuinely theirs** — an irreversible/boundary action, or an ambiguous requirement whose two readings produce materially different code — *and* that none of the above already answers, *and* whose park sentence you can finish. Then **park it** (note + move on); do not block the batch waiting on a reply. Collect every such item into the **one** end-of-run digest. A mid-run "is this ok?" when continuing is the plan is the tell you're sticking.
+
+Worked examples of each failure — including the one where "open question **for the implementer**" was read as withholding — are in `references/afk-artifacts.md`.
 
 The test: *"Could I answer this myself from the standing instructions, the tracker, or my own recommendation?"* If yes, asking is the mistake — act.
 
