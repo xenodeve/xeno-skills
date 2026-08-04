@@ -25,6 +25,15 @@ So the score table is **in this file**, below the guidance, rather than in a doc
 
 **A delegated green is not a green.** Two failures seen in this repo, both from workers that did good work otherwise: a test that pinned message *wording* rather than behaviour (the suite passed either way; only reading it found the problem), and a suite in which no test had ever been observed to fail, because the prompt asked for "the function and its tests" in one pass. **Ask for the RED first, and require the failing output back before the implementation exists.** Then mutate: mutation is what converts a delegated green into evidence.
 
+**And a delegated RED is not a red.** That advice was followed exactly on 2026-08-05 and was still not enough. Two leaves went out **at the same moment**, to `gpt-5.6-luna` at `high`, same prompt shape, both asked for the red only. The code leaf came back with a good test. The prose leaf came back with **11 assertions**, each a `grep` for a sentence the worker had *invented* — it ran, exited 1, and **reproduced on the orchestrator's machine exactly as reported.** The result was real; the test was worthless, because the fix it demanded was *"paste these strings into the file"*, and it would have gone green on a change that added the sentences and nothing else.
+
+So **re-running a delegated red is not the check — reading what the assertion is anchored to is.** A reproducing red proves only that the assertion fails today; it says nothing about whether the assertion is *about* anything. Demand anchors that are **facts a reader can check against reality** — a real flag, a measured count, a returned value — never a wording the worker chose. This repo's own `tests/skills/test-agy-effort-flag.sh` is the standard: it asserts on `--effort`, its three rungs, and the measured `446`.
+
+Two more tells, both shipped in that same file:
+
+- **A "control" that is trivially true forever.** Its two passing checks were `[ -f "$FILE" ]` on files months old. A real control asserts a *behaviour* that holds before **and** after, so an over-broad fix breaks it.
+- **Positive assertions with no negative check.** It defined a `hasnt` helper and never called it, so a partial edit adding the new wording *beside* the old, wrong wording would pass.
+
 ## Choose the axis before the model
 
 **Never rank candidates by the composite Intelligence Index alone.** Measured from Artificial Analysis' own methodology page (Index v4.1):
