@@ -89,7 +89,7 @@ The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **o
 | Back-end | `model` (per call) | `reasoning_effort` (per call) |
 |---|---|---|
 | `codex` | ✅ `-m` — **`gpt-5.6-sol` for every brainstorm round** (the panel's output is reasoning; the small model is a `clink-subagents` instrument) (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` — **`medium` by default, `high` for the round that matters; `xhigh` and `max` are past the value cliff** |
-| `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ➖ baked into the model label (`(Low/Medium/High)`, `(Thinking)`) |
+| `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ✅ `--effort low|medium|high` — real, but **mutually exclusive** with `--model`; agy refuses the pair for every model it serves, and the tiered label (`(Low/Medium/High)`, `(Thinking)`) is the other way to say it. PAL refuses the pair before spawn (`pal-mcp-server#43`). |
 | `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ baked into the model id, **ladder differs per model** — derive it with [`references/cursor-params.py`](references/cursor-params.py) rather than assuming a suffix exists |
 | `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
 
