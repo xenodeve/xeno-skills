@@ -16,9 +16,10 @@ Each tier catches what the one above it can't reach, and each is cheaper to hit 
 
 ```
 <repo>/.githooks/
-├── pre-push            # runs both guards, propagates failure
+├── pre-push            # runs all three guards, propagates failure
 ├── check-issue-ref     # every push carries a GitHub issue reference
-└── check-tree-budget   # no large dirty tree, no build artifacts
+├── check-tree-budget   # no large dirty tree, no build artifacts
+└── check-gate-ledger   # every push states what happened to each judgment gate
 ```
 
 Copy them from `references/guards/`, mark them executable, then **enable per clone**:
@@ -42,7 +43,17 @@ Both are distilled from MangaDock's `scripts/`, which exists because of three re
 
 **`check-tree-budget`** — fails above 25 tracked changes or 50 untracked files (`T4_MAX_TRACKED` / `T4_MAX_UNTRACKED`), and fails on any build artifact regardless of count. The budget exists because of a real incident: a **312-file WIP** accumulated on a shared MangaDock branch and blocked the next stage of work. "Start from a clean tree" was already the rule; the budget is what made it checkable instead of aspirational.
 
-**The `wip/` escape hatch, and its limit.** A `wip/*` branch bypasses the **count** gate and the issue-ref requirement — that is the sanctioned way to push a deliberate one-time freeze, and the branch name is the declaration. It **never** bypasses the **artifact** gate: a freeze is a statement about how much unfinished work is in flight, never a licence to commit generated output.
+**`check-gate-ledger`** — every push must carry a `T4-Gates:` trailer on some commit on the branch, naming all five judgment gates with `ran` | `not-run` | `n-a`:
+
+```
+T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a verify=ran
+```
+
+**It does not force a gate to run.** `not-run` passes. What it forbids is saying *nothing* about a gate, because the other guards catch a missing artifact while a skipped judgment gate leaves no trace at all — and `t4-dev-workflow` admits hooks "can raise the cost of skipping a judgment skill but can't verify the reasoning". Raising that cost from zero is the entire job. It exists because of a real incident: an AFK batch on 2026-08-04 opened **nine PRs** (`pal-mcp-server` #44–#48, #50; `xeno-skills` #100–#103) with `/simplify`, `/code-review` and `/scrutinize` run **zero** times, and nothing failed, warned, or went missing — the omission surfaced only when the developer asked. Paying the gates afterwards found a real defect in **seven of the ten** PRs.
+
+A trailer on any commit of the branch counts, since the claim is about the branch and a follow-up commit must not invalidate it. As with `check-issue-ref`, a trailer that exists only on the base branch is someone else's claim and does not vouch for this push.
+
+**The `wip/` escape hatch, and its limit.** A `wip/*` branch bypasses the **count** gate, the issue-ref requirement and the gate ledger — that is the sanctioned way to push a deliberate one-time freeze, and the branch name is the declaration. It **never** bypasses the **artifact** gate: a freeze is a statement about how much unfinished work is in flight, never a licence to commit generated output.
 
 ## Same guards in CI
 
@@ -50,6 +61,9 @@ The local hook is opt-in and `--no-verify`-able, so it raises the floor rather t
 
 ```yaml
       - run: sh .githooks/check-tree-budget
+      - run: sh .githooks/check-gate-ledger
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
       - run: PR_BODY="$(gh pr view "${{ github.event.number }}" --json body -q .body)" sh .githooks/check-issue-ref
         env:
           BASE_REF: origin/${{ github.base_ref }}
