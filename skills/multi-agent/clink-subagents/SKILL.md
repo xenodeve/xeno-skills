@@ -30,7 +30,26 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it.
 - **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo.
+- **Proven to have run** — *only for a delegation whose result depends on a command having executed*: a test run, a build, a lint, anything whose report is worthless if the tool silently no-opped. **Make the worker return a sentinel it can only produce by running the thing**, and check it came back:
+
+  > *"Before anything else, run `<the command>` and paste its FIRST and LAST line verbatim, plus the exit code. If you cannot execute commands, reply exactly `TOOLCHAIN_DEAD` and stop."*
+
+  **Why a sentinel rather than "check your setup".** A broken tool chain does not error — it returns **exit 0 with a plausible answer** the model produced by reasoning from the prompt instead. Nothing in the response distinguishes that from a real run, so **a plausible result is not evidence the tool ran.** Seen twice on this machine: a global instruction prefixing every shell command with a binary the harness had removed from `PATH` (every `codex` tool call failed, silently), and `codex`'s `rtk` wrapper failing to resolve `rg`, `grep`, `ls` and `gh` while its *file reads* kept working — so the same worker was half-blind, and only its shell half.
+
+  **When the check fails, do the work yourself or change client — not retry.** Retrying re-runs the same broken chain and returns the same confident nothing; the fault is in the worker's environment, which another identical call cannot alter.
+
 - Good fits: a well-specified function/module, a mechanical refactor across a known site, a bulk format/transform, a first-draft you'll review, focused external-doc research/summarization.
+
+### Jobs a given client cannot do at all
+
+Cheaper than discovering it with a call. **Every row carries the date it was last verified, because all of these have moved before** — treat an old date as a prompt to re-probe, not as a fact.
+
+| Client | Cannot | Last verified |
+|---|---|---|
+| `antigravity` | **Run anything.** Its command tools are auto-denied headless, so it cannot execute a test, a build or a lint. *File reads and `--help`-style probes do work* — the limit is execution, not access, and forbidding shell commands in the prompt makes it reliable rather than flaky | 2026-08-04 |
+| `cursor` (Windows) | **Touch a file at all**, if it inherits a bash `SHELL` — every tool call dies and it answers from the prompt text with exit 0. Fix the config first (see gotchas); do not delegate file work until you have | 2026-07-31 |
+| `codex` | **Nothing inherently** — it holds through a write-run-self-correct loop. But on a machine where a wrapper intercepts its shell, its command tools fail while its file reads succeed, which is the half-blind case the precondition above exists to catch | 2026-08-04 |
+| `claude-9arm` / qwen | **Run builds or tests.** It ignored an explicit working directory, wrote to the repo root, and produced no files across a multi-step run. Read, gather and format only | 2026-07-16 |
 
 **Never delegate** (keep it yourself):
 - Orchestration, decomposition, deciding *what* to build, integration across the whole change.
