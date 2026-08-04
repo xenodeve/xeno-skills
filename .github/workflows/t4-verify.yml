@@ -1,0 +1,62 @@
+# xeno-skills' own gate — this repo ships the CI/CD layer, so it runs one.
+#
+# Two jobs on purpose, per the rule this repo documents in ci-cd-layer.md: a
+# check name should say what broke.
+#   tests           — the bash contract suite (hooks, gate, guards, skills)
+#   skill-discovery — the END-TO-END check, run against the real installer
+#
+# Why skill-discovery is separate and not just part of the suite: the bash
+# guards encode our *understanding* of how `npx skills` walks the tree. This
+# job asks the installer itself. When those two disagree, the installer wins —
+# and a family of skills shipping complete-but-undiscoverable (#45) is exactly
+# the failure that no local reasoning caught.
+name: T4 verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: t4-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The suite shells out to perl, python and timeout; all are present on
+      # ubuntu-latest. bash is the harness — no package manager needed.
+      - run: bash tests/hooks/run-all.sh
+
+  skill-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Pinned to the 1.x line: patches still land (so an installer change that
+      # breaks discovery surfaces here, which is the point), without a major
+      # version silently redefining the contract.
+      - name: Every SKILL.md must be discoverable by the real installer
+        run: |
+          expected=$(find skills -name SKILL.md | wc -l)
+          out=$(npx --yes skills@1 add . --list 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+          found=$(printf '%s' "$out" | grep -oE 'Found [0-9]+ skills' | grep -oE '[0-9]+' | head -1)
+          echo "SKILL.md in repo: $expected · discovered by installer: ${found:-none}"
+          if [ "${found:-0}" -ne "$expected" ]; then
+            echo ""
+            echo "::error::installer discovered ${found:-0} of $expected skills."
+            echo "The usual cause is a skill nested inside another skill's directory:"
+            echo "the installer stops descending once a directory has its own SKILL.md,"
+            echo "so a family directory must be a container, never a skill (see #45)."
+            find skills -name SKILL.md | sort
+            exit 1
+          fi

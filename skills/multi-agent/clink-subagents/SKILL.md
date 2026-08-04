@@ -30,7 +30,26 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it.
 - **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo.
+- **Proven to have run** — *only for a delegation whose result depends on a command having executed*: a test run, a build, a lint, anything whose report is worthless if the tool silently no-opped. **Make the worker return a sentinel it can only produce by running the thing**, and check it came back:
+
+  > *"Before anything else, run `<the command>` and paste its FIRST and LAST line verbatim, plus the exit code. If you cannot execute commands, reply exactly `TOOLCHAIN_DEAD` and stop."*
+
+  **Why a sentinel rather than "check your setup".** A broken tool chain does not error — it returns **exit 0 with a plausible answer** the model produced by reasoning from the prompt instead. Nothing in the response distinguishes that from a real run, so **a plausible result is not evidence the tool ran.** Seen twice on this machine: a global instruction prefixing every shell command with a binary the harness had removed from `PATH` (every `codex` tool call failed, silently), and `codex`'s `rtk` wrapper failing to resolve `rg`, `grep`, `ls` and `gh` while its *file reads* kept working — so the same worker was half-blind, and only its shell half.
+
+  **When the check fails, do the work yourself or change client — not retry.** Retrying re-runs the same broken chain and returns the same confident nothing; the fault is in the worker's environment, which another identical call cannot alter.
+
 - Good fits: a well-specified function/module, a mechanical refactor across a known site, a bulk format/transform, a first-draft you'll review, focused external-doc research/summarization.
+
+### Jobs a given client cannot do at all
+
+Cheaper than discovering it with a call. **Every row carries the date it was last verified, because all of these have moved before** — treat an old date as a prompt to re-probe, not as a fact.
+
+| Client | Cannot | Last verified |
+|---|---|---|
+| `antigravity` | **Run anything.** Its command tools are auto-denied headless, so it cannot execute a test, a build or a lint. *File reads and `--help`-style probes do work* — the limit is execution, not access, and forbidding shell commands in the prompt makes it reliable rather than flaky | 2026-08-04 |
+| `cursor` (Windows) | **Touch a file at all**, if it inherits a bash `SHELL` — every tool call dies and it answers from the prompt text with exit 0. Fix the config first (see gotchas); do not delegate file work until you have | 2026-07-31 |
+| `codex` | **Nothing inherently** — it holds through a write-run-self-correct loop. But on a machine where a wrapper intercepts its shell, its command tools fail while its file reads succeed, which is the half-blind case the precondition above exists to catch | 2026-08-04 |
+| `claude-9arm` / qwen | **Run builds or tests.** It ignored an explicit working directory, wrote to the repo root, and produced no files across a multi-step run. Read, gather and format only | 2026-07-16 |
 
 **Never delegate** (keep it yourself):
 - Orchestration, decomposition, deciding *what* to build, integration across the whole change.
@@ -130,16 +149,55 @@ Omit both to use the CLI's **config default** (Codex reads `~/.codex/config.toml
 
 ### The GPT-5.6 ladder — and the cap on it
 
-Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site. Scores are AA Intelligence Index v4.1; the figure in brackets is **AA cost-per-task in USD**. **Codex is subscription-flat, so that figure is a proxy for weekly quota burn, not money** — a cheaper tier means more calls before the cap. *(Source: `docs/research/2026-07-16-model-effort-capability-matrix.md` in the `xeno-skills` repo, not shipped here.)*
+Effort is the knob most likely to be set wrongly, because the cost of setting it high is invisible at the call site.
+
+**Four scales are in play and none converts into another.** Each figure below states which one it is on; ranking a number from one against a number from another produces a false ordering.
+
+| Scale | Where it appears | Can you act on it directly? |
+|---|---|---|
+| **Coding / Agentic sub-index** (older) | the routing rubric above — the `71-77` / `45-54` pairs | no — comparative, and a different population |
+| **AA Intelligence Index v4.1** | the `Index` column below; frontier is about 60 | no — comparative only |
+| **Coding Agent Index v1.3** | harness x model pairs, quoted in [`clink-masteragent`](../clink-masteragent/SKILL.md) | no — a third population again |
+| **Subscription credits** | the measured Sol-vs-Luna ratio below | **yes — this is the only one you spend** |
 
 > **Every amount in this file is deliberately written without a currency sign — do not add one back.** Loading a skill as a slash command with arguments performs shell-style positional substitution: a dollar sign followed by a digit is replaced by the corresponding word of those arguments. Written the natural way, the entire ladder below rendered as `ตัว.20` / `skill.04` in a live invocation — a plausible-looking table carrying no cost information at all, with nothing to signal it.
 
-| Model | low | medium | high | xhigh | max |
-|---|---|---|---|---|---|
-| **`gpt-5.6-sol`** | 49.5 (0.20) | 53.5 (0.31) | **56 (0.45)** | 58 (0.68) | 59 (1.04) |
-| **`gpt-5.6-luna`** | 33 (0.04) | 38 (0.05) | **46 (0.09)** | **49 (0.10)** | 51 (0.21) |
+<!-- figures:start source=docs/research/data/aa-models-augmented.csv -->
 
-`gpt-5.6-terra` and `gpt-5.5` are deliberately absent — see the skip rule below.
+Every number between these markers comes from that file. `Index` is AA Intelligence
+Index v4.1. `Burn` is AA cost-per-task in USD — codex is subscription-flat, so it
+stands in for weekly quota burn rather than money. `Cost/pt` is what the whole Index
+suite costs divided by the index: **lower is better value**, and it is the column the
+skip rules are argued on. The source lives in the `xeno-skills` repo and is **not
+shipped with the installed skill**; the figures are reproduced here so this file
+still reads without it.
+
+| Model | Effort | Index | Burn | Cost/pt |
+|---|---|---|---|---|
+| **`gpt-5.6-luna`** | low | 33.3 | 0.012 | 0.48 |
+| **`gpt-5.6-luna`** | medium | 38.1 | 0.015 | 0.62 |
+| **`gpt-5.6-luna`** | high | 46.1 | 0.029 | 1.33 |
+| **`gpt-5.6-luna`** | xhigh | 49.1 | 0.043 | 2.16 |
+| **`gpt-5.6-luna`** | max | 51.2 | 0.066 | 3.73 |
+| **`gpt-5.6-sol`** | low | 49.4 | 0.307 | 8.10 |
+| **`gpt-5.6-sol`** | medium | 53.6 | 0.514 | 13.01 |
+| **`gpt-5.6-sol`** | high | 55.9 | 0.771 | 20.75 |
+| **`gpt-5.6-sol`** | xhigh | 57.7 | 1.167 | 32.31 |
+| **`gpt-5.6-sol`** | max | 58.9 | 1.862 | 58.46 |
+
+The rungs the skip rule below excludes, with the figures that exclusion rests on:
+
+| Model | Effort | Index | Burn | Cost/pt |
+|---|---|---|---|---|
+| `gpt-5.6-terra` | low | 40.5 | 0.132 | 3.83 |
+| `gpt-5.6-terra` | medium | 45.6 | 0.160 | 4.89 |
+| `gpt-5.6-terra` | high | 49.0 | 0.304 | 9.59 |
+| `gpt-5.6-terra` | xhigh | 51.6 | 0.430 | 13.67 |
+| `gpt-5.6-terra` | max | 55.0 | 0.733 | 29.26 |
+| `gpt-5.5` | low | 43.5 | 0.260 | 8.63 |
+| `gpt-5.5` | medium | 50.4 | 0.495 | 18.56 |
+| `gpt-5.5` | high | 53.1 | 0.801 | 32.36 |
+| `gpt-5.5` | xhigh | 54.8 | 1.175 | 50.66 |
 
 ### Pick by task difficulty — this table is the answer
 
@@ -147,28 +205,42 @@ Read down until a row describes your leaf, then stop. **Set both `model` and `re
 
 | Your leaf | `model` | `reasoning_effort` | Index | Burn |
 |---|---|---|---|---|
-| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33 | 0.04 |
-| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38 | 0.05 |
-| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46 | 0.09 |
-| **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49 | 0.10 |
-| **Hard** — subtle correctness, a leaf Luna already returned wrong | `gpt-5.6-sol` | `medium` | 53.5 | 0.31 |
-| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 56 | 0.45 |
+| **Trivial** — list, extract, reformat, restate, a one-line lookup | `gpt-5.6-luna` | `low` | 33.3 | 0.012 |
+| **Simple** — boilerplate, a mechanical transform, a pure function with no trap | `gpt-5.6-luna` | `medium` | 38.1 | 0.015 |
+| **Routine coding — the default when you are unsure** | `gpt-5.6-luna` | **`high`** | 46.1 | 0.029 |
+| **Routine with a real edge case** — tricky input, an unfamiliar API, a draft you will edit | `gpt-5.6-luna` | `xhigh` | 49.1 | 0.043 |
+| **Hard, cheap lane first** — a leaf Luna returned wrong at `xhigh`. Try this before changing lane; it costs an eighth of the row below | `gpt-5.6-luna` | `max` | 51.2 | 0.066 |
+| **Hard** — subtle correctness, a leaf Luna returned wrong at **every** rung | `gpt-5.6-sol` | `medium` | 53.6 | 0.514 |
+| **Hardest — the ceiling.** A leaf that already failed at `sol`/`medium` | `gpt-5.6-sol` | **`high`** | 55.9 | 0.771 |
 
-**The rungs outside the table, and why each is out:** `max` is off both models; `xhigh` exists on Luna only, never on Sol; and Sol `low` is excluded as a bad trade, not because it is dominated — 49.5 @ 0.20 against Luna `xhigh`'s 49 @ 0.10 is half an index point for twice the burn. Those four exclusions plus the six rows above are the complete set; there is no seventh option to reach for.
+<!-- figures:end -->
+
+**The rungs outside the table, and why each is out.** Sol's `xhigh` and `max` are removed by the owner's cap below, not by the arithmetic. Sol `low` is out on the arithmetic, and the reason has changed since this rule was written: Luna `max` now scores **higher** (51.2 against 49.4) at a **fifth of the burn** (0.066 against 0.307) and roughly **half the cost per point** (3.73 against 8.10), so Sol `low` is now strictly dominated rather than merely a bad trade. Those exclusions plus the seven rows above are the complete set; there is no eighth option to reach for.
+
+**Luna `max` was unlocked on 2026-08-04**, and the mechanism matters more than the row. The cap had been set from pre-cut prices; re-deriving it from current figures — which is what the cap is *for* — showed it no longer held on Luna's ladder, because the 80% cut of 2026-07-30 moved `max` from expensive to nearly free. The owner confirmed the unlock. **Sol's cap is unchanged and was re-derived the same way; it still holds.** This is the cap working as designed, not an exception to it.
 
 **Reviews and judgment are not on this table at all.** Deciding whether code is correct, which design wins, or what is wrong with a plan is [`clink-brainstorm`](../clink-brainstorm/SKILL.md)'s job, and it uses `gpt-5.6-sol` for all of it. This table is for **work handed out to be done** — nothing on it is a substitute for a panel.
 
-**Burn** is AA cost-per-task in USD, and since codex is subscription-flat it is a proxy for weekly quota burn, not money — the point of the table is that the Luna rows burn roughly **3× to 11× less** than the Sol rows (0.04–0.10 against 0.31–0.45) for work that does not need Sol.
+**The gap between the lanes is far wider than earlier versions of this table claimed.** The Luna rows burn **12× to 64× less** than the Sol rows (0.012–0.043 against 0.514–0.771), and on value per point Luna is **15× to 21× better than Sol at the same effort tier** (0.48 against 8.10 at `low`, 3.73 against 58.46 at `max`).
+
+**That is corroborated by direct measurement, not only by the table.** Six `clink` calls with an identical prompt, plus the developer's own weekly-limit observation, put `gpt-5.6-sol @ medium` at **13–24× the subscription credits** of Luna for the same correct answer. Credits are the scale you actually spend, and the measured ratio and the sourced one now agree — the earlier documented figure of 3× to 11× was the outlier, and it was arguing from prices that had been cut.
 
 **Pick the row by what the leaf *is*; escalate only after it actually failed.** Those are two separate steps and neither substitutes for the other. First selection is by description — stakes are not a row, and "this call really matters" moves you nowhere. Then, if that row came back wrong or thin, move down exactly one row and retry. Never open on a lower row because the leaf *feels* hard: that judgment is what put a documentation review on `sol`/`max` and burned four minutes for zero output.
 
-**Never `gpt-5.6-terra` and never `gpt-5.5`** — every rung of both is strictly dominated, so they are left out of the table rather than listed as options. Terra's *best* rung, `max` 55 @ 0.55, loses to **Sol `high` 56 @ 0.45** on both axes; every lower Terra rung falls the same way (`low` 40.5 @ 0.10 against Luna `high` 46 @ 0.09 — higher *and* cheaper); and 5.5 `high` 53 @ 0.60 loses to **Sol `medium` 53.5 @ 0.31**.
+**Never `gpt-5.6-terra` and never `gpt-5.5`.** Both are reachable — a real `codex exec -m gpt-5.6-terra` call returns normally, so absence from the table is a routing decision, not an availability fact. They are out because **intelligence per unit of cost is never worth it at any rung**, which is a weaker claim than the strict dominance this rule used to assert and is the one the current figures actually support:
 
-Why the cap removes Sol's top rungs: the ladder gains **+4, +2.5, +2, +1** across low→max while cost more than triples from `medium` (0.31 → 1.04). The final rung buys **one index point for about 1.5× the burn** (0.68 → 1.04). And Luna returns **3.3× to 5.7× more index per unit of burn than Sol at the same tier** (825 vs 248 pts per cost unit at `low`, 490 vs 85 at `xhigh`, 243 vs 57 at `max`), which is why the first four rows are all Luna.
+- **`gpt-5.5` is strictly dominated at every rung.** `low` 43.5 @ 8.63 loses to Luna `high` 46.1 @ 1.33; `medium` 50.4 @ 18.56 loses to Luna `max` 51.2 @ 3.73; `high` 53.1 @ 32.36 loses to Sol `medium` 53.6 @ 13.01 — each time on **both** index and cost per point.
+- **Terra is not dominated, and still never worth it.** Its best value is `low` at 3.83 per point, which is worse than *every* Luna rung (0.48 to 3.73). Where it edges anything, the edge is inside the noise: `xhigh` beats Luna `max` by **0.4 index points** for **6.5× the burn** (0.430 against 0.066), and `max` beats Sol `high` on value by 3.4% while scoring **lower** (55.0 against 55.9). Paying six times more for four tenths of a point is the trade this rule exists to refuse.
+
+Why the cap removes Sol's top rungs, recomputed from the figures above rather than inherited: across Sol's ladder the index gains **+4.1, +2.3, +1.8, +1.2** while the burn goes 0.307 → 1.862, a sixfold rise. Per unit of cost that is **20, 8.9, 4.5, 1.8** index points — the fourth step returns under a tenth of the first. `high` is where the return collapses, and that is where the cap sits.
+
+**Luna's ladder does not collapse that way, which is why its `max` is now a row.** Its whole range costs 0.012 to 0.066, so the step Sol charges 0.695 for costs Luna 0.023. Climbing to Luna `max` is cheaper than *not* climbing on Sol, and it is why the escalation path now exhausts the cheap lane before changing lane at all.
+
+**The cap is still an owner's instruction and still not something to argue past.** It was loosened here by re-deriving it from current data — the procedure the cap itself prescribes — not by an agent judging a leaf hard enough to deserve a higher rung. That argument remains refused.
 
 The cap is an owner's instruction (set 2026-07-31). **Do not reverse-engineer a rate, a deadline, or a difficulty estimate to argue your way past it** — it is deliberately tighter than the raw numbers alone would justify, so "but this leaf is hard enough to need `sol`/`max`" is the argument it was written to refuse, not a loophole in it.
 
-Caveats carried from the research: the index is a 2026-07-16 snapshot of a **composite** score, and Sol's `low`/`medium` figures are interpolated rather than published. Re-fetch before leaning on a 1–2 point gap.
+Caveats. The index is a **composite** score, so a 1–2 point gap between two rungs is not a reliable difference — re-derive before routing on one. `Burn` is a single representative figure and the underlying measurement is noisy: the same prompt at the same model and effort has been measured at 20,344 and 62,742 input tokens, and AA publishes a 5th-to-95th-percentile cost spread of roughly fivefold. Stating those spreads in this table is [#89](https://github.com/xenodeve/xeno-skills/issues/89); until it lands, read `Burn` as an order of magnitude, not a price.
 
 **Cursor's ladders are per-model — derive them, don't guess.** There is no fixed tier set and no structured catalog to query: `serverConfigCache` in `~/.cursor/cli-config.json` holds only backend URLs, and the real catalog is buried in a minified 3.7 MB bundle. The one machine-readable source is `cursor-agent --list-models`, where the knobs are encoded in the id suffixes. [`references/cursor-params.py`](../clink-brainstorm/references/cursor-params.py) peels the suffix vocabulary off each id and regroups; run it whenever Cursor ships new models. A measured run gave **193 ids → 31 base models**, and the ladders are genuinely irregular:
 
