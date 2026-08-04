@@ -66,4 +66,12 @@ Keep it scannable: what landed, what's waiting on the developer and why, where t
 
 - **Preflight** is the only place scope gets set — get it wrong and the whole unattended run is unsafe. It's a checklist because every item is a real failure mode from an actual batch, not advice.
 - **Park note** is what makes "stop, don't guess" cheap enough to actually do. Without a template, agents guess because parking *feels* like dropping the work; the template reframes a park as a completed handoff.
+### The gate line every digest and every branch carries
+
+```
+T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a verify=ran
+```
+
+One line per item in the digest, and the same line as a commit trailer on the branch so `check-gate-ledger` can block a push that omits a gate. **`not-run` is a legal answer** — write it with the reason beside it. The form exists because silence about a gate is indistinguishable from having passed it, and a digest that merely *lists* what ran expresses an omission by writing less.
+
 - **Landing digest** enforces one-notification discipline (per-item pings defeat the point of AFK) and forces the done/parked/unreached accounting that keeps issues honest.
