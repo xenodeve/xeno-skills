@@ -43,9 +43,11 @@ upstreams is modelling a third of the problem.
 true for 9arm, and wrong as a general rule. The manifest can pin versions for three and must fall back
 to a SHA only for the one that has nothing else.
 
-**But not by the version string alone.** impeccable reports **two different versions**:
-`package.json` says `3.5.0` while `.claude-plugin/plugin.json` and the shipped skill frontmatter say
-`4.0.4`. **Pin by resolved git SHA and record the version as a label, not as the identity.**
+**But the version is artifact-scoped, not repo-scoped.** impeccable reports `3.5.0` in `package.json`
+and `4.0.4` in `.claude-plugin/plugin.json` and the shipped skill frontmatter — **the CLI and the skill
+plugin are separately versioned artifacts in one repo, each correct.** A manifest that records "the
+version of impeccable" is therefore already wrong before it is written. **Pin the resolved git SHA as
+the identity, and record the version of the specific artifact you depend on as a label.**
 
 ---
 
@@ -198,9 +200,21 @@ Three reviewers, three different answers to *"what survives of `design/*`"*:
 | **A** | `design-rules` only | impeccable is an execution engine whose prime directive is *"the brief wins"* — it needs an authoritative brief, and xeno's deterministic numerics are exactly that |
 | **B** | trimmed `design-psychology` only | the 3-brain **ordered** vote, MAYA, incremental pricing and LIFT are the rules impeccable has no analogue for; the numerics are the part it deliberately declined |
 | **C** | nothing | four of five are dominated on method, enforcement and rigour; the fifth is a router for the other four. Salvage ~30 lines as a note |
+| **D** | trimmed `design-setup` only | keep **the staged funnel** — five isolated style directions → explicit selection → three body-layout variants → explicit selection → two-pass hero → promotion. impeccable generates three compositions at **one** approval point and then builds. The funnel is not design advice; it is a sequence |
 
 They agree on what to delete — the router, and every rule impeccable covers or consciously rejects.
 They disagree on whether prescriptive numerics are an asset or the thing being rejected.
+
+**Position D deserves weight out of proportion to its single vote, because it is the only one that
+applies the wrapper rule rather than judging design content.** A staged narrowing funnel with explicit
+human gates between stages *is* composition — the thing this library is supposed to own — while a type
+scale and a spacing grid are technique, which it is supposed to hand off. The other three positions all
+argue about which technique to keep. **That is the wrong axis, and the audits have now made that
+mistake twice.**
+
+Its own strongest objection: impeccable's single gate is cheaper and behaviour-tested, and the extra
+gates may buy decision fatigue rather than better output. Testable by the same method as everything
+else here, and untested.
 
 **On the wrapper thesis they split harder.** One holds it **untenable**: *"wrapping fails at two
 ecosystems that own global state, and the mechanism that fails first is state synchronisation and
