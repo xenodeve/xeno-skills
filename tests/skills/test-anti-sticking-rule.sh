@@ -27,7 +27,7 @@ has "$AFK" "for the implementer"        "a plan that ASSIGNS a question has deci
 has "$AFK" "are assignments, not deferrals" "the trigger phrases are named as assignments"
 has "$AFK" "invalidates the premise"    "a review finding against a settled spec: escalate only on an invalidated premise"
 has "$AFK" "disagreeing is not itself new information" "a reviewer disagreeing is not new information about intent"
-has "$AFK" "re-read"                    "the plan's structured sections are re-read, not recalled"
+has "$AFK" "do not recall them"         "the plan's structured sections are re-read, not recalled"
 has "$AFK" "change inventory"           "the change inventory is named as a section to re-read"
 
 echo
