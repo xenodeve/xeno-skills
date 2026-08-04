@@ -41,6 +41,21 @@ echo "the evidence survives — the batch that produced this rule is named:"
 has "$LAYER" "nine PRs"                      "the guard's own doc names the incident"
 has "$LAYER" "#100"                          "and cites the PRs so the claim is checkable"
 
+# Adding a third guard left "wire the same TWO scripts into the CI gate" standing
+# in the bootstrap procedure — a second site where a hardcoded count went stale,
+# and it was found by reading a sibling PR rather than by the change-site survey.
+# Limit stated: this pins the phrasings that just went stale, so guard #4 has to
+# extend the list. That is still cheaper than finding it in review again.
+BS="$REPO_ROOT/skills/t4/t4-project-bootstrap/SKILL.md"
+guards=$(find "$REPO_ROOT/skills/t4/t4-project-bootstrap/references/guards" -type f ! -name 'pre-push' | wc -l)
+echo
+echo "no doc still counts the guard set as two ($guards on disk):"
+stale=0
+for phrase in "same two scripts" "both guards" "two guards"; do
+  if grep -qiF -- "$phrase" "$BS" "$LAYER"; then echo "      stale phrasing: \"$phrase\""; stale=1; fi
+done
+if [ "$stale" -eq 0 ]; then ok "no two-guard phrasing survives in the bootstrap procedure or the layer doc"; else bad "a doc still describes the guard set as two"; fi
+
 # `not-run` being legal is the whole design; a future edit that quietly turns
 # this into "every gate must have run" would invert it while every assertion
 # above still passed on wording alone. Pin the permission explicitly.
