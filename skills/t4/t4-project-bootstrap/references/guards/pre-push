@@ -16,6 +16,7 @@ status=0
 
 sh "$dir/check-tree-budget" || status=1
 sh "$dir/check-issue-ref"   || status=1
+sh "$dir/check-gate-ledger" || status=1
 
 if [ "$status" -ne 0 ]; then
   echo "" >&2

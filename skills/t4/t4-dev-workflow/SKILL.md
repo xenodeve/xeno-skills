@@ -94,6 +94,13 @@ Every rule here has a cost, so there is always a locally-reasonable argument for
 **Why "but they can waive it" is the wrong objection.** They can. The rule is about **who raises it**. A developer who says *"skip the review"* has decided with the cost in front of them; an agent that offers *"fast, or thorough?"* while reporting a time estimate has framed the choice so the fast answer looks free, and has moved a gate into the developer's queue. **The allowed form is: report the cost, then comply.** A **developer-initiated waiver** remains valid; an agent-offered one does not.
 
 **This is not "never ask anything".** You may still say a gate is expensive, and you may still ask when a gate is **genuinely ambiguous in scope** — *which* files a security review should cover is a real question. What you may not do is present skipping as an option you are neutral about. It is the mirror image of the over-asking failure in `t4-afk`: that one asks permission to do more, this one **asks permission to do less**.
+**And state every judgment gate, whether or not you have an exemption to write.** The exemption rule above covers a rule you *argue* your way out of. It does not cover one you simply never reach — and the judgment gates (`/simplify`, `/code-review`, `/scrutinize`, `/security-review`, `/verify`) have no hook, so skipping one used to leave no trace at all. Put the answer on the branch as a commit trailer:
+
+```
+T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a verify=ran
+```
+
+**`not-run` is a legal answer** and `check-gate-ledger` accepts it. The guard raises the cost of skipping a judgment gate from zero; it does not pretend to verify the reasoning, which it cannot. What it refuses is a gate you say nothing about, because an unrun gate is otherwise indistinguishable from a passed one in the only report anybody reads.
 
 **Say it where the work is reported.** An exemption that lives only in your head is a violation, not an exemption: write it in the PR body / the message reporting the work, in the form *rule → the checkable fact → how to verify it*. This is what makes it reviewable, and what makes a wrong exemption catchable later.
 

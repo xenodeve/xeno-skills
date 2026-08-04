@@ -101,6 +101,8 @@ When the worklist is done or the run bound is hit:
 - Every touched issue reconciled: body current, and **closed-with-evidence** or **parked-with-note** — never silently closed, never finished-but-left-open.
 - Ledger + ship log updated so the next session inherits real state.
 - **One** notification with a digest: done / parked (with the decision each needs) / anything that needs the developer. Notify on batch-done or needs-a-decision — not on routine sub-progress.
+- **The digest enumerates the gates; it does not list them.** State every one of `/simplify`, `/code-review`, `/scrutinize`, `/security-review`, `/verify` as **ran / not-run / n-a**, per item. A digest that enumerates **cannot omit one by writing less**, which is the only property that matters here: a list of what ran, with the skipped ones simply absent, reads as completeness. The same claim goes on the branch as a `T4-Gates:` commit trailer, where `check-gate-ledger` blocks the push if a gate is unstated.
+- **The guard does not force a gate to run** — `not-run` passes. Declaring a skip is allowed; being silent about one is not. A gate you could not pass still parks the item (above); a gate you chose not to run is reported as `not-run` with the reason.
 
 ## Common mistakes (AFK rationalizations)
 
@@ -113,6 +115,7 @@ When the worklist is done or the run bound is hit:
 | "I'll grep to prove it's internal-only, then rename it." | The grep is you reviewing your own boundary change unattended. Park it; the developer confirms "internal-only" in 20 seconds on return. |
 | "Looks done, I'll close the issue." | Close only with evidence (commit/test/impact). No human is checking behind you — the evidence is the check. |
 | "I'll write it up as fixed; it almost certainly is." | The digest is the *only* report of an unattended run, so an unverified verdict in it is indistinguishable from a verified one. Mark each item **verified** (with the artifact) or **hypothesis**; "tests not run" is a complete line (`t4-dev-workflow`). |
+| "The digest covers what I did — the gates I skipped just aren't in it." | That rule covers a claim you **make**. This is the other half: **a true report with a hole in it.** Listing what ran and not what did not is how nine PRs shipped with `/simplify`, `/code-review` and `/scrutinize` at zero and nothing detected it. Enumerate every gate as ran / not-run / n-a. |
 | "I'll commit this red and fix it next item." | Never leave the tree broken. Revert to green and park; the returning dev must land on green. |
 | "This item needs a bit more than the issue said — I'll just widen it." | Scope growth is a park. Note the extra work as new tracked work; don't absorb it silently. |
 | "One notification per item so they see progress." | One digest at the end (or on a real decision). Per-item pings defeat AFK. |
