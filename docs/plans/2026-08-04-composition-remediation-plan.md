@@ -135,8 +135,11 @@ deletion-and-ownership problem, and the remediation is a deletion-and-ownership 
 
 ## Phase 1 — pure defects
 
-Every item is a place where **xeno contradicts itself or points at something that does not exist**. No
-upstream arbitration is involved. Version 1's group **1D was removed entirely** — see Phase 2.
+Every **fix** here is a place where **xeno contradicts itself or points at something that does not
+exist**, needing no upstream arbitration. Note the wording: 1.2 *inventories* four references but
+prescribes a fix for only one — the other three resolve, and their remedy is a behaviour change routed
+to Phase 2. Saying "every item" would re-assert about those three exactly the claim 1.2 withdraws.
+Version 1's group **1D was removed entirely** — see Phase 2.
 
 ### 1.1 — the divergent file pair (highest value; the skill names itself as the example)
 
