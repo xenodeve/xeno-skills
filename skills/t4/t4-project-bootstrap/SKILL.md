@@ -51,6 +51,8 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 
    **`using-t4` goes in as a standing default, not as a pointer.** Write it in those words, requiring a re-route **at every phase boundary** and naming them (after writing code → `simplify`; before merge → `code-review` + `scrutinize`; touched auth/secrets → `security-review`) and the sentence that forecloses the read-once reading: **a check at task start does not discharge a later trigger**. A "pointer to the entry map" is read once at session start and never returned to, which is the one behaviour the map forbids of itself — and a repo bootstrapped with the pointer wording ran that way for months before anyone noticed, because nothing fails when it happens.
 
+   **`clink-subagents` goes in as the delegation default, with the two rules that do not relax.** In an agent-primary repo the orchestrator's context window is the scarce resource — the clink back-ends bill against flat subscriptions and the master does not — so delegation is the default rather than the optimisation. Write both guardrails, because they are what stop that default becoming a liability: **verify everything a subagent returns** (a report is a hypothesis until checked; a worker in this family's history claimed a merged PR that did not exist), and **never delegate the final verification** or a security-boundary change. **Skip this section entirely if `clink` is not configured.**
+
    **`clink-masteragent`: ask the user, do not decide.** **Skip this section entirely if `clink` is not configured** — an unavailable capability is not a question. Otherwise ask whether it is wired as a delegation default, and offer the two shapes that differ materially — *invoke before any `clink` call* (cheap; nothing loaded on sessions that never delegate) or *load at session start alongside `using-t4`* (strongest, but ~19 KB every session against the 9 KB ceiling `using-t4` is held to). **Record the answer in `CLAUDE.md` either way**, so a later reader can tell a decision from an omission. If the question goes unanswered the default is **not wired**, and that is written down rather than left implied. Do not apply this reasoning to `using-t4` above: that one is not a question.
 4. **Install the memory layer** from `t4-agent-memory` (ledger, ship log, vault `Home.md` + note format). This is what makes the repo agent-durable.
 5. **Install the workflow layer.** Three of these files are not T4's to author: `using-t4` records that the tracker / label / domain-doc conventions are **reused** from the matt pocock ecosystem, and the family's rule is to hand the technique to the ecosystem skill rather than keep a second copy of it.
@@ -71,8 +73,17 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 8. **Install the guards layer** from `references/guards-layer.md` — copy `references/guards/` into `<repo>/.githooks/`, tell the user to run `git config core.hooksPath .githooks`, and wire the same three scripts into the CI gate. This is the tier that binds Codex/Gemini/humans; the Claude hooks in step 6 do not.
 9. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
 10. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
-11. **Verify placeholders are gone** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
-12. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
+11. **Verify the hooks layer is actually installed** — **list all three and report which are missing**: `.claude/hooks/` (the scripts + `run-hook.cmd`), `.claude/t4.json` (the marker every hook exits silently without), and the `hooks` key inside `.claude/settings.json`. **Say the result out loud even when it passes.** Steps 1–5 each leave a visible file behind, so a skipped step 6 looks identical to a successful one — **a repo with the docs and no hooks looks bootstrapped**, and that is how `pal-mcp-server` ran with the PR-without-an-issue gate, the dangerous-git denial and the pre-merge `verify` all absent while its own `CLAUDE.md` described them as enforced. An agent that has read `t4-dev-workflow` *plans around* a gate that is not there.
+12. **Verify placeholders are cleared** — grep the new files for `<PLACEHOLDER>` / a stale `<ORG>/<REPO>` and any residual sibling-project domain words (e.g. manga/cache/MIT). A leftover is a defect.
+13. **Reconcile, don't duplicate** — upgrade any narrower existing rule to the team standard; don't leave two conflicting statements.
+
+## Retrofitting a repo that already has the docs
+
+The common case is not a fresh repo — it is one bootstrapped before a layer existed, or one where a step was skipped and nobody looked. **Run step 11 first:** it reports which layers are missing, rather than which you remember installing.
+
+Then run **steps 6 to 8 in order and nothing else** — hooks, CI, guards. Those are the enforcement tiers, and they are the ones that go missing, because they are the only steps whose absence leaves no file behind to notice.
+
+**Do not re-run steps 1–5 on a repo that already has the docs.** That overwrites governance a team has since edited; step 13's reconcile rule exists precisely to avoid leaving a second, conflicting copy. A retrofit ends the way an install does — by reporting what is now present and what you deliberately left.
 
 ## Reference files
 
