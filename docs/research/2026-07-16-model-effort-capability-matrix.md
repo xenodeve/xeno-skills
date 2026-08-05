@@ -8,6 +8,12 @@
 >
 > **Current figures live in `docs/research/data/aa-models-augmented.csv`**, which is the
 > source the clink skills' figures blocks name and the contract test validates against.
+>
+> **Its client inventory is replaced by `2026-08-05-clink-model-inventory-refresh.md`**, read from
+> each CLI's own state rather than from config. That pass found this document's `codex` list short by
+> five models, its effort ladder wrong in both directions — three models never reach `max`, four go
+> past it to `ultra` — and a **272,000-token context cap** applied to every codex model that this
+> document does not mention at all.
 > The prose replacement is `xeno-skills#72` and is not written yet — until it is, the
 > structured export is the record, and the skills carry the reader's copy.
 >

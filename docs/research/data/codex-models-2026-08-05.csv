@@ -1,0 +1,9 @@
+slug,context_window,max_context_window,default_reasoning_level,reasoning_levels,description
+gpt-5.6-sol,272000,272000,low,low|medium|high|xhigh|max|ultra,Latest frontier agentic coding model.
+gpt-5.6-sol-wm,272000,272000,low,low|medium|high|xhigh|max|ultra,Work Mode routing alias for GPT-5.6 Sol.
+codex-auto-review,272000,272000,medium,low|medium|high|xhigh|max|ultra,Balanced agentic coding model for everyday work.
+gpt-5.6-terra,272000,272000,medium,low|medium|high|xhigh|max|ultra,Balanced agentic coding model for everyday work.
+gpt-5.6-luna,272000,272000,medium,low|medium|high|xhigh|max,Fast and affordable agentic coding model.
+gpt-5.5,272000,272000,medium,low|medium|high|xhigh,"Frontier model for complex coding, research, and real-world "
+gpt-5.4,272000,1000000,medium,low|medium|high|xhigh,Strong model for everyday coding.
+gpt-5.4-mini,272000,272000,medium,low|medium|high|xhigh,"Small, fast, and cost-efficient model for simpler coding tas"
