@@ -45,16 +45,25 @@ for f in "${CLAUDE_PLUGIN_ROOT:-}/skills/t4/using-t4/SKILL.md" ".claude/hooks/us
 done
 [ -n "$content" ] || content="Invoke the \`using-t4\` skill now to load the T4 operating map before doing anything else."
 
-# Drop HTML-comment lines. The map is injected verbatim on every session start
-# AND every compaction, and it sits at ~99% of the 9000 B budget that
-# tests/hooks/test-dispatcher-content.sh enforces — so a note aimed at whoever
-# EDITS the skill would otherwise spend that budget forever on a reader who
-# cannot act on it. Notes must occupy whole lines; a comment trailing live prose
-# takes the prose with it.
+# Drop maintainer notes — but only lines that are ENTIRELY a comment. The map is
+# injected verbatim on every session start AND every compaction, and it sits at
+# ~99% of the 9000 B budget tests/hooks/test-dispatcher-content.sh enforces, so a
+# note aimed at whoever EDITS the skill would otherwise spend that budget forever
+# on a reader who cannot act on it.
+#
+# The first version dropped any line CONTAINING `<!--`, so a line mixing prose
+# with a trailing note vanished whole. That limitation was documented and
+# nothing enforced it, and the content test only guards five phrases — so losing
+# any other line passed silently. Content now always wins: a mixed line is
+# injected with its comment rather than lost.
 content="$(printf '%s\n' "$content" | awk '
-  /<!--/ { inc = 1 }
-  !inc   { print }
-  /-->/  { inc = 0 }
+  # whole-line comment, opened and closed on the same line
+  /^[[:space:]]*<!--.*-->[[:space:]]*$/ { next }
+  # block opening on its own line
+  /^[[:space:]]*<!--/ && !/-->/          { inc = 1; next }
+  inc && /-->/                           { inc = 0; next }
+  inc                                    { next }
+                                         { print }
 ')"
 
 wrapped="<EXTREMELY_IMPORTANT>
