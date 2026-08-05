@@ -25,9 +25,42 @@
 #      `--check` passed on the strength of `--check-only`.
 #   C. LOOSE MATCH — the anchor matches more than one line of its target file,
 #      so which line satisfied it is not determined by the assertion.
+#
+# CLASSIFICATION (#115). "Positive-only" is a finding for a CORRECTIVE suite —
+# one pinning wording that replaced something wrong — and noise for a
+# PRESERVATION or STRUCTURAL one, where there is no withdrawn claim to exclude.
+# Judged by reading each suite's stated purpose; a suite listed here is exempt
+# from finding A, and one that is not listed is treated as corrective.
+#
+#   PRESERVATION — pins a rule that would rot by being deleted or softened, not
+#   by acquiring a rival sentence. A negative assertion would have to invent the
+#   wording it excludes, which is the defect #113 describes, in a mirror.
+#     test-anti-sticking-rule · test-backgrounded-call-rule · test-exemption-rule
+#     test-offered-skip-rule · test-root-cause-rule · test-verdict-rule
+#     test-delegation-precondition
+#
+#   STRUCTURAL — asserts two places agree, or that generated artifacts match
+#   their documentation. Nothing was ever withdrawn.
+#     test-ci-templates (job names == required-check contexts)
+#     test-survey-rule  (the pipeline is listed in several places and must agree)
+#     test-gate-ledger-rule (the trailer's vocabulary appears in every consumer)
+#     test-bootstrap-wiring-rule
+#
+# THE TRAP THAT MAKES A NAIVE `hasnt` WORSE THAN NONE, found while classifying:
+# a corrected document usually QUOTES the withdrawn claim in order to reject it.
+# `t4-project-bootstrap` says *"goes in as a standing default, not as a pointer"*
+# and then explains what a "pointer to the entry map" does wrong — so
+# `hasnt "pointer to the entry map"` would fail against the CORRECTED text. A
+# negative assertion has to target the claim in its ASSERTED form, not any
+# mention of it. Where that form cannot be quoted, add nothing.
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Suites exempt from finding A — see CLASSIFICATION above.
+NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
+test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
+test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
@@ -61,7 +94,10 @@ for suite in tests/*/*.sh; do
   done
 
   findings=""
-  if [ "${#has_anchors[@]}" -gt 0 ] && [ "$hasnt_count" -eq 0 ]; then
+  name="$(basename "$suite" .sh)"
+  corrective=1
+  case " $(printf '%s' "$NOT_CORRECTIVE" | tr '\n' ' ') " in *" $name "*) corrective=0 ;; esac
+  if [ "$corrective" -eq 1 ] && [ "${#has_anchors[@]}" -gt 0 ] && [ "$hasnt_count" -eq 0 ]; then
     findings="${findings}  A. POSITIVE-ONLY — ${#has_anchors[@]} has, 0 hasnt: a stale claim left beside a new one passes\n"
     positive_only=$((positive_only + 1))
   fi
@@ -109,5 +145,8 @@ echo "positive-only suites (A):  $positive_only"
 echo "shadowed anchors (B):      $shadowed"
 echo "loose matches (C):         $loose"
 echo
-echo "A suite absent from the list above asserts on content and carries a negative check."
+echo "A is reported only for CORRECTIVE suites — see CLASSIFICATION in this file's header."
+echo "A zero there is not self-evidently a clean result: add a suite that asserts"
+echo "positively and is not in NOT_CORRECTIVE, and it must appear. If it does not,"
+echo "this check is broken rather than satisfied."
 exit 0
