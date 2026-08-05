@@ -35,6 +35,10 @@ NOTE_MUST_NOT_LEAK_MULTILINE
 The map ends here.
 FIXTURE
 
+cat >> "$TMP/plugin/skills/t4/using-t4/SKILL.md" <<'FIXTURE2'
+Prose with <!-- an inline note --> and LIVE_PROSE_AFTER_COMMENT that must survive.
+FIXTURE2
+
 mkdir -p "$TMP/repo/.claude"; printf '{"t4":true}\n' > "$TMP/repo/.claude/t4.json"
 out="$( cd "$TMP/repo" && printf '{"session_id":"s1"}' \
   | CLAUDE_PLUGIN_ROOT="$TMP/plugin" T4_HOOK_LOCK_DIR="$TMP/l" bash "$HOOK" )"
@@ -62,6 +66,16 @@ esac
 case "$out" in
   *"# Using T4"*) ok "the heading survives";;
   *) bad "the heading survives";;
+esac
+
+# Traced 2026-08-05 while scrutinising #105: the first version dropped any line
+# CONTAINING `<!--`, so a line mixing prose with a trailing note vanished
+# whole. The limitation was documented and nothing enforced it — and the content
+# test only guards five phrases, so losing any OTHER line passed silently. Only
+# lines that are entirely a comment may be removed.
+case "$out" in
+  *LIVE_PROSE_AFTER_COMMENT*) ok "prose sharing a line with a comment is not dropped";;
+  *) bad "prose sharing a line with a comment is not dropped";;
 esac
 
 echo
