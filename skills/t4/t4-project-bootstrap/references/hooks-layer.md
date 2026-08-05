@@ -64,7 +64,8 @@ Honest scope: the local gate raises the floor for agent-run merges; the CI requi
 
 | Symptom | Likely cause → fix |
 |---|---|
-| **No hook fires at all** | The repo has no `.claude/t4.json` marker (every hook exits silently without it) → add it. Or the plugin isn't installed / `.claude/settings.json` doesn't register the hooks → check the install path (plugin vs bootstrap). |
+| **The layer was never installed at all** | Check this **before** the marker row below: the two look identical from outside and the fixes differ. `.claude/hooks/` is absent or empty, so **there is no .claude/hooks/ for a marker to point at** and adding `.claude/t4.json` changes nothing. A repo whose docs are present *looks* bootstrapped, so nobody checks — `pal-mcp-server` ran this way while its own `CLAUDE.md` described gates that did not exist. → Retrofit: `SKILL.md` step 11 to confirm, then steps 6–8. |
+| **No hook fires, but `.claude/hooks/` is populated** | The repo has no `.claude/t4.json` marker (every hook exits silently without it) → add it. Or the plugin isn't installed / `.claude/settings.json` doesn't register the hooks → check the install path (plugin vs bootstrap). |
 | **Hooks silent on Windows only** | `run-hook.cmd` found no `bash` → install Git for Windows (it looks in `C:\Program Files\Git\bin\bash.exe` then `PATH`). By design it exits 0 (no-op) rather than erroring. |
 | **`using-t4` not re-injected after a compaction** | The session-start dedup lock must be the **time-window** form (`hooks/t4-session-start`); a permanent per-session lock suppresses the `compact` re-inject. Confirm `hooks.json` matcher is `startup\|clear\|compact`. |
 | **`using-t4` injection rejected as too large** | The dispatcher content exceeds the token budget (`tests/hooks/test-dispatcher-content.sh`, ≤ 9000 B) → trim it; keep leaf detail in the target skill, not the injected map. |
