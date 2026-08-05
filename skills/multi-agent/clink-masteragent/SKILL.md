@@ -34,6 +34,13 @@ Two more tells, both shipped in that same file:
 - **A "control" that is trivially true forever.** Its two passing checks were `[ -f "$FILE" ]` on files months old. A real control asserts a *behaviour* that holds before **and** after, so an over-broad fix breaks it.
 - **Positive assertions with no negative check.** It defined a `hasnt` helper and never called it, so a partial edit adding the new wording *beside* the old, wrong wording would pass.
 
+**And a delegated detector is neither.** When what comes back *reports on* something rather than *doing* something — a linter, a scanner, a coverage report, an audit, a review — the green/red rules do not bite, because such a thing can run, exit 0, and produce a report in which **nothing is false and nothing is useful.** Two checks, both measured 2026-08-05:
+
+- **Are the findings over-broad?** A delegated audit called **30 of 32** suites defective — it flagged suites with *no assertions at all*, and every anchor containing no space, which condemns `446`: a measured token count and one of the best anchors in that repo. Corrected, **the real number was 11**. A reviewer trusting the count would have been sent to 19 healthy suites. **False positives are not the safe direction** — a critic that cries wolf **gets switched off**, and its true findings go with it.
+- **Was the clean result probed?** The corrected detector then reported **0 findings**, which reads as good news and is worth nothing alone: it is **indistinguishable from a detector that stopped working**. So **make it dirty on purpose** — feed it one known defect, watch the count go `0 → 1`, delete the probe. A scan you have not seen find something has not been shown to find anything.
+
+**The second occurrence was self-inflicted**, and that is the part to keep: the replacement detector, written by the agent that had just criticised the first, repeated the same over-broad flagging one layer down. **Over-broad flagging does not respect who is writing.**
+
 ## Choose the axis before the model
 
 **Never rank candidates by the composite Intelligence Index alone.** Measured from Artificial Analysis' own methodology page (Index v4.1):
