@@ -3,6 +3,25 @@ name: using-t4
 description: Use at the start of any task in a T4-team repo (T4 Labs / Slow-Inc) to decide which T4 skill applies — setting up the repo, session-start memory and open-work, planning or shipping a feature, or recording a bug/decision/change — and to hand off to the companion skill ecosystems the team runs alongside (superpowers, matt pocock, 9arm). The entry-point map for the t4-* skill family; consult it before acting when you're unsure which T4 discipline or which external skill a task needs. Triggers include working in a repo whose CLAUDE.md points here, "how do we work in this repo", "which T4 skill", and starting a session in a Slow-Inc repo (MangaDock, T4-Fastwork).
 ---
 
+<!--
+MAINTAINERS — THIS FILE IS UNDER TWO MACHINE-ENFORCED CONSTRAINTS, AND THEY PULL AGAINST EACH OTHER.
+
+  1. SIZE. `hooks/t4-session-start` injects this file verbatim on every session start and every
+     compaction. `tests/hooks/test-dispatcher-content.sh` caps that injected output at 9000 B.
+     Measured 2026-08-05: 8965 B. Thirty-five bytes spare.
+
+  2. CONTENT. The same test requires five exact phrases to survive every edit:
+     `Route first` · `Red flags` · `phase boundary` · `does not discharge` · `load the current one`.
+
+The trap is that the fix for (1) breaks (2): you pay for an overrun by trimming a sentence, and three
+of those five phrases sit inside prose that reads as trimmable. The two failures look nothing alike —
+one says the output is 9033 B, the other says a device is missing — so measure after trimming rather
+than assuming. Run: bash tests/hooks/test-dispatcher-content.sh
+
+HTML comments are stripped before injection, so this note costs the session budget nothing. Keep
+notes on their own lines; a comment trailing live prose takes the prose with it.
+-->
+
 # Using T4
 
 ## Overview

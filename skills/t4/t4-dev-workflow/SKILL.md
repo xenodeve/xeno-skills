@@ -28,6 +28,12 @@ Most "surprise cases" aren't surprises — they're **sites the plan never knew a
 
 **Do it after the concept is settled (`/grill-me`) and before `/to-prd`** — surveying a concept that's still moving is wasted, and planning without it is guessing.
 
+**The trigger is an action, not a phase: the first time you are about to write down what you will change.** A plan, a PRD, an issue body, a comment saying "I'll edit X and Y", the first edit of a multi-file change — whichever comes first, that is the cue. Phrase it to yourself as *"I am about to commit to a set of files"*, the same way `/simplify` is tied to *after writing code*.
+
+**Why it needed one.** A step attached to a *phase boundary* fires only when someone happens to notice the boundary — and `using-t4` already warns that boundaries are what get crossed unnoticed (*"a check at task start does not discharge a later trigger"*). **Worked example, one session, minutes apart:** on `#78` the survey was skipped and the consequence arrived inside the same edit — one added clause took the injected dispatcher to 9033 B against a hard 9000 B cap. On `#86` the same agent ran it first and budgeted the addition before writing it. **The difference was not diligence. It was that #86's issue body handed the survey over as a section and #78's did not.**
+
+**A sibling issue's change inventory is survey input.** The warning that would have prevented `#78` was already written down — in `#86`'s body, read in the same session. Before surveying, check the issues adjacent to yours for an inventory someone already built; a survey that ignores one is redoing work that exists.
+
 **What to enumerate — don't stop at the obvious file:**
 
 - **Every occurrence of the thing you're changing**, not the first one. `rg` for the symbol, the string, the config key, the route, the error message. **Duplicates are the classic miss:** the same list, rule, or constant written in two files drifts the moment you update one — this repo's own pipeline is described in both `SKILL.md` and `references/workflow-artifacts.md`, and a change to one alone is a defect.
@@ -137,6 +143,7 @@ The order — no step skipped because the answer "looks obvious":
 
 | Trigger | Skill | Condition |
 |---|---|---|
+| **About to write down what you will change** — a plan, a PRD, an issue body, or the first edit of a multi-file change | **change-site survey** (above) | Every time. Check adjacent issues for an inventory that already exists |
 | Bug / error / stack trace | `/debug-mantra` | Start a debug session every time |
 | Complex debug / perf regression | `/diagnose` | reproduce → minimise → hypothesise → fix |
 | After fixing a bug | `/post-mortem` (see t4-engineering-records) | Record root cause + fix + validation |

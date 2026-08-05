@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-session-start
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
 # T4 SessionStart hook — inject the `using-t4` map into a T4 repo, once per session.
 #
 # Guard:  runs only when the current repo carries the `.claude/t4.json` marker.
@@ -41,6 +44,18 @@ for f in "${CLAUDE_PLUGIN_ROOT:-}/skills/t4/using-t4/SKILL.md" ".claude/hooks/us
   if [ -f "$f" ]; then content="$(<"$f")"; break; fi
 done
 [ -n "$content" ] || content="Invoke the \`using-t4\` skill now to load the T4 operating map before doing anything else."
+
+# Drop HTML-comment lines. The map is injected verbatim on every session start
+# AND every compaction, and it sits at ~99% of the 9000 B budget that
+# tests/hooks/test-dispatcher-content.sh enforces — so a note aimed at whoever
+# EDITS the skill would otherwise spend that budget forever on a reader who
+# cannot act on it. Notes must occupy whole lines; a comment trailing live prose
+# takes the prose with it.
+content="$(printf '%s\n' "$content" | awk '
+  /<!--/ { inc = 1 }
+  !inc   { print }
+  /-->/  { inc = 0 }
+')"
 
 wrapped="<EXTREMELY_IMPORTANT>
 You are in a T4 repo. Below is your \`using-t4\` map — route every task through it before acting.

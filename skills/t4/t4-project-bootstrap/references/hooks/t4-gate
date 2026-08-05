@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-gate
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
 # T4 PreToolUse gate — the one hard-enforcement layer. It only ever BLOCKS a
 # tool call (deny); silence means "no opinion, let the normal flow proceed".
 # Scoped to T4 repos via the `.claude/t4.json` marker.
