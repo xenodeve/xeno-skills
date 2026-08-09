@@ -44,12 +44,26 @@ done
 [ -f "$REPO_ROOT/.claude/hooks/using-t4.snapshot.md" ] \
   && ok "using-t4.snapshot.md present (plugin-less session-start fallback)" \
   || bad "using-t4.snapshot.md missing"
+# The snapshot is the plugin-less session-start fallback: stale content would be
+# injected into every session. It must track the repo's own using-t4 SKILL.md.
+if cmp -s "$REPO_ROOT/.claude/hooks/using-t4.snapshot.md" "$REPO_ROOT/skills/t4/using-t4/SKILL.md"; then
+  ok "using-t4.snapshot.md in sync with skills/t4/using-t4/SKILL.md"
+else
+  bad "using-t4.snapshot.md DRIFTED from skills/t4/using-t4/SKILL.md (re-copy)"
+fi
 
 echo "the guards layer is installed so every agent/human meets it, not just Claude:"
 for f in pre-push check-issue-ref check-tree-budget check-gate-ledger; do
   [ -f "$REPO_ROOT/.githooks/$f" ] \
     && ok ".githooks/$f present" \
     || bad ".githooks/$f missing"
+  # Same source-of-truth rule as the hooks: the installed copies must track the
+  # repo's own references/guards (which CI runs), so a stale install is caught.
+  if cmp -s "$REPO_ROOT/.githooks/$f" "$REPO_ROOT/skills/t4/t4-project-bootstrap/references/guards/$f"; then
+    ok ".githooks/$f in sync with references/guards"
+  else
+    bad ".githooks/$f DRIFTED from references/guards (re-copy)"
+  fi
 done
 
 echo "the CI gate runs the same guard scripts on PRs (can't be --no-verify'd):"
