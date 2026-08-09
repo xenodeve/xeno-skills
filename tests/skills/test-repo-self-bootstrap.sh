@@ -65,6 +65,15 @@ has "$REPO_ROOT/CLAUDE.md" "discharge a later trigger"  "the read-once failure i
 has "$REPO_ROOT/CLAUDE.md" "docs/OPEN-WORK-LEDGER.md"   "the session-start protocol points at the ledger"
 has "$REPO_ROOT/CLAUDE.md" "Obsidian-xeno-skills/Home.md" "and at the memory vault"
 
+echo "the governed docs this repo ships are bilingual in the repo itself (not just the template):"
+for f in CONTEXT.md UBIQUITOUS_LANGUAGE.md PRODUCT.md docs/agents/workflow.md docs/agents/issue-tracker.md docs/agents/triage-labels.md docs/agents/domain.md; do
+  if grep -qF '<!-- lang:en -->' "$REPO_ROOT/$f" && grep -qF '<!-- lang:th -->' "$REPO_ROOT/$f"; then
+    ok "$f carries both lang:en and lang:th"
+  else
+    bad "$f is missing a language marker (governed-docs bilingual rule)"
+  fi
+done
+
 echo ""
 echo "repo-self-bootstrap: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

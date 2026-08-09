@@ -30,6 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       # The suite shells out to perl, python and timeout; all are present on
       # ubuntu-latest. bash is the harness — no package manager needed.
       - run: bash tests/hooks/run-all.sh
