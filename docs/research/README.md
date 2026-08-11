@@ -12,6 +12,13 @@ this library composes with the ecosystems it sits on top of. One dated file per 
 - [2026-07-16 — Subagent vs self: token economics](2026-07-16-subagent-vs-self-token-economics.md) —
   the two-pool cost model (your metered tokens vs free-local / flat-subscription); when delegating
   actually saves your tokens.
+- [2026-08-11 — OpenCode compatibility survey](2026-08-11-opencode-compatibility-survey.md) — the
+  skills already run in OpenCode **unchanged**, because it searches `~/.claude/skills/<name>/SKILL.md`
+  (machine-verified) and falls back to `CLAUDE.md` for rules. It also enforces the same
+  name-matches-directory and no-nesting constraints that produced #45. Qualifies the premise in
+  `guards-layer.md`: OpenCode has its own blocking `tool.execute.before` hook, so Claude is not the
+  only agent with a native gate — Tier 0.5 still stands for Codex/Gemini/humans. Nothing acted on;
+  OpenCode was never installed, and whether a plugin can inject at session start is unresolved.
 - [2026-08-04 — xeno-skills × pbakaus/impeccable composition audit](2026-08-04-xeno-vs-impeccable-composition-audit.md)
   — the fourth ecosystem, which the first three audits did not know existed. Refutes the "design/* is
   genuine delta" conclusion, but not the way a grep suggested: impeccable saw those numerics and
