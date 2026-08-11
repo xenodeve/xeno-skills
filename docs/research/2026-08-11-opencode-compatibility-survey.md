@@ -28,18 +28,29 @@ worktree root for the project-scoped ones:
 | 5 | `.agents/skills/<name>/SKILL.md` | project, agent-compatible |
 | 6 | `~/.agents/skills/<name>/SKILL.md` | global, agent-compatible |
 
-Paths 3 and 4 are deliberate Claude Code compatibility, and 4 is exactly where `npx skills add`
-installs. **Machine-verified** on 2026-08-11:
+Paths 3 and 4 are deliberate Claude Code compatibility. **Observed**, not inferred — OpenCode 1.18.15
+was run against this machine on 2026-08-11:
 
 ```
-~/.claude/skills/design/SKILL.md            present
-~/.claude/skills/design-setup/SKILL.md      present
-~/.claude/skills/using-t4/SKILL.md          present
-~/.claude/skills/t4-dev-workflow/SKILL.md   present
+$ opencode debug skill        # 379 skills loaded in total
+  using-t4               <- C:\Users\xenod\.agents\skills\using-t4\SKILL.md
+  t4-dev-workflow        <- C:\Users\xenod\.agents\skills\t4-dev-workflow\SKILL.md
+  design                 <- C:\Users\xenod\.agents\skills\design\SKILL.md
+  design-setup           <- C:\Users\xenod\.agents\skills\design-setup\SKILL.md
+  …  all 14 of ours, 14/14
 ```
 
 So a user who ran `npx skills add xenodeve/xeno-skills` has these skills available in OpenCode
-already, without knowing it and without any porting work.
+already, without knowing it and without any porting work. That is now an observed load, not a path
+match plus a documented contract.
+
+**The mechanism is not the one first assumed.** `npx skills add` writes to **both** `~/.claude/skills/`
+and `~/.agents/skills/` — `using-t4/SKILL.md` is 8601 bytes in each, byte-identical — and the skill
+OpenCode actually resolved came from `.agents` (search path **6**), not `.claude` (path **4**). The
+documentation lists `.claude` before `.agents`; the observed resolution is the other way round, so
+either that list is not a precedence order or precedence differs from listing. Not worth guessing at:
+the conclusion holds through path 6 regardless, and the Claude-compatible paths matter for a repo that
+ships `.claude/skills/` in-tree rather than through the installer.
 
 Skills are loaded on demand through a native `skill` tool — `skill({ name: "using-t4" })` — and the
 available skills are surfaced to the model as name/description pairs, the same progressive-disclosure
@@ -118,6 +129,26 @@ none either. What is incomplete is the implied "so Claude is the only agent with
 OpenCode has one, which makes a plugin a **third delivery path** alongside the bootstrap `.claude/hooks/`
 copy and the Claude Code plugin.
 
+## 4a. The dispatcher does not port — only its compaction half does
+
+This was the survey's open question: whether a plugin can inject context at session start, since that
+is the mechanism the whole `using-t4` dispatcher depends on. **Answered: it cannot.**
+
+- `session.created` is listed as an event with no documented payload or mutation surface — detection
+  only. No example injects through it.
+- `experimental.session.compacting` **does** inject. It exposes `output.context.push(...)`, and
+  setting `output.prompt` replaces the compaction prompt entirely (which makes `output.context`
+  ignored). It fires *before the LLM generates the continuation summary*.
+
+So the T4 dispatcher ports on the **compact** leg and not the **startup** leg, and even the compact
+leg runs through an `experimental.` hook. That asymmetry matters: `t4-session-start` fires on
+`startup|clear|compact` precisely because compaction is when the map is most likely to have fallen
+out of context — OpenCode covers that case and misses the one where a session begins cold.
+
+Anything equivalent to a cold-start injection would have to come from a different mechanism —
+`instructions` in `opencode.json`, or `AGENTS.md`/`CLAUDE.md` content, both of which are static files
+rather than a hook.
+
 ## 5. Two enforcement mechanisms we have no analogue for
 
 **The `skill` tool is itself permission-gated.** Because `skill` appears in the permission tool list,
@@ -143,7 +174,7 @@ careless checkout.
 | `CLAUDE.md` | `AGENTS.md` primary, `CLAUDE.md` fallback | **works today, unchanged** |
 | `PreToolUse` gate (`t4-gate`) | plugin `tool.execute.before`, throw to block | portable — rewrite in JS |
 | dangerous-git deny list | `permission.bash` patterns, last-match-wins | partly declarative, no plugin needed |
-| `SessionStart` dispatcher injection | `session.created` event exists | **unverified** — see boundary |
+| `SessionStart` dispatcher injection | no equivalent — see §4a | **does not port** (compact leg only) |
 | `UserPromptSubmit` reminder | no documented equivalent found | unknown |
 | `/grill-me`, `/tdd`, … | `.opencode/commands/*.md`, `$ARGUMENTS`, `` !`shell` `` | portable — rewrite per command |
 | clink subagents | agents as markdown, `mode: subagent`, per-agent `permission` | different mechanism, same intent |
@@ -156,21 +187,29 @@ careless checkout.
 frontmatter rule, hook name, permission and policy schema, and config key above. Fetched through a
 summarising reader, not read as raw HTML — quoted strings are reproduced from that reader's output.
 
-**Machine-verified** (run here, 2026-08-11): the contents of `~/.claude/skills/`, confirming
-`npx skills add` installs flat at depth 1 and therefore lands on OpenCode's search path 4.
+**Machine-verified** (run here, 2026-08-11, OpenCode **1.18.15** at `~/.bun/bin/opencode.exe`): the
+contents of `~/.claude/skills/` and `~/.agents/skills/`; and `opencode debug skill`, which loaded 379
+skills including **all 14 of ours**, resolved from `~/.agents/skills/`.
+
+**Corrected after first publication.** The first version of this file placed *"OpenCode has never been
+installed or run"* in the unverified column. That was false: it was installed at
+`~/.bun/bin/opencode.exe`, simply absent from `PATH`, which is why a check for the binary would have
+come back empty and why the claim felt safe to make. It was never checked at all. The error was caught
+by another agent working the same clone, and the fix is not merely to delete the sentence — running
+the tool promoted §1 from doc-sourced to observed and corrected the install path in the process. A
+register table is worth exactly what its worst cell is worth; one wrong cell puts every other cell in
+question, which is why this correction is recorded rather than quietly edited away.
 
 **Unverified, and load-bearing:**
 
-- **OpenCode has never been installed or run in this survey.** No skill was actually loaded by it. The
-  compatibility claim in §1 is a path match plus a documented contract, not an observed load.
-- **Whether a plugin can inject context at session start is unknown.** `session.created` is listed as
-  an event, but no documented example shows injecting into the model's context. This is the fact that
-  decides whether the dispatcher pattern — the thing that makes `using-t4` fire at all — ports, or
-  whether only the blocking half does.
+- **No plugin was written or executed.** `tool.execute.before` blocking a call is doc-sourced and its
+  example is quoted, but nothing in this survey exercised it. The claim that the T4 gate is portable
+  rests on a reading, not a run — and §8.2 is deliberately gated on that.
 - One fetched summary described permissions as "post-tool-use gating," which contradicts the
   `tool.execute.before` hook name and example on the same site. Treated here as an artifact of the
   summariser; resolving it needs the source.
 - Whether a user can bypass a policy is not addressed in the docs.
+- Why `.agents` (path 6) resolved ahead of `.claude` (path 4) is not established — see §1.
 
 ## 8. Implications, deliberately not acted on
 
@@ -183,3 +222,17 @@ summarising reader, not read as raw HTML — quoted strings are reproduced from 
    reasoning as written is now falsifiable by a reader who knows OpenCode.
 4. The `skill`-as-gated-tool and global-beats-project policy shapes are both stronger than anything in
    the current ladder and are worth considering on their own merits, independently of OpenCode.
+
+### Open issues this bears on
+
+- **#83** (every GitHub-mutating MCP tool bypasses the gate) and **#126** (the gate disappears
+  silently without bash). §4's third delivery path matters *most* exactly where the Claude path fails
+  open, which is what both of these describe. A gate that binds tool calls rather than shell strings
+  is the shape neither of those defects could take.
+- **#85** (a repo missing `.claude/t4.json` is silently ungated, with no way to tell). §5's
+  global-beats-project policy precedence is a direct design answer: an operator-level rule a
+  repository cannot switch off is precisely what #85 asks for, and nothing in the current ladder has
+  that shape — every T4 control is per-repo and editable from inside the repo.
+
+*Cross-references contributed by a second agent surveying OpenCode as a `clink` client rather than as
+a skill host; the two surveys do not overlap and neither supersedes the other.*
