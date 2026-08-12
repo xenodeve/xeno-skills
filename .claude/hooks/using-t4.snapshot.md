@@ -8,7 +8,7 @@ MAINTAINERS — THIS FILE IS UNDER TWO MACHINE-ENFORCED CONSTRAINTS, AND THEY PU
 
   1. SIZE. `hooks/t4-session-start` injects this file verbatim on every session start and every
      compaction. `tests/hooks/test-dispatcher-content.sh` caps that injected output at 9000 B.
-     Measured 2026-08-12: 8970 B. Thirty bytes spare.
+     Measured 2026-08-12: 8974 B. Twenty-six bytes spare.
 
   2. CONTENT. The same test requires five exact phrases to survive every edit:
      `Route first` · `Red flags` · `phase boundary` · `does not discharge` · `load the current one`.
@@ -32,7 +32,7 @@ The T4 team runs its repos **agent-primary** — the coding agent is the main de
 
 ## Route first — before you respond
 
-Before you answer, ask, explore, edit, or run any tool: check the map and invoke the matching skill. **Uncertainty is a reason to consult the map, not skip it** — but a leaf skill fires on its own explicit trigger, not a hunch (don't invoke `security-review` because a line contains "token"). Announce **"Using `<skill>` to `<purpose>`"**, then invoke — announcing is not the work.
+Before you answer, ask, explore, edit, or run any tool: check the map and invoke the matching skill. **Uncertainty is a reason to consult the map, not skip it** — but a leaf skill fires on its own explicit trigger, not a hunch (don't invoke `security-review` because a line contains "token"). Announce **"Using `<skill>` to `<purpose>`"**, then invoke.
 
 **Re-route at every phase boundary.** A check at task start does **not** discharge a later trigger: wrote code → `simplify`; before merge → `code-review` + `scrutinize`; touched auth/secret → `security-review`; done → `verify`. A parent skill (`t4-dev-workflow`) **does not discharge** its leaves (`tdd`, `verify`, …).
 
@@ -61,6 +61,7 @@ Before you answer, ask, explore, edit, or run any tool: check the map and invoke
 | **Something notable just happened** — fixed & validated a bug, made a hard-to-reverse decision, shipped a system-affecting change | **`t4-engineering-records`** |
 | **Recording or recalling durable memory** — persisting a convention/decision/feedback, or finding where open work lives | **`t4-agent-memory`** |
 | **Going AFK** — the developer hands you a bounded batch to run unattended and steps away ("handle it", "clear the queue", "keep going without me") | **`t4-afk`** |
+| **Writing anything the developer reads** | **`t4-bro`** |
 
 ## Companion ecosystems — use them alongside T4
 
@@ -101,7 +102,7 @@ In a T4 repo:
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — simplest thing that works, surgical diffs tracing to the request, verifiable success criteria.
 - **Some rules are machine-enforced** — the `PreToolUse` gate + a git pre-push guard block a PR with no issue, dangerous git, a failed `verify` (`t4-dev-workflow`). They raise the floor, not replace judgment.
-- **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker, your own earlier recommendation, or a plan that **assigns the decision to you** ("for the implementer") answers it, *act*. Interrupt only for a genuinely unresolved decision that's the developer's — park + one digest. Re-asking what you can answer is "sticking" (`t4-afk`).
+- **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker, your own earlier recommendation, or a plan that **assigns the decision to you** answers it, *act*. Interrupt only for a genuinely unresolved decision that's the developer's — park + one digest. Re-asking what you can answer is "sticking" (`t4-afk`).
 
 ## When NOT to use
 
