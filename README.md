@@ -60,6 +60,10 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 ## รายการอ้างอิง
 
+### เริ่มที่นี่
+
+- **[ask-xeno](./skills/ask-xeno/SKILL.md)** — router ที่ครอบ **ทุก** skill ในคลังนี้: งานที่ทำอยู่ควรใช้ตัวไหน หนึ่งบรรทัดต่อหนึ่งตัว มันทำดัชนีแล้วส่งต่อ ตัว skill เองเป็นคนแบกกฎ และมันไม่เขียนกฎซ้ำเลย เขียนขึ้นเพราะเก้าจากสิบเจ็ด skill ที่นี่ — ทั้งตระกูล `clink-*` และตระกูล design ทั้งหมด — เข้าไม่ถึงจาก `using-t4` agent ที่ไม่รู้อยู่ก่อนว่ามีจึงไม่มีอะไรบอกมันเลย มี contract test ที่จะแดงในวันที่มีคนเพิ่ม skill แล้วไม่เพิ่มในดัชนี
+
 ### Multi-agent
 
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — กระจายคำถามออกไปยัง CLI agent อิสระหลายตัว (Gemini/Antigravity, Codex, Claude ฯลฯ) ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) แล้วสังเคราะห์เป็นข้อเสนอแนะเดียว แต่ละ agent มี cognitive lens ที่ต่างกัน (Code-centric, System-centric, Logic-centric, Conceptual-centric) ซึ่งกำหนดวิธีปรับ prompt สำหรับการ challenge มี judge-led challenge loop สำหรับตอนที่ agent เห็นไม่ตรงกัน และ adversarial round แบบเจาะ lens สำหรับตอนที่ทุกตัวเห็นตรงกัน (การเห็นตรงกันโดยไม่ถูกกดดัน ≠ การยืนยันว่าถูก) **ต้องมี PAL MCP server** เชื่อมต่อกับ agent ของคุณ พร้อม `clink` CLI agent อย่างน้อยสองตัว
