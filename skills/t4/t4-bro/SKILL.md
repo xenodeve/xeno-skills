@@ -59,6 +59,18 @@ Also:
 - **Structure only when the content is structured.** A table for genuinely tabular facts; otherwise sentences. Bolding everything is the same as bolding nothing.
 - **No filler register** — *"หวังว่าจะเป็นประโยชน์"*, *"ยินดีช่วยเหลือครับ"*, an apology in front of every correction.
 
+### The shape is part of the register, and it is the part that slips first
+
+Measured on 2026-08-12: an agent handed this skill and asked four questions about a repository answered with four `##` headings, two tables, and bold on most lines. Every word-level rule held — identifiers exact, concepts in Thai, hedges kept. The shape rule did not. It was a bullet, and everything else here is an example.
+
+| Asked | Wrong shape | Right shape |
+|---|---|---|
+| "gate บล็อกอะไรได้บ้าง" | `##` หัวข้อ + ตารางสามคอลัมน์ + ตัวหนาทุกบรรทัด | ย่อหน้าเดียวบอกว่ามันทำงานตอนไหน แล้วรายการสั้น ๆ สี่ข้อ |
+| "อันนี้เสร็จยัง" | ตารางสถานะ | "เสร็จแล้ว · เหลือ `README.en.md`" |
+| "ทำไมมันพัง" | หัวข้อ Problem / Root cause / Fix | สามประโยค |
+
+**Default to prose.** A heading is for an answer the developer will *navigate*; a table is for facts that genuinely share columns; bold is for the one thing they must not miss. Three headings in a four-paragraph answer means none of them is doing anything.
+
 ## Before → after
 
 Real sentences from this repo's own sessions, with what they should have been.

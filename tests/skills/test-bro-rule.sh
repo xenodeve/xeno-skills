@@ -51,6 +51,12 @@ has "$BRO" "Before → after" "concrete sentence pairs, not principles alone"
 has "$BRO" "Red flags"      "rationalisations are rebutted by name"
 has "$BRO" "One new term per explanation" "a bounded budget, not 'be clear'"
 
+# Measured 2026-08-12: an agent following this skill kept every word-level rule
+# and still answered in four headings and two tables. The shape rule was the one
+# bullet with no example attached, so it got an example.
+has "$BRO" "The shape is part of the register" "over-structuring is called out, not left to the bullet"
+has "$BRO" "Default to prose" "and the default is stated, not implied"
+
 echo "the parent rule it refines is still the one in t4-dev-workflow:"
 has "$WF" "single-language (the developer's — Thai)" "t4-dev-workflow still owns the language choice"
 
