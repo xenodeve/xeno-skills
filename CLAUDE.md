@@ -38,6 +38,24 @@ claim is a defect (see the composition audits in `docs/research/2026-08-04-*`).
 3. The GitHub issue you're picking up — `gh issue view <n> --comments`.
 4. `DONE.md` / `docs/research/` only if the task needs history or provenance.
 
+## Session-end protocol — write the skill-usage entry
+
+Before the session ends, write one entry to `Obsidian-xeno-skills/skill-usage/<YYYY-MM-DD>-<slug>.md`
+(skeleton and rules in `t4-agent-memory`). It records **skill↔behaviour only** — what shipped goes in
+`DONE.md`, what is still open goes in the ledger.
+
+This is the repo's feedback database: read it *before changing a skill*, instead of designing a
+benchmark for one. Three rules make it worth having:
+
+- **A session that skipped a rule records the skip** — especially the embarrassing case. An empty
+  section is written out as `none observed`; dropping it turns silence into an unearned pass.
+- **Only what happened in this session.** A reconstructed retrospective is a hypothesis.
+- **Name the skill file and quote what was actually written or done**, or the next agent cannot act
+  on it.
+
+**No hook produces this entry and none can** (`docs/adr/0001-hook-based-workflow-enforcement.md`) —
+a missing entry means a missing entry, not a session in which nothing went wrong.
+
 ## using-t4 — standing default (invoke at every phase boundary)
 
 This repo follows the T4 operating standard. **Re-route at every phase boundary:** a check at task
