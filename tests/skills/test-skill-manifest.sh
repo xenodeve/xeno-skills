@@ -47,6 +47,16 @@ while IFS= read -r f; do
 done <<< "$skills"
 [ -z "$nested" ] && ok "no SKILL.md sits inside another skill's directory" || bad "undiscoverable (nested):$nested"
 
+echo "every frontmatter PARSES as YAML (grep sees strings; the installer sees a document):"
+# t4-bro passed every assertion above and the installer skipped it — an unquoted
+# colon-space in `description` made the document invalid. CI's skill-discovery
+# job would have caught it and never ran (billing lock), so the check is local.
+if python "$(dirname "$0")/check-frontmatter.py"; then
+  ok "every SKILL.md frontmatter parses"
+else
+  bad "a SKILL.md frontmatter does not parse, or no parser was available (see 'parser:' above)"
+fi
+
 echo "no machine-specific absolute paths in shipped skill content:"
 abs="$(grep -rln 'file:///' skills/ 2>/dev/null)"
 [ -z "$abs" ] && ok "no file:/// links (they break on every machine but the author's)" || bad "absolute file:/// links in: $abs"

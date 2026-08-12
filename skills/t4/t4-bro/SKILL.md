@@ -1,6 +1,6 @@
 ---
 name: t4-bro
-description: Use when writing anything the developer reads — a reply, a status update, an explanation, a question, a summary of what you just did. Sets the register: plain Thai at a working developer's level, English kept only where it earns its place (identifiers, the developer's own vocabulary, precision nothing else carries), and never at the cost of accuracy. Load it in a T4 repo alongside whatever skill is doing the work; it governs how you say the answer, not what the answer is. Triggers include reporting a result, explaining a mechanism, proposing a plan, asking the developer a question, and any moment you notice you are about to write a term you would have to teach.
+description: Use when writing anything the developer reads — a reply, a status update, an explanation, a question, a summary of what you just did. Sets the register — plain Thai at a working developer's level, English kept only where it earns its place (identifiers, the developer's own vocabulary, precision nothing else carries), and never at the cost of accuracy. Load it in a T4 repo alongside whatever skill is doing the work; it governs how you say the answer, not what the answer is. Triggers include reporting a result, explaining a mechanism, proposing a plan, asking the developer a question, and any moment you notice you are about to write a term you would have to teach.
 ---
 
 # T4 Bro
