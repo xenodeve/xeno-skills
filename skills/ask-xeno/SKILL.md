@@ -10,8 +10,8 @@ description: The top of this library. Ask it which family your task belongs to, 
 | You are… | Enter at |
 |---|---|
 | **Working in a T4 repo** — building a feature, filing an issue or PR, recording a decision, picking up where a session left off, running unattended, or writing anything the developer reads | **`using-t4`** |
-| **Handing work to another agent** — executing a scoped subtask, convening a panel for judgment, or hunting a bug across agents | **`clink-masteragent`** *(the clink family entry; read it before any delegation)* |
-| **Designing a web UI** — prototyping 0→1, applying micro-UI rules, auditing a page, or reasoning about why a layout works | **`design`** *(the design family entry)* |
+| **Handing work to another agent** — executing a scoped subtask, convening a panel for judgment, or hunting a bug across agents | **`using-clink`** |
+| **Designing a web UI** — prototyping 0→1, applying micro-UI rules, auditing a page, or reasoning about why a layout works | **`using-design`** |
 | **Writing code, in any repo** | **`karpathy-guidelines`** — simplest thing that works, surgical diffs, verifiable success criteria |
 
 **This file stays thin on purpose.** Each family entry already carries its own map and its own rules; restating them here would create a second copy that drifts from the first. If you find yourself wanting to add detail to this table, it belongs in the family entry instead.

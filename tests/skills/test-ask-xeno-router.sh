@@ -24,7 +24,7 @@ BUDGET=1800
 
 # The family entries ask-xeno delegates to. Renaming one without updating this
 # list is itself a defect, so the list is spelled out rather than derived.
-ENTRIES="using-t4 clink-masteragent design karpathy-guidelines"
+ENTRIES="using-t4 using-clink using-design karpathy-guidelines"
 
 pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }

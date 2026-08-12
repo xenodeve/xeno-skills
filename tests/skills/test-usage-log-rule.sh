@@ -61,7 +61,7 @@ has "$GOV" "skill-feedback" "the CLAUDE.md skeleton names the session-end step"
 echo "every entry point an agent can arrive through names it (#146):"
 has "$MAP" "skill-feedback" "using-t4 — the file injected verbatim every session"
 for f in skills/multi-agent/clink-masteragent/SKILL.md \
-         skills/design/design/SKILL.md \
+         skills/design/using-design/SKILL.md \
          skills/karpathy-guidelines/SKILL.md; do
   has "$REPO_ROOT/$f" "skill-feedback"    "$(basename "$(dirname "$f")") names the obligation"
   has "$REPO_ROOT/$f" "t4-agent-memory"  "$(basename "$(dirname "$f")") points at the rules instead of copying them"

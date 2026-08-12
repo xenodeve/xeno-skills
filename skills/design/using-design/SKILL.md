@@ -1,5 +1,5 @@
 ---
-name: design
+name: using-design
 description: Master Antigravity Web Design Suite. Coordinates 4 specialized design skills (design-setup for 0->1 prototyping, design-rules for micro-UI CSS/Tailwind rules & LIFT system, design-audit for 30-second first impression reviews, and design-psychology for 3-brain personas & luxury white space). Includes full research video transcript library.
 triggers:
   - /design
