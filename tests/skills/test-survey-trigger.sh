@@ -42,7 +42,7 @@ echo
 echo "using-t4 warns whoever edits it about BOTH machine-enforced constraints:"
 has "$MAP" "MACHINE-ENFORCED CONSTRAINTS" "the note exists"
 has "$MAP" "test-dispatcher-content.sh" "it names the test that enforces them"
-has "$MAP" "Fifty-four bytes spare" "it states the measured headroom"
+has "$MAP" "Thirty bytes spare" "it states the measured headroom"
 has "$MAP" "five exact phrases to survive every edit" "it names the content constraint, not only the size one"
 
 echo

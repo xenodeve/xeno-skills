@@ -51,7 +51,7 @@ has "$ART" "none observed"                "an empty section is written out, not 
 has "$ART" "skills:"                      "the entry records which skills were actually loaded"
 
 echo "a bootstrapped repo gets it through its CLAUDE.md:"
-has "$GOV" "skill-usage" "the CLAUDE.md skeleton names the session-end step"
+has "$GOV" "skill-feedback" "the CLAUDE.md skeleton names the session-end step"
 
 # #146: the log reached three files in one family while ten of seventeen skills
 # sat outside it — and the families it missed (multi-agent, karpathy) are where
@@ -59,17 +59,33 @@ has "$GOV" "skill-usage" "the CLAUDE.md skeleton names the session-end step"
 # through has to name the obligation, or the loop is aimed away from its own
 # evidence. The rules stay in ONE file; these only point at it.
 echo "every entry point an agent can arrive through names it (#146):"
-has "$MAP" "skill-usage" "using-t4 — the file injected verbatim every session"
+has "$MAP" "skill-feedback" "using-t4 — the file injected verbatim every session"
 for f in skills/multi-agent/clink-masteragent/SKILL.md \
          skills/design/design/SKILL.md \
          skills/karpathy-guidelines/SKILL.md; do
-  has "$REPO_ROOT/$f" "skill-usage"      "$(basename "$(dirname "$f")") names the obligation"
+  has "$REPO_ROOT/$f" "skill-feedback"    "$(basename "$(dirname "$f")") names the obligation"
   has "$REPO_ROOT/$f" "t4-agent-memory"  "$(basename "$(dirname "$f")") points at the rules instead of copying them"
 done
 
-echo "one destination, and an unlocatable vault is reported rather than skipped:"
-has "$MEM" "the skill library's own vault" "skill feedback lives with the skill, not the repo that loaded it"
-has "$MEM" "say so in the session report"  "a skipped entry is never silent"
+# A falsify seat (fresh lineage, per clink-debug's provenance rule) refuted the
+# file-first design on four predicates. Two stuck and decided the redesign:
+#   - the vault sat inside a git checkout, so `git switch` made the destination
+#     vanish — a directory that flickers with the branch is not a database;
+#   - a session that ends by crashing or cancellation never reaches "session
+#     end" at all, so a file written there is written never.
+# A GitHub issue has neither property. Hence: the issue is the record, and the
+# note is demoted to a local working copy for xeno-skills development only.
+echo "the issue is the record, reachable from any repo and any session:"
+has "$MEM" "The GitHub issue is the record"  "the durable destination is the tracker, not a file"
+has "$MEM" "One issue per rule, not per session" "the comment count is the frequency signal"
+has "$MEM" "skill-feedback"                   "the label that makes them findable as a set"
+
+echo "the two gh flags that decide whether this works at all:"
+has "$MEM" "--state all"                      "closed issues carry the analysis and the deliberate-by-design cases"
+has "$MEM" "--repo xenodeve/xeno-skills"      "gh defaults to the repo you are standing in"
+
+echo "the note survives, scoped to developing the library itself:"
+has "$MEM" "only when the session ran inside" "a session in another repo files the issue and writes no note"
 
 echo ""
 echo "usage-log-rule: $pass passed, $fail failed"

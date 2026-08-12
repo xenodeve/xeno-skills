@@ -21,7 +21,7 @@ Each layer exists because it answers a different question, and each is structure
 | **Personal memory** — `~/.claude/projects/<slug>/memory/` + `MEMORY.md` index | "What did *I* learn across my own sessions?" (same note format) | one file per memory, via `MEMORY.md` | Loaded by the runtime each session; keep in sync with the vault |
 | **Open-work ledger** — `docs/OPEN-WORK-LEDGER.md` | "What is still open, tracked *and* untracked?" | one row per work item | **Every session start** — the consolidated *discovery index* (GitHub issues stay the source of truth for tracked work; the ledger also catches untracked MD-only items and reconciles to issues) |
 | **Ship log** — `DONE.md` | "What did past sessions actually ship, and how was it validated?" | one dated entry (newest on top) | When you need the history of a change; append after each shipped unit |
-| **Skill-usage log** — `Obsidian-<Repo>/skill-usage/` (committed) | "Which skills fired in real work, and which rules actually held?" | one dated entry per session | **Before changing a skill** — read it instead of designing a benchmark; write your own entry at session end |
+| **Skill-usage feedback** — `skill-feedback` issues on `xenodeve/xeno-skills`; `Obsidian-xeno-skills/skill-usage/` as the local copy while developing the library | "Which rules actually held in real work, and how often did each fail?" | one issue per rule, one comment per session | **Before changing a skill** — read its issue instead of designing a benchmark; report at session end from any repo |
 | **Survey-provenance cache** — `docs/reports/survey-manifest/` | "What did a prior scan already read, at which commit?" | one entry per file/issue/PR | Before a broad codebase/issue survey — skip or diff unchanged sources |
 | **Serena code memories** — `mem:` graph | "How is the *code* structured?" | one memory per topic, reached via `mem:core` | When exploring unfamiliar code |
 
@@ -55,9 +55,24 @@ Every skill in this family was improved the same way: a session went wrong, some
 
 Real sessions already produce this data and throw it away. The log keeps it.
 
-**Write one entry at session end**, to `skill-usage/<YYYY-MM-DD>-<slug>.md` in **the skill library's own vault** — `<xeno-skills clone>/Obsidian-xeno-skills/` — whichever repo the session ran in (skeleton in `references/memory-artifacts.md`). It records skill↔behaviour only: what shipped belongs in `DONE.md`, what is still open belongs in the ledger.
+### The GitHub issue is the record
 
-**One destination, not one per repo.** "Did this rule hold?" is a question about the *skill*, not about the repo that happened to load it, and the read-trigger is *before changing a skill* — which a log scattered one-vault-per-repo cannot serve. A repo's own vault keeps that repo's project memory; skill feedback is not project memory. The absolute path is configured once in the global `~/.claude/CLAUDE.md`. **If you cannot locate the vault, say so in the session report** rather than skipping quietly — an entry nobody knows is missing is the exact failure this layer exists to stop.
+Report to **`xenodeve/xeno-skills`**, from whichever repo the session ran in. A file was the first design and was refuted: a directory inside a git checkout vanishes on `git switch`, and a session that ends by crashing or cancellation never reaches "session end" at all, so a file written there is written never. An issue has neither property.
+
+**One issue per rule, not per session.** A rule that fails in five sessions is one issue with five comments, and the comment count is the frequency. A new issue per session buries the signal it exists to surface.
+
+At session end, for each rule that did not hold:
+
+1. **Search, `--state all`.** `gh issue list --repo xenodeve/xeno-skills --state all --search "<skill> <rule>"`. `gh issue list` defaults to `--state open`, and the closed ones are the expensive misses — one may already contain the analysis you are about to redo, or record that the behaviour you are calling a bug is deliberate.
+2. **Found one → add a comment.** Do not open a second.
+3. **None → open one**, labelled **`skill-feedback`**, titled `feedback(<skill>): <the rule that did not hold>`.
+4. **Pass `--repo xenodeve/xeno-skills` on every call.** `gh` defaults to the repo you are standing in; without the flag the feedback lands in whatever project you happened to be working on.
+
+Each report names the **skill file**, the rule **in the words the skill uses**, and **what was actually written or done, quoted** — plus whether the rule was skipped outright or followed and still produced the wrong thing.
+
+### The Obsidian note
+
+Keep writing `skill-usage/<YYYY-MM-DD>-<slug>.md` in the library's own vault (skeleton in `references/memory-artifacts.md`) **only when the session ran inside `xeno-skills` itself**. There it is the working database you read while changing a skill, next to the code. A session in any other repo files the issue and writes no note — the note would live in a checkout that repo does not have.
 
 **This is deliberately not a vault note**, and the strict add/update threshold above does not apply to it. That threshold rejects one-off task notes, which is right for the vault and exactly wrong here: a feedback database needs the unremarkable entries, because the rate is the signal. A log of only the memorable sessions is a failure-selected sample, and no rate can be computed from one.
 
