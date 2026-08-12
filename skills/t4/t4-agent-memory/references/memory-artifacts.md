@@ -105,6 +105,39 @@ concrete observed behavior that proves it works.>
 ---
 ```
 
+## Skill-usage log entry — `Obsidian-<Repo>/skill-usage/<YYYY-MM-DD>-<slug>.md`
+
+**What it's for:** so a skill can be improved from real sessions instead of a benchmark. One entry per session, written at session end. Records skill↔behaviour only — the work itself belongs in `DONE.md` and the ledger.
+
+**The section that matters is "Rules that did not hold".** An entry with nothing in it says `none observed` in full; dropping the heading turns silence into an unearned pass.
+
+````markdown
+---
+date: <YYYY-MM-DD>
+repo: <repo>
+skills: [<every skill actually loaded, in the order it was loaded>]
+gates: simplify=<ran|not-run|n-a> code-review=<> scrutinize=<> security-review=<> verify=<>
+---
+
+## What the session did
+<one line, for context only — see DONE.md for the work>
+
+## Rules that did not hold
+- **<rule, in the words the skill uses>** (`<skill file>`) — <what was actually written or done,
+  quoted> · <why it slipped, if known>
+<or: none observed>
+
+## Rules followed that still produced the wrong thing
+- **<rule>** (`<skill file>`) — <followed as written; the outcome was still wrong because ___>
+<or: none observed>
+
+## Wording that was unclear, or that contradicted another skill
+- `<skill file>` says <X>; `<other file>` says <Y> — <which one the session acted on>
+<or: none observed>
+````
+
+**Reading it:** before changing a skill, read the entries that mention it. Three sessions failing the same rule is a design problem in the rule; one session failing it is a session.
+
 ## `docs/reports/survey-manifest/` — provenance cache
 
 **What it's for:** so a later scan (a new report, an ADR, an audit) does **not** re-read files/issues/PRs that haven't changed.

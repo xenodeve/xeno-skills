@@ -14,7 +14,7 @@ The full governance doc set for a T4 repo, and which skill owns each.
 
 | Doc | Location | Owner skill | Purpose |
 |-----|----------|-------------|---------|
-| `CLAUDE.md` | root | bootstrap | Agent operating manual: north-star, repo structure, commands, memory + notify wiring, `docs/agents/*` pointers, architecture map. |
+| `CLAUDE.md` | root | bootstrap | Agent operating manual: north-star, repo structure, commands, memory + notify wiring, `docs/agents/*` pointers, architecture map, and the **session-end step** — write the `skill-usage` log entry (`t4-agent-memory`). |
 | `CONTEXT.md` | root | bootstrap | System-context doc; points at `UBIQUITOUS_LANGUAGE.md` as the canonical glossary. (Multi-context repos use `CONTEXT-MAP.md`.) |
 | `UBIQUITOUS_LANGUAGE.md` | root | bootstrap | Canonical term glossary: bold terms + definition + "aliases to avoid". |
 | `PRODUCT.md` | root | bootstrap | Product brief (the "why"). |

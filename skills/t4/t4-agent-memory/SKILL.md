@@ -21,6 +21,7 @@ Each layer exists because it answers a different question, and each is structure
 | **Personal memory** — `~/.claude/projects/<slug>/memory/` + `MEMORY.md` index | "What did *I* learn across my own sessions?" (same note format) | one file per memory, via `MEMORY.md` | Loaded by the runtime each session; keep in sync with the vault |
 | **Open-work ledger** — `docs/OPEN-WORK-LEDGER.md` | "What is still open, tracked *and* untracked?" | one row per work item | **Every session start** — the consolidated *discovery index* (GitHub issues stay the source of truth for tracked work; the ledger also catches untracked MD-only items and reconciles to issues) |
 | **Ship log** — `DONE.md` | "What did past sessions actually ship, and how was it validated?" | one dated entry (newest on top) | When you need the history of a change; append after each shipped unit |
+| **Skill-usage log** — `Obsidian-<Repo>/skill-usage/` (committed) | "Which skills fired in real work, and which rules actually held?" | one dated entry per session | **Before changing a skill** — read it instead of designing a benchmark; write your own entry at session end |
 | **Survey-provenance cache** — `docs/reports/survey-manifest/` | "What did a prior scan already read, at which commit?" | one entry per file/issue/PR | Before a broad codebase/issue survey — skip or diff unchanged sources |
 | **Serena code memories** — `mem:` graph | "How is the *code* structured?" | one memory per topic, reached via `mem:core` | When exploring unfamiliar code |
 
@@ -47,6 +48,24 @@ Do this at the start of every session in a T4 repo, in order, and **stop pulling
 - **Add/update threshold — be strict.** Persist only stable, non-obvious conventions/decisions/feedback that save a future agent from costly rediscovery. Do NOT persist: quick-read facts, generic framework knowledge, one-off task notes, volatile line-level details, or anything likely to change soon. If asked to "remember" something the repo already records (code structure, git history, a past fix), persist instead *what was non-obvious about it*.
 - **Link liberally.** A `[[name]]` that doesn't exist yet marks a memory worth writing later — it's a to-do, not an error. Reference related memories so the graph, not any single note, holds the structure.
 - **Update, don't duplicate.** Before writing, check `Home.md` for a note that already covers it; edit that one. Delete memories that turn out to be wrong.
+
+## The skill-usage log
+
+Every skill in this family was improved the same way: a session went wrong, somebody noticed afterwards, and the finding was reconstructed from a transcript. That needs a person to remember something felt off, and it only catches failures large enough to survive to the end of a session. The alternative — handing a skill to an agent on an invented task and grading the output — buys one synthetic session at full price, with no control run and nobody needing the work.
+
+Real sessions already produce this data and throw it away. The log keeps it.
+
+**Write one entry at session end**, to `Obsidian-<Repo>/skill-usage/<YYYY-MM-DD>-<slug>.md` (skeleton in `references/memory-artifacts.md`). It records skill↔behaviour only — what shipped belongs in `DONE.md`, what is still open belongs in the ledger.
+
+**This is deliberately not a vault note**, and the strict add/update threshold above does not apply to it. That threshold rejects one-off task notes, which is right for the vault and exactly wrong here: a feedback database needs the unremarkable entries, because the rate is the signal. A log of only the memorable sessions is a failure-selected sample, and no rate can be computed from one.
+
+Three rules:
+
+- **A session that skipped a rule must record the skip** — including the embarrassing case, especially the embarrassing case. An empty section is written out as "none observed" rather than dropped, because silence is indistinguishable from compliance in the only record anybody reads. This is the principle `check-gate-ledger` is built on.
+- **Only what happened in this session.** A reconstructed retrospective is a hypothesis wearing a log's clothing.
+- **Name the skill file and quote what was actually written or done.** A finding without its artifact cannot be acted on by whoever reads it next.
+
+**Writing the entry is agent discipline.** No hook produces it, and none can — a hook enforces checkable actions, not process (`docs/adr/0001-hook-based-workflow-enforcement.md`). Treat a missing entry as a missing entry, not as a session in which nothing went wrong.
 
 ## Dev notifications (agent → developer)
 
