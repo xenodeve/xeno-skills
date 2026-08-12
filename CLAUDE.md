@@ -38,23 +38,32 @@ claim is a defect (see the composition audits in `docs/research/2026-08-04-*`).
 3. The GitHub issue you're picking up — `gh issue view <n> --comments`.
 4. `DONE.md` / `docs/research/` only if the task needs history or provenance.
 
-## Session-end protocol — write the skill-usage entry
+## Session-end protocol — report what actually happened
 
-Before the session ends, write one entry to `Obsidian-xeno-skills/skill-usage/<YYYY-MM-DD>-<slug>.md`
-(skeleton and rules in `t4-agent-memory`). It records **skill↔behaviour only** — what shipped goes in
-`DONE.md`, what is still open goes in the ledger.
+Before the session ends, **report every rule that did not hold** as a `skill-feedback` issue on
+`xenodeve/xeno-skills`. The tracker is the record: it does not depend on the branch checked out,
+does not depend on the repo the session ran in, and survives a session that ends by crashing.
 
-This is the repo's feedback database: read it *before changing a skill*, instead of designing a
-benchmark for one. Three rules make it worth having:
+**One issue per rule, not per session** — a rule that fails five times is one issue with five
+comments, and the comment count is the frequency.
 
-- **A session that skipped a rule records the skip** — especially the embarrassing case. An empty
-  section is written out as `none observed`; dropping it turns silence into an unearned pass.
-- **Only what happened in this session.** A reconstructed retrospective is a hypothesis.
-- **Name the skill file and quote what was actually written or done**, or the next agent cannot act
-  on it.
+```sh
+gh issue list --repo xenodeve/xeno-skills --state all --search "<skill> <rule>"   # --state all
+gh issue comment <n> --repo xenodeve/xeno-skills --body-file <file>               # found one
+gh issue create --repo xenodeve/xeno-skills --label skill-feedback ...            # none
+```
 
-**No hook produces this entry and none can** (`docs/adr/0001-hook-based-workflow-enforcement.md`) —
-a missing entry means a missing entry, not a session in which nothing went wrong.
+`--repo` is not optional; `gh` defaults to the repo you are standing in. Include closed issues — a
+closed one often holds the analysis already, or records that the behaviour is deliberate.
+
+**In this repo also write the local note**, `Obsidian-xeno-skills/skill-usage/<YYYY-MM-DD>-<slug>.md`,
+so the findings sit next to the code being changed. Sessions in other repos file the issue only.
+Rules and skeleton: `t4-agent-memory`.
+
+**Report the skips, especially the embarrassing ones** — a record of only the memorable sessions is a
+failure-selected sample. **No hook produces any of this**
+(`docs/adr/0001-hook-based-workflow-enforcement.md`); a missing report means a missing report, not a
+session in which nothing went wrong.
 
 ## using-t4 — standing default (invoke at every phase boundary)
 
