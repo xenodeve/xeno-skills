@@ -65,3 +65,11 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## At session end — record what actually happened
+
+These four guardrails are prose an agent is trusted to follow, which means the only evidence they work is a session in which they held. §3 already has one recorded failure — no rule for completing something left incomplete, and a disclosure that got read as authorisation — found only because a session went wrong and was reconstructed afterwards.
+
+**Before the session ends, write one skill-usage entry** to `skill-usage/` in the skill library's own vault (`<xeno-skills clone>/Obsidian-xeno-skills/`), whichever repo you were working in. Record which guardrail did not hold and what was actually written or done instead — **including the embarrassing cases, especially those.** A log of only the memorable sessions is a failure-selected sample.
+
+The rules, the skeleton and the read-trigger live in **`t4-agent-memory`** — load it rather than working from this paragraph. If you cannot locate the vault, say so in the session report instead of skipping quietly.

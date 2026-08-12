@@ -55,7 +55,9 @@ Every skill in this family was improved the same way: a session went wrong, some
 
 Real sessions already produce this data and throw it away. The log keeps it.
 
-**Write one entry at session end**, to `Obsidian-<Repo>/skill-usage/<YYYY-MM-DD>-<slug>.md` (skeleton in `references/memory-artifacts.md`). It records skill↔behaviour only — what shipped belongs in `DONE.md`, what is still open belongs in the ledger.
+**Write one entry at session end**, to `skill-usage/<YYYY-MM-DD>-<slug>.md` in **the skill library's own vault** — `<xeno-skills clone>/Obsidian-xeno-skills/` — whichever repo the session ran in (skeleton in `references/memory-artifacts.md`). It records skill↔behaviour only: what shipped belongs in `DONE.md`, what is still open belongs in the ledger.
+
+**One destination, not one per repo.** "Did this rule hold?" is a question about the *skill*, not about the repo that happened to load it, and the read-trigger is *before changing a skill* — which a log scattered one-vault-per-repo cannot serve. A repo's own vault keeps that repo's project memory; skill feedback is not project memory. The absolute path is configured once in the global `~/.claude/CLAUDE.md`. **If you cannot locate the vault, say so in the session report** rather than skipping quietly — an entry nobody knows is missing is the exact failure this layer exists to stop.
 
 **This is deliberately not a vault note**, and the strict add/update threshold above does not apply to it. That threshold rejects one-off task notes, which is right for the vault and exactly wrong here: a feedback database needs the unremarkable entries, because the rate is the signal. A log of only the memorable sessions is a failure-selected sample, and no rate can be computed from one.
 

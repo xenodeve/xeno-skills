@@ -18,6 +18,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MEM="$REPO_ROOT/skills/t4/t4-agent-memory/SKILL.md"
 ART="$REPO_ROOT/skills/t4/t4-agent-memory/references/memory-artifacts.md"
 GOV="$REPO_ROOT/skills/t4/t4-project-bootstrap/references/governance-docs.md"
+MAP="$REPO_ROOT/skills/t4/using-t4/SKILL.md"
 
 pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }
@@ -51,6 +52,24 @@ has "$ART" "skills:"                      "the entry records which skills were a
 
 echo "a bootstrapped repo gets it through its CLAUDE.md:"
 has "$GOV" "skill-usage" "the CLAUDE.md skeleton names the session-end step"
+
+# #146: the log reached three files in one family while ten of seventeen skills
+# sat outside it — and the families it missed (multi-agent, karpathy) are where
+# #131, #136, #137 and #138 came from. Every entry point an agent can arrive
+# through has to name the obligation, or the loop is aimed away from its own
+# evidence. The rules stay in ONE file; these only point at it.
+echo "every entry point an agent can arrive through names it (#146):"
+has "$MAP" "skill-usage" "using-t4 — the file injected verbatim every session"
+for f in skills/multi-agent/clink-masteragent/SKILL.md \
+         skills/design/design/SKILL.md \
+         skills/karpathy-guidelines/SKILL.md; do
+  has "$REPO_ROOT/$f" "skill-usage"      "$(basename "$(dirname "$f")") names the obligation"
+  has "$REPO_ROOT/$f" "t4-agent-memory"  "$(basename "$(dirname "$f")") points at the rules instead of copying them"
+done
+
+echo "one destination, and an unlocatable vault is reported rather than skipped:"
+has "$MEM" "the skill library's own vault" "skill feedback lives with the skill, not the repo that loaded it"
+has "$MEM" "say so in the session report"  "a skipped entry is never silent"
 
 echo ""
 echo "usage-log-rule: $pass passed, $fail failed"
