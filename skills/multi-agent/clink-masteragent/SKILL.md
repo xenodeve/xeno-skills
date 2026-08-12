@@ -200,3 +200,11 @@ Coverage gaps, stated: AA publishes only the top 25 per axis, so blanks are "not
 | Qwen3.6 35B A3B (Reasoning) | 31.6 | 21.4 | 41.9 | 0.503 | 0.449 | 0.087 | 0.277 | 262,144 | 333.53 | 10.54 |
 
 <!-- figures:end -->
+
+## At session end — record what actually happened
+
+Every defect found in these skills so far came from a session going wrong and somebody reconstructing it afterwards from a transcript. `clink-brainstorm` alone produced three that way (a leading prompt manufacturing convergence, an agentic agent told not to read files, a stop condition skipped without disclosure) — and none of them was recorded by the session that caused it.
+
+**Before the session ends, report each rule that did not hold** as a `skill-feedback` issue on `xenodeve/xeno-skills`, whichever repo you were working in. Search `--state all` first and **comment on the existing issue rather than opening a second** — one issue per rule, so the comment count is the frequency. Pass `--repo xenodeve/xeno-skills` on every call; `gh` defaults to the repo you are standing in. It records which skills fired, which rules did not hold, and which rule was followed and still produced the wrong thing — **including the embarrassing cases, especially those.** A log of only the memorable sessions is a failure-selected sample and no rate can be read from it.
+
+The rules, the skeleton and the read-trigger live in **`t4-agent-memory`** — load it rather than working from this paragraph. If you cannot reach the tracker, say so in the session report instead of skipping quietly.

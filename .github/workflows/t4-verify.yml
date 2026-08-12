@@ -30,9 +30,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       # The suite shells out to perl, python and timeout; all are present on
       # ubuntu-latest. bash is the harness — no package manager needed.
       - run: bash tests/hooks/run-all.sh
+      # The git guards: every PR must carry an issue reference, a tree within
+      # budget (no build artifacts), and a gate ledger stating every judgment
+      # gate. Same scripts the local pre-push hook runs — in CI they cannot be
+      # bypassed (guards-layer.md). Scoped to pull_request: on a push-to-main
+      # run the branch has already passed these as a PR, and the ledger range
+      # (origin/main..HEAD) is empty there.
+      - if: github.event_name == 'pull_request'
+        run: sh .githooks/check-tree-budget
+      - if: github.event_name == 'pull_request'
+        run: sh .githooks/check-gate-ledger
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+      - if: github.event_name == 'pull_request'
+        run: PR_BODY="$(gh pr view "${{ github.event.number }}" --json body -q .body)" sh .githooks/check-issue-ref
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          GH_TOKEN: ${{ github.token }}
 
   skill-discovery:
     runs-on: ubuntu-latest

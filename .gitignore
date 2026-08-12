@@ -1,0 +1,2 @@
+# Local Claude permissions — not part of the committed operating layer
+.claude/settings.local.json
