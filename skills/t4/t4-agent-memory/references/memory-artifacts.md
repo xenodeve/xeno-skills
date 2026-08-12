@@ -105,6 +105,64 @@ concrete observed behavior that proves it works.>
 ---
 ```
 
+## Skill feedback — a `skill-feedback` issue on `xenodeve/xeno-skills`
+
+**What it's for:** so a skill can be improved from real sessions instead of a benchmark. **This is the record** — it works from any repo, in any session, and it survives a session that ends by crashing. One issue per **rule**, one comment per **session**, so the comment count is how often that rule actually fails.
+
+**Search before writing, and include closed issues.** A closed one often already holds the analysis, or records that the behaviour you are about to call a bug was deliberate.
+
+```sh
+gh issue list --repo xenodeve/xeno-skills --state all --search "<skill> <rule>"
+# found  → gh issue comment <n> --repo xenodeve/xeno-skills --body-file <file>
+# none   → gh issue create --repo xenodeve/xeno-skills --label skill-feedback \
+#            --title "feedback(<skill>): <the rule that did not hold>" --body-file <file>
+```
+
+`gh` defaults to the repository you are standing in. **`--repo` is not optional** — without it the feedback lands in whatever project you happened to be working on.
+
+Body of the comment (or of the issue's first report):
+
+```markdown
+**Session:** <YYYY-MM-DD>, in `<repo>` · skills loaded: <list>
+**Rule:** <in the words the skill uses> — `<skill file>`
+**What happened:** <what was actually written or done, quoted>
+**Skipped, or followed-and-still-wrong:** <which>
+**Why it slipped, if known:** <one line, or "unknown">
+```
+
+## Skill-usage log entry — `Obsidian-<Repo>/skill-usage/<YYYY-MM-DD>-<slug>.md`
+
+**What it's for:** the local working copy, written **only while developing `xeno-skills` itself**, so the session's findings sit next to the code you are about to change. Sessions in any other repo file the issue and write no note. Records skill↔behaviour only — the work itself belongs in `DONE.md` and the ledger.
+
+**The section that matters is "Rules that did not hold".** An entry with nothing in it says `none observed` in full; dropping the heading turns silence into an unearned pass.
+
+````markdown
+---
+date: <YYYY-MM-DD>
+repo: <repo>
+skills: [<every skill actually loaded, in the order it was loaded>]
+gates: simplify=<ran|not-run|n-a> code-review=<> scrutinize=<> security-review=<> verify=<>
+---
+
+## What the session did
+<one line, for context only — see DONE.md for the work>
+
+## Rules that did not hold
+- **<rule, in the words the skill uses>** (`<skill file>`) — <what was actually written or done,
+  quoted> · <why it slipped, if known>
+<or: none observed>
+
+## Rules followed that still produced the wrong thing
+- **<rule>** (`<skill file>`) — <followed as written; the outcome was still wrong because ___>
+<or: none observed>
+
+## Wording that was unclear, or that contradicted another skill
+- `<skill file>` says <X>; `<other file>` says <Y> — <which one the session acted on>
+<or: none observed>
+````
+
+**Reading it:** before changing a skill, read the entries that mention it. Three sessions failing the same rule is a design problem in the rule; one session failing it is a session.
+
 ## `docs/reports/survey-manifest/` — provenance cache
 
 **What it's for:** so a later scan (a new report, an ADR, an audit) does **not** re-read files/issues/PRs that haven't changed.
