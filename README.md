@@ -66,6 +66,8 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 ### Multi-agent
 
+- **[using-clink](./skills/multi-agent/using-clink/SKILL.md)** — ทางเข้าของตระกูล: จะใช้ตัวไหนในสี่ตัวข้างล่าง ตัดสิน**ก่อน**ที่จะเสียค่าเรียกไปแล้ว · งาน เทียบกับ การตัดสิน คือจุดตัดสินใจทั้งหมด และเป็นจุดที่มักสลับกัน — ตั้ง panel สำหรับคำถามที่ worker เดียวตอบได้ คือเผาหลายเลนเพื่อให้ได้ความเห็นในที่ที่ต้องการข้อเท็จจริง · ส่ง worker ไปผลิตการตัดสิน คือได้คำตอบมั่นใจที่ไม่มีใครตรวจ · `clink-masteragent` ถูกระบุไว้ในนั้นในฐานะเงื่อนไขก่อนใช้ ไม่ใช่ตัวเลือกที่สี่
+
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — กระจายคำถามออกไปยัง CLI agent อิสระหลายตัว (Gemini/Antigravity, Codex, Claude ฯลฯ) ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) แล้วสังเคราะห์เป็นข้อเสนอแนะเดียว แต่ละ agent มี cognitive lens ที่ต่างกัน (Code-centric, System-centric, Logic-centric, Conceptual-centric) ซึ่งกำหนดวิธีปรับ prompt สำหรับการ challenge มี judge-led challenge loop สำหรับตอนที่ agent เห็นไม่ตรงกัน และ adversarial round แบบเจาะ lens สำหรับตอนที่ทุกตัวเห็นตรงกัน (การเห็นตรงกันโดยไม่ถูกกดดัน ≠ การยืนยันว่าถูก) **ต้องมี PAL MCP server** เชื่อมต่อกับ agent ของคุณ พร้อม `clink` CLI agent อย่างน้อยสองตัว
 
 - **[clink-subagents](./skills/multi-agent/clink-subagents/SKILL.md)** — มอบหมาย **งานที่มีขอบเขตชัด** (เขียน implementation, refactor, แปลงชุดใหญ่, research เฉพาะจุด, ร่างแรก) ให้ Codex (GPT-5.6) หรือ Antigravity (Gemini) ทำเป็น subagent ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) — เพื่อ offload งาน, รันขนานกัน หรือประหยัด context ต่างจาก `clink-brainstorm` (ที่ขอ *ความเห็น*) ตรงที่อันนี้ *สั่งให้ทำงานจริงแล้วเอาผลกลับมา* มาพร้อม routing rubric อิงดัชนี [Artificial Analysis](https://artificialanalysis.ai/models) (Codex = โมเดล coding เทพแต่ harness อ่อน → งานยาก self-contained + ต้อง verify; Antigravity = agentic อ่อน → เฉพาะงาน single-shot ง่าย ๆ; คุณ = orchestrate + verify) และกฎเหล็ก **verify ทุกอย่างที่ subagent คืนมา** **ต้องมี PAL MCP server** พร้อม `clink` agent `codex`/`antigravity`
@@ -90,7 +92,7 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 ตระกูล skill ด้านการออกแบบเว็บ กลั่นจากคลังวิดีโอของ Chase AI, Flux Academy (Ran Segall), Chris McCoy, Kole Jain และ Satori Graphics โดย `design` เป็นตัวประสานที่ route ไปยังอีกสี่ตัว (transcript ต้นทางอยู่ใน `skills/design/references/` — เครดิตเป็นของผู้สร้างวิดีโอแต่ละราย)
 
-- **[design](./skills/design/design/SKILL.md)** — ตัวประสานของตระกูล route งานออกแบบไปยัง skill ที่ถูกต้อง
+- **[using-design](./skills/design/using-design/SKILL.md)** — ตัวประสานของตระกูล route งานออกแบบไปยัง skill ที่ถูกต้อง
 - **[design-setup](./skills/design/design-setup/SKILL.md)** — กรอบการ setup + prototype เว็บแบบ 0→1 ครบวงจร: preflight check, decision gate, การแยกโค้ดทดลอง, prompt 4 ส่วน, ลำดับ build 3 เฟส และการปิดท้ายด้วยการ commit token
 - **[design-rules](./skills/design/design-rules/SKILL.md)** — กฎ micro-UI ระดับ CSS/Tailwind: typography (tracking -2%, สเกล Major Third 1.25x, line-height 150%), สมดุลสี 60-30-10, กริด 12/8/4 คอลัมน์, จังหวะ spacing 8pt, ปุ่ม 4 สถานะ และระบบ LIFT กับ 6 ระดับของ visual flow
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion
