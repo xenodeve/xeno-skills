@@ -62,7 +62,7 @@ Injected hooks are *reminders* (the model can still ignore them); the hard enfor
 
 ### Start here
 
-- **[ask-xeno](./skills/ask-xeno/SKILL.md)** — a router over **every** skill in this library: which one fits what you are doing, one line each. It indexes and hands off; the skills themselves carry the rules, and it never restates them. Written because nine of the seventeen skills here — every `clink-*` and the whole design family — were unreachable from `using-t4`, so an agent that did not already know they existed had nothing to tell it. A contract test fails the day a new skill is added and the index is not.
+- **[ask-xeno](./skills/ask-xeno/SKILL.md)** — the top of the library, and deliberately thin: four family entries and nothing else. It names where to enter — `using-t4`, `clink-masteragent`, `design`, `karpathy-guidelines` — and each entry carries its own map, so nothing is restated twice. Written because nine of the seventeen skills here, every `clink-*` and the whole design family, were reachable from no route at all. A contract test asserts every skill is reachable in **at most two hops** and that this file stays under 1800 bytes, so a top router cannot quietly grow into a second copy of everything below it.
 
 ### Multi-agent
 
