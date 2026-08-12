@@ -8,7 +8,7 @@ MAINTAINERS — THIS FILE IS UNDER TWO MACHINE-ENFORCED CONSTRAINTS, AND THEY PU
 
   1. SIZE. `hooks/t4-session-start` injects this file verbatim on every session start and every
      compaction. `tests/hooks/test-dispatcher-content.sh` caps that injected output at 9000 B.
-     Measured 2026-08-05: 8965 B. Thirty-five bytes spare.
+     Measured 2026-08-12: 8970 B. Thirty bytes spare.
 
   2. CONTENT. The same test requires five exact phrases to survive every edit:
      `Route first` · `Red flags` · `phase boundary` · `does not discharge` · `load the current one`.
@@ -64,7 +64,7 @@ Before you answer, ask, explore, edit, or run any tool: check the map and invoke
 
 ## Companion ecosystems — use them alongside T4
 
-The `t4-*` skills sit **on top of** three general ecosystems — not alternatives. Invoke them by their own triggers; every slash-command a T4 skill names (`/grill-me`, `/to-prd`, `/tdd`, `/debug-mantra`, `/post-mortem`, `/scrutinize`) lives in one of these.
+The `t4-*` skills sit **on top of** three general ecosystems — not alternatives. Invoke them by their own triggers; every slash-command a T4 skill names (`/grill-me`, `/to-prd`, `/tdd`, `/scrutinize`) lives in one of these.
 
 | Ecosystem | Reach it via | Use it for | Representative skills |
 |---|---|---|---|
@@ -74,13 +74,14 @@ The `t4-*` skills sit **on top of** three general ecosystems — not alternative
 
 **Routing rule:** T4 skills own the *team-specific* decision (which record, which memory layer, the tracker rules) and **hand off the technique** to the ecosystem skill. For non-T4 *how to work*, prefer `superpowers:using-superpowers`.
 
-## Session-start protocol
+## Session protocol
 
-At the start of any session in a T4 repo, before picking up work:
+In a T4 repo:
 
-1. **`karpathy-guidelines`** — load once at session start so every edit this session is surgical, simple, and goal-verified (see the coding-behavior rule below).
-2. **`t4-agent-memory`** — read the vault index + open-work ledger (what survives a context reset), then the issue you're picking up.
+1. **`karpathy-guidelines`** — load once at session start so every edit this session is surgical, simple, and goal-verified.
+2. **`t4-agent-memory`** — read the vault index + open-work ledger, then the issue you're picking up.
 3. Route the task through the map above.
+4. **At session end** — report each rule that did not hold as a `skill-feedback` issue on `xenodeve/xeno-skills`; comment, don't duplicate (`t4-agent-memory`).
 
 ## The non-negotiable rules (all skills carry these)
 
