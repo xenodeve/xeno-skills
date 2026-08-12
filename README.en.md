@@ -60,6 +60,10 @@ Injected hooks are *reminders* (the model can still ignore them); the hard enfor
 
 ## Reference
 
+### Start here
+
+- **[ask-xeno](./skills/ask-xeno/SKILL.md)** — the top of the library, and deliberately thin: four family entries and nothing else. It names where to enter — `using-t4`, `clink-masteragent`, `design`, `karpathy-guidelines` — and each entry carries its own map, so nothing is restated twice. Written because nine of the seventeen skills here, every `clink-*` and the whole design family, were reachable from no route at all. A contract test asserts every skill is reachable in **at most two hops** and that this file stays under 1800 bytes, so a top router cannot quietly grow into a second copy of everything below it.
+
 ### Multi-agent
 
 - **[clink-brainstorm](./skills/multi-agent/clink-brainstorm/SKILL.md)** — Fan a question out to multiple independent AI CLI agents (Gemini/Antigravity, Codex, Claude, etc.) through [PAL](https://github.com/BeehiveInnovations/pal-mcp-server)'s `clink` tool, then synthesize one recommendation. Each agent has a distinct cognitive lens (Code-centric, System-centric, Logic-centric, Conceptual-centric) that determines how to tailor challenge prompts. Includes a judge-led challenge loop for when agents disagree and a lens-targeted adversarial round for when they converge (convergence without pressure ≠ validation). **Requires PAL MCP server** connected to your agent with at least two `clink` CLI agents configured.
