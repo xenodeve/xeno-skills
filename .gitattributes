@@ -19,3 +19,12 @@ skills/t4/t4-project-bootstrap/references/hooks/run-hook.cmd       text eol=lf
 
 # Guard scripts are executed by git as POSIX sh — CRLF breaks the shebang.
 skills/t4/t4-project-bootstrap/references/guards/*  text eol=lf
+
+# The INSTALLED copies in this repo, which tests/hooks/test-bootstrap-sync.sh
+# compares byte-for-byte against the canonical sources pinned above. Unpinned,
+# a Windows checkout gives them CRLF while the sources stay LF, and the sync
+# test reports DRIFTED on files whose contents are identical — the same failure
+# mode as the using-t4 budget note above, and the second time it has been hit.
+# The comparison is byte-exact, so BOTH sides have to be pinned or neither is.
+.claude/hooks/*  text eol=lf
+.githooks/*      text eol=lf
