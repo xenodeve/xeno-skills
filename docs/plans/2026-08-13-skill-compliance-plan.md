@@ -8,12 +8,12 @@
 
 ## The shape
 
-Four slices, in this order. The middle one is a precondition for the last, which is the only reason the order is not the obvious one.
+Four slices, in this order, **after the baseline below is counted**. The middle one is a precondition for the last, which is the only reason the order is not the obvious one.
 
 | | | Fixes |
 |---|---|---|
 | **0** | Stop injecting `using-t4` at session start — it is the wrong router and its measured effect is zero | 33 KB per session spent on one family's map |
-| **1** | Before the turn: name the skill this task needs, if it has not been loaded | #134 — the reminder fired every prompt and the skill was never loaded |
+| **1** | Before the turn: name the skill this task needs, if it has not been loaded — routed twice, by a Thai-carrying table and by a classifier, unioned | #134 — the reminder fired every prompt and the skill was never loaded |
 | **2** | Write into each rule the trace it leaves in the sequence of work | nothing on its own; makes slice 3 possible |
 | **3** | At turn end: the skill was loaded — did its steps appear? | #130 — both skills invoked, in context, step still never ran |
 
@@ -58,11 +58,13 @@ So the route list is paid for on unmatched turns only. `ask-xeno` stays the file
 
 **The cost lands where the developer feels it**, and that is the constraint on the classifier: prompt-time is the one moment a hook makes a person wait. It runs only on a table miss, under a stated time cap, and on expiry the turn proceeds unrouted rather than delayed.
 
-**Why it can work when the current reminder does not.** The current hook emits the same four sentences every turn regardless of state; after the first turn it carries no new information. This one speaks only when there is something to say, and what it says is derived from **what happened**, not from what the agent claims: the transcript is written by the harness, and the only way to produce a `Skill` `tool_use` block is to make the call.
+**Why it can work when the current reminder does not.** The current hook emits the same four sentences every turn regardless of state; after the first turn it carries no new information. This one speaks only when there is something to say, and what it says is derived from **what happened**, not from what the agent claims: the transcript is written by the harness, and the only way to produce the record is to make the call.
+
+**There are two such records, and only one of them is obvious.** Measured on this session: `Skill` `tool_use` blocks name 12 distinct skills, and `<command-name>` records name four more that produce **no `tool_use` block at all** — `/t4-bro` twice, `/handoff` twice, `/to-prd` and `/t4-afk` once each. A detector that greps only `"name":"Skill"` reports `t4-bro` as never loaded in a session that loaded it three times, and would then emit a reminder for a skill already in context — the false positive that costs the most trust. **Both record types count, everywhere a skill's presence is decided.**
 
 **It must not claim** to enforce loading. It reports an absence.
 
-**The seam** is the hook's emitted JSON, as with every suite in `tests/hooks/`. Cases: skill present → empty stdout; absent → exactly one `additionalContext` naming it; transcript missing, moved or unparseable → exit 0, empty; a large fixture inside a stated time budget, asserted rather than described.
+**The seam** is the hook's emitted JSON, as with every suite in `tests/hooks/`. Cases: skill present via `tool_use` → empty stdout; **present only via a slash command → also empty stdout**; absent → exactly one `additionalContext` naming it; table miss with the classifier unavailable or over its cap → the turn proceeds, nothing emitted, exit 0; transcript missing, moved or unparseable → exit 0, empty; a large fixture inside a stated time budget, asserted rather than described.
 
 ### The compaction problem, and why slice 1 has to solve it
 
@@ -78,7 +80,9 @@ invoked after  the last compaction  (6):  clink-brainstorm clink-debug clink-sub
                                           code-review scrutinize t4-dev-workflow
 ```
 
-`using-t4`, `karpathy-guidelines`, `tdd` and `simplify` appear **only before**. A whole-file check reports them as loaded. They are not: their content was compacted out of the model's context, and the model no longer holds the rules. **The hook would fall silent exactly when the reminder is most needed** — in a long session, which is where drift lives.
+`using-t4`, `karpathy-guidelines`, `tdd` and `simplify` appear **only before**. A whole-file check reports them as loaded. **The hook would fall silent exactly when the reminder is most needed** — in a long session, which is where drift lives.
+
+**What survives a compaction is a carry, and a carry is not a load.** The claim that compaction simply removes a skill from context is too strong, and was corrected by measurement on this session's fourth boundary: the harness re-injects the bodies of recently invoked skills after compacting — but **truncated**, and `clink-subagents` and `clink-brainstorm` came back cut mid-file with an explicit truncation marker, while the four skills listed above did not come back at all. Truncation removes the end of a file, and in several of these skills the rules and red-flag tables sit in the middle and the end. **So a carried skill can be missing exactly the section under test while appearing present.** Treating a carry as a load is therefore the more expensive error of the two: it reports loaded, stays silent, and never re-reminds. The boundary resets the set. No partial credit.
 
 **So the check counts from the last `compact_boundary`, not from the start of the file.** The marker is explicit (`subtype: "compact_boundary"`, alongside `isCompactSummary: true` and `compactMetadata`), so this costs one extra condition, not a new mechanism. It also bounds the read: the slice after the last boundary is a fraction of the file.
 
@@ -98,6 +102,8 @@ That is a sequence fact. It is not a quality criterion, and the difference is th
 
 The census in #159 sorts 126 rules into 33 already machine-decidable, 68 needing a trace, and 25 not decidable from a transcript at any effort. **Only the 68 are in scope.** The 25 get a line saying they are out of scope, because an unmarked gap reads as coverage.
 
+**The census has to be re-cut for delegated work**, and this was not known when it was taken. Nothing a delegate does is written to the master's transcript — measured, 35 `clink` calls and 5 native `Agent` calls this session against zero `isSidechain: true` records in any of the six transcripts in the project directory. A rule whose trace would be produced *inside* the delegate is undecidable here no matter how it is worded, so each of the 68 needs a second question asked of it: **is this trace produced by the master, or by whoever the master handed the work to?** The ones in the second group are rewritten to the part that is the master's — what it put in the delegate's prompt, and what it did with the result — or they move to the undecidable pile with a stated reason.
+
 **Traces do not go in the skill body.** They go in a sibling file that only the reviewer reads. The master gains nothing from a machine-readable trace declaration and would pay for it on every load — and a load is not free: measured on this session, `/tdd` was invoked three times and each invocation re-injected the whole skill, 3,744 / 3,712 / 3,715 bytes. Sixty-eight declarations inline would be charged to the master, repeatedly, for data only the reviewer consumes.
 
 The rule's prose stays where it is; the sibling file references it by id, and a test pins the two together so a rule cannot be reworded out from under its trace.
@@ -110,9 +116,15 @@ The rule's prose stays where it is; the sibling file references it by id, and a 
 
 ## Slice 3 — check the trace at turn end
 
-A `Stop` hook of `type: "command"` reads the transcript slice since the last compaction, exits silently when no skill was invoked, and otherwise asks a **small model**: for each skill invoked, do the traces it declares appear?
+A `Stop` hook of `type: "command"` spawns the reviewer **detached** and returns immediately. The reviewer reads the segment — the slice from that turn's `UserPromptSubmit` to its `Stop` — and asks a **small model**: for each skill invoked, do the traces it declares appear? It writes its verdict to the state file, and the finding is delivered at the **next `UserPromptSubmit`**, which is the moment before the master takes on the next task.
 
-**It reads the session history only.** No diff, no test output, no repository access. Both of its inputs are short and fixed — the skill's text and a bounded slice — which is what makes a small model a safe choice rather than a cheap one.
+**Nothing waits on it.** The reviewer works while the developer reads and types, so its cost to the developer is zero rather than a few seconds on every turn forever. If the next prompt arrives first, the hook waits a stated fraction of a second and then proceeds without it; the verdict lands one segment later. That placement also ends the race against the transcript writer, which is why the staleness question below is no longer load-bearing.
+
+**It does not run when there is nothing to review.** A segment with no tool use is a question answered, not work done — the precondition is checked in the script, before any model is spawned, so an idle turn costs nothing at all.
+
+**It reads the session history only.** No diff, no test output, no repository access. Both of its inputs are short and fixed — the declared traces and a bounded slice — which is what makes a small model a safe choice rather than a cheap one. It never sees the skill bodies: the traces live in a reviewer-only sibling file (slice 2).
+
+**The slice excludes what the hooks themselves wrote.** Hook output is persisted into the transcript — 142 copies of the current reminder's text in this session alone — so an unfiltered reviewer reads its own predecessor's finding inside its segment and either counts it as evidence or raises it again. Filtering `attachment` and hook-written records removes the whole class.
 
 **It does not block.** It raises a finding. The master agent decides whether the finding is correct or the reviewer misread, because the master is the stronger model.
 
@@ -120,13 +132,33 @@ A `Stop` hook of `type: "command"` reads the transcript slice since the last com
 
 **A reviewer holds no memory of the previous segment**, which is what bounds its input by the segment rather than the session. The state it must still carry forward — a trace whose halves land in different prompts, an `unknown` the transcript had not yet written, a finding the master overruled — moves through a small schema a script maintains, not through the reviewer's own prose. Design: [`2026-08-13-review-handoff.md`](2026-08-13-review-handoff.md).
 
-**Absence near the tail is never a violation.** The transcript is written asynchronously; measured across 7,268 records the gap between them is `p50 0.2s`, `p90 15.7s`, with 3.2% over a minute. Usually current, occasionally a whole turn behind. Evidence that would fall in that window resolves to `unknown` and is recorded as `unknown` — never as "no finding", never as "violated".
+**Absence near the tail is never a violation** — and the rule that guarantees it does not rest on a latency figure.
+
+The figure this plan previously quoted (`p50 0.2s`, `p90 15.7s`, 3.2% over a minute, across 7,268 records) measures **the interval between consecutive records** — largely how long turns run and how long the developer is away — **not how far behind the file is when a hook opens it.** It was carried into the design as though it were the second thing. It is not, and it is the second time a number has been used here without checking what it measures; the first was the 108-second claim that #159's correction comment already retracts.
+
+The quantity this design would need is `now − timestamp(last record)`, sampled by a hook on real sessions. **It has never been measured, and the design is built so that it does not have to be.** The transcript is append-only and ordered, so a segment is judged only once its **closing record is present** — and that record's presence proves everything before it is present too. No latency figure enters the argument. If the closing record has not arrived by the time the answer is needed, the verdict is `unknown`, recorded as `unknown`, and re-asked on the next segment — never "no finding", never "violated".
+
+---
+
+## Before any of it: the baseline
+
+**This plan has no success number, and the failure it is fixing is exactly the failure of shipping without one.** The current reminder hook fires on every prompt, its measured effect is zero (#134), and that went unnoticed for a long time because nothing was counted before or after.
+
+So the first work is not slice 0. It is a measurement, and the material for it already exists: six transcripts in this repository's project directory, 12,507 lines. Counted over them, before a line of hook code changes:
+
+- how often a turn's work matched a route and the skill was **not** loaded — the rate slice 1 claims to reduce
+- how often a loaded skill's declared trace is **absent** — the rate slice 3 claims to surface
+- how many rules fall to `delegated` and to undecidable once the census is re-cut
+
+Then the same three counts after each slice lands. **A slice that cannot move its own number is not finished, it is unfalsifiable** — and this is a repository whose own rule is that a documented claim without a test is a defect.
 
 ---
 
 ## What is not known, and will not be assumed
 
-- **Whether a small model matches traces reliably.** Untested. It must be measured against real sessions before it is allowed to raise a finding at all.
+- **Whether a small model matches traces reliably**, and in particular whether it returns `partial` correctly — the verdict the entire cross-segment mechanism rests on. Untested. It must be measured against real sessions before it is allowed to raise a finding at all.
+- **How well the classifier routes a Thai prompt**, and at what latency. Both are the deciding facts for slice 1's second layer, and neither has been sampled.
+- **How far behind the transcript is at read time.** Never measured; see slice 3 for why the design is arranged not to depend on it.
 - **Whether `type: "prompt"` or `type: "agent"` works from a plugin's `hooks/hooks.json`.** The vendor reference neither permits nor forbids it. Verified only from a settings file — which is the path `t4-project-bootstrap` writes, so bootstrapped repos are covered either way.
 - **Whether a blocking `Stop` hook has a retry ceiling.** Untested, and it only matters if the non-blocking decision is ever revisited.
 
