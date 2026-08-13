@@ -204,14 +204,28 @@ The fork at `xenodeve/pal-mcp-server` is the same project's other half, so *"a f
 
 **So the worker's event stream is present inside PAL and never reaches the master.** That does not weaken the case for the reviewer tier — it decides *where* it belongs. **The reviewer runs inside PAL, before the prune**, consuming the events at the one point they exist, and what crosses to the master is the small structured record rather than the stream. #37's bound is untouched, because nothing unbounded moves.
 
-Four pieces, in dependency order:
+### Most of this is already tracked there, and this plan should have checked first
 
-1. **Consume the events before they are pruned.** Nearly free — the data is already assembled, and this is one hook point ahead of an existing function. Covers `codex`, `claude` and `opencode`, whose parsers retain `events` today.
-2. **Event retention for `cursor` and `antigravity`.** Both run `antigravity_text` (`clink/constants.py:55,65`), a text parser that keeps nothing — cursor has no parser module of its own at all. Until this lands, those two clients cannot support a reviewer that reads anything but the worker's own account, and per the rule above they must return `final: "unknown"` rather than a laundered verdict.
-3. **A `skills` parameter** so the master names the skills and the server resolves, attaches and records them. The handoff stops being a string match against a pasted blob and becomes a structured fact, with the version sent recorded rather than inferred from a hash.
-4. **A call log in our own format** — client, model, effort, prompt, the returned record, `continuation_id` — so the master-side reviewer reads one stable local file instead of anything foreign.
+**The survey rule applies to another repository's tracker as much as to this one's, and it was not run before the pieces above were proposed.** `pal-mcp-server` carries epic **#11** — *supervised subagent sessions: master-approved permissions and evidence-based liveness* — with phases **#14** (per-client trust at spawn), **#15** (supervised session: non-blocking call, registry, evidence-based status) and **#16** (interrupt-and-resume per-action approval), plus the Phase 0 spike **#12** and its report, `docs/reports/2026-08-04-clink-phase0-spike-host-followup-and-cli-capability.md`.
 
-**All four belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
+**#16 is the same machinery as the reviewer tier above, for a different purpose.** It exists so the master can approve or deny one privileged action; this exists so a reviewer can see whether a skill was followed. Both need the identical seam: a control endpoint the child's hook can reach, a session registry with an `awaiting_decision`-shaped state, resume by the **CLI's own session identifier**, and a per-client capability gate. **So the reviewer is a sibling deliverable of epic #11, not a parallel track**, and it inherits #16's blocking status: *gated, do not start* until #12 returns.
+
+It also inherits the two hazards that epic already names, and neither had occurred to this design:
+
+- **The orphan hazard.** A subagent orphaned by a transport timeout may still be running; resuming its session identifier while it is alive puts two processes on one session state. #16 calls it the epic's highest-risk item. A review loop that resumes a worker to correct it is exposed to exactly this.
+- **Silent no-op across clients.** #12's capability table shows a blocking pre-tool hook proven on **Claude Code alone** — `codex` has hooks whose event vocabulary is unverified, `cursor` advertises none locally, `agy`'s route is speculative. #11 story 24 already requires a per-client capability probe. This matches the conclusion reached independently above, and #12 got there first.
+
+**What is genuinely new, and cheap, and blocked by none of it:**
+
+1. **Consume the events before they are pruned.** The data is already assembled; this is one hook point ahead of an existing function. Covers `codex`, `claude` and `opencode`, whose parsers retain `events` today. Independent of the #11 chain.
+2. **A `skills` parameter** so the master names the skills and the server resolves, attaches and records them — the handoff becomes a structured fact with the version recorded rather than inferred from a hash. Independent of the #11 chain.
+3. **Event retention for `cursor` and `antigravity`** — both run `antigravity_text` (`clink/constants.py:55,65`), which keeps nothing, and cursor has no parser module of its own. This is a precondition for the reviewer on those two clients, and until it lands they must return `final: "unknown"` rather than a laundered verdict.
+
+**A fourth idea from an earlier draft — a call log in our own format — is largely #15's registry** and should be raised there rather than filed again.
+
+**One more from the same report that this design would otherwise have walked into:** `agy --print-timeout` defaults to **5 minutes**, inside clink's 1800 s child timeout, so an antigravity run can be cut by the CLI itself — tracked as **#65**. Any review loop that lengthens a delegation meets that ceiling first on that client.
+
+**All of it belongs in that repository's tracker, and the first action there is to read #11 and #12 rather than to file anything.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
 
 ---
 
