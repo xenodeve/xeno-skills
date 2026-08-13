@@ -178,7 +178,9 @@ The clink-side reviewer answers one narrow question and reports it upward: **did
   "reviewer": { "cli": "cursor", "model": "...", "continuation_id": "fresh" } }
 ```
 
-**The deciding constraint is what the reviewer can actually see, and it differs per client — verified in the PAL source, not assumed.** `clink/parsers/codex.py`, `claude.py` and `opencode.py` each retain the worker's full event stream in `metadata["events"]`. `cursor` has no parser module at all and `antigravity`'s keeps no events, so those two return **final text only**.
+**The deciding constraint is what the reviewer can actually see, and it differs per client — verified in the PAL source, not assumed.** `clink/parsers/codex.py`, `claude.py` and `opencode.py` each retain the worker's full event stream in `metadata["events"]`. `cursor` and `antigravity` both run the `antigravity_text` parser, which keeps none — cursor has no parser module of its own at all — so those two carry **final text only**.
+
+**And on no client does the stream reach the master today**: `_prune_metadata` strips `events` from every response before it leaves the tool. That is why this reviewer belongs *inside* PAL rather than in the hook layer — see the section below.
 
 That split decides where this tier is real:
 
@@ -198,11 +200,18 @@ That split decides where this tier is real:
 
 The fork at `xenodeve/pal-mcp-server` is the same project's other half, so *"a foreign CLI writes formats we cannot depend on"* is a statement about today's implementation, not a constraint. Two changes there would move clink from *boundary-readable* to *first-class*:
 
-- **the server records each call** — client, model, effort, prompt, response, `continuation_id` — into one local JSONL in **our** format, which the reviewer reads directly instead of parsing three foreign session formats
-- **a `skills` parameter** so the master names the skills and the server resolves, attaches and records them; the handoff stops being a string match against a pasted blob and becomes a structured fact, and the version sent is recorded rather than inferred from a hash
-- **event retention for `cursor` and `antigravity`**, which is the precondition for the clink-side reviewer above being anything more than a reader of self-reports — and the cheapest of the three to specify, since `codex.py` already shows the shape
+**The trace already exists and is discarded at the last step.** `tools/clink.py:690` — `_prune_metadata` drops `events`, `raw` and `raw_events` from every response, success and error alike, leaving `events_removed_for_normal: true` in their place. It is deliberate and correct as a caller-facing decision: those fields passed through no size bound at all, so a large CLI response was capped in the field a caller reads and unbounded in the field beside it (#37).
 
-**All three belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
+**So the worker's event stream is present inside PAL and never reaches the master.** That does not weaken the case for the reviewer tier — it decides *where* it belongs. **The reviewer runs inside PAL, before the prune**, consuming the events at the one point they exist, and what crosses to the master is the small structured record rather than the stream. #37's bound is untouched, because nothing unbounded moves.
+
+Four pieces, in dependency order:
+
+1. **Consume the events before they are pruned.** Nearly free — the data is already assembled, and this is one hook point ahead of an existing function. Covers `codex`, `claude` and `opencode`, whose parsers retain `events` today.
+2. **Event retention for `cursor` and `antigravity`.** Both run `antigravity_text` (`clink/constants.py:55,65`), a text parser that keeps nothing — cursor has no parser module of its own at all. Until this lands, those two clients cannot support a reviewer that reads anything but the worker's own account, and per the rule above they must return `final: "unknown"` rather than a laundered verdict.
+3. **A `skills` parameter** so the master names the skills and the server resolves, attaches and records them. The handoff stops being a string match against a pasted blob and becomes a structured fact, with the version sent recorded rather than inferred from a hash.
+4. **A call log in our own format** — client, model, effort, prompt, the returned record, `continuation_id` — so the master-side reviewer reads one stable local file instead of anything foreign.
+
+**All four belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
 
 ---
 
