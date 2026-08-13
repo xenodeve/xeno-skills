@@ -103,6 +103,8 @@ A `Stop` hook of `type: "command"` reads the transcript slice since the last com
 
 **Two things must be stated plainly rather than implied.** A non-blocking hook **cannot compel an answer** — asking the master to respond is a convention, not a mechanism, and #159's original wording claimed otherwise. And a finding raised on the last turn of a session reaches nobody, so either it is carried forward on the next `UserPromptSubmit` or the design says the final turn is unreviewed.
 
+**A reviewer holds no memory of the previous segment**, which is what bounds its input by the segment rather than the session. The state it must still carry forward — a trace whose halves land in different prompts, an `unknown` the transcript had not yet written, a finding the master overruled — moves through a small schema a script maintains, not through the reviewer's own prose. Design: [`2026-08-13-review-handoff.md`](2026-08-13-review-handoff.md).
+
 **Absence near the tail is never a violation.** The transcript is written asynchronously; measured across 7,268 records the gap between them is `p50 0.2s`, `p90 15.7s`, with 3.2% over a minute. Usually current, occasionally a whole turn behind. Evidence that would fall in that window resolves to `unknown` and is recorded as `unknown` — never as "no finding", never as "violated".
 
 ---
