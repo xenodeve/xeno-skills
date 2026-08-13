@@ -50,11 +50,23 @@ So the route list is paid for on unmatched turns only. `ask-xeno` stays the file
 **The routing decision is made twice, by two mechanisms, and their answers are unioned.** A single mechanism that fails to fire produces exactly the silence this slice exists to remove, so neither is allowed to be the only one:
 
 - **a deterministic table** — fast, no model, and it **must carry Thai trigger terms**: the developer writes in Thai, and 2,060 lines of this session's transcript contain Thai text, so a table built from English keywords matches almost nothing. It would not merely fail to fire — it would fall through to the unmatched branch on nearly every turn, which is the branch that emits the route list, and the per-turn cost this slice was designed to avoid comes back in full.
-- **a classifier**, run only when the table did not match — a small model given the user's prompt and the closed list of skills from `ask-xeno`, returning a skill id, a confidence, and the phrase it matched. **A closed list and a structured return, never prose**: it selects from the routes that exist, it does not describe what it thinks the task is. Below the threshold it returns nothing, and nothing is emitted.
+- **a classifier** — a small model given the user's prompt and the closed list of skills, returning a skill id, a confidence, and the phrase it matched. **A closed list and a structured return, never prose**: it selects from the routes that exist, it does not describe what it thinks the task is. Below the threshold it returns nothing, and nothing is emitted.
 
-**Union, not intersection.** If either names a skill, the skill is named. Requiring both would mean each is a single point of failure for the other's coverage.
+**When the classifier runs, and why "only on a table miss" was wrong.** An earlier draft of this section claimed the two mechanisms were unioned so that neither was a single point of failure, and then ran the classifier only when the table did not match — which makes the table authoritative whenever it fires, including when it fires **wrongly**. *"ตรวจ UI ที่ทำเสร็จแล้วว่ามีปัญหาอะไร"* matching `t4-dev-workflow` is a match, so under that rule the second mechanism never gets to disagree. That is a fallback, not redundancy, and calling it redundancy is the more expensive mistake because it stops anyone looking for the gap.
 
-`ask-xeno` stays what it was: the file the master reads when it wants to route itself, and the source of the closed list both mechanisms select from. Three layers, and a task has to slip all three to go unrouted.
+So the classifier runs whenever the deterministic answer is **not trustworthy**, which is a broader condition than "absent":
+
+- the table did not match
+- it matched more than one route
+- it matched across families (a `t4-*` route and a `clink-*` route at once)
+- it matched on a weak or generic term
+- the prompt carries a phase word — *เสร็จแล้ว · ก่อน merge · แก้บั๊ก* — that implies a route different from the matched one
+
+**Union on the result.** Where both run and disagree, both are named; the master is the one that picks, and it is the stronger model. Suppressing one answer to look decisive is how a routing bug becomes invisible.
+
+**And the table is compiled, never hand-maintained.** `ask-xeno` → `using-t4` / `using-clink` / `using-design` → leaf is the routing hierarchy, and it stays the single source of truth. A second table written by hand in a hook is a second routing universe that drifts from the first the day someone edits one and not the other — the same duplicate-site defect `t4-dev-workflow`'s survey rule is written to catch, built in deliberately. The hook's table and the classifier's closed list are both **generated from the skill graph**, with a test asserting the generated artifact matches the source. Runtime stays cheap; the knowledge stays in one place.
+
+**A classifier that fails must be counted, not merely tolerated.** The turn proceeding unrouted is the right behaviour and an invisible one — a dead classifier looks exactly like a session with nothing to route, which is precisely how #134 stayed unnoticed. Every skipped invocation increments the same counters the baseline section establishes.
 
 **The cost lands where the developer feels it**, and that is the constraint on the classifier: prompt-time is the one moment a hook makes a person wait. It runs only on a table miss, under a stated time cap, and on expiry the turn proceeds unrouted rather than delayed.
 
@@ -102,6 +114,8 @@ That is a sequence fact. It is not a quality criterion, and the difference is th
 
 The census in #159 sorts 126 rules into 33 already machine-decidable, 68 needing a trace, and 25 not decidable from a transcript at any effort. **Only the 68 are in scope.** The 25 get a line saying they are out of scope, because an unmarked gap reads as coverage.
 
+**Those three numbers are inherited, not verified here.** They were taken before the delegation finding below existed, and no one has re-counted them since; treat them as a hypothesis carrying the register they were written in, and make the re-count part of the work rather than a formality after it.
+
 **The census has to be re-cut for delegated work**, and this was not known when it was taken. Nothing a delegate does is written to the master's transcript — measured, 35 `clink` calls and 5 native `Agent` calls this session against zero `isSidechain: true` records in any of the six transcripts in the project directory. A rule whose trace would be produced *inside* the delegate is undecidable here no matter how it is worded, so each of the 68 needs a second question asked of it: **is this trace produced by the master, or by whoever the master handed the work to?** The ones in the second group are rewritten to the part that is the master's — what it put in the delegate's prompt, and what it did with the result — or they move to the undecidable pile with a stated reason.
 
 **Traces do not go in the skill body.** They go in a sibling file that only the reviewer reads. The master gains nothing from a machine-readable trace declaration and would pay for it on every load — and a load is not free: measured on this session, `/tdd` was invoked three times and each invocation re-injected the whole skill, 3,744 / 3,712 / 3,715 bytes. Sixty-eight declarations inline would be charged to the master, repeatedly, for data only the reviewer consumes.
@@ -116,13 +130,17 @@ The rule's prose stays where it is; the sibling file references it by id, and a 
 
 ## Slice 3 — check the trace at turn end
 
-A `Stop` hook of `type: "command"` spawns the reviewer **detached** and returns immediately. The reviewer reads the segment — the slice from that turn's `UserPromptSubmit` to its `Stop` — and asks a **small model**: for each skill invoked, do the traces it declares appear? It writes its verdict to the state file, and the finding is delivered at the **next `UserPromptSubmit`**, which is the moment before the master takes on the next task.
+A `Stop` hook of `type: "command"` spawns the reviewer **detached** and returns immediately. The reviewer reads the segment — **the slice from the previous `Stop` to this one**, because the developer does not start every turn: 51 task-notification records and 10 `TaskCreate` calls in this session woke the agent to work with no prompt submitted, and those turns are where delegated results land — and asks a **small model**: for each skill invoked, do the traces it declares appear? It writes its verdict to the state file, and the finding is delivered at the **next `UserPromptSubmit`**, which is the moment before the master takes on the next task.
 
 **Nothing waits on it.** The reviewer works while the developer reads and types, so its cost to the developer is zero rather than a few seconds on every turn forever. If the next prompt arrives first, the hook waits a stated fraction of a second and then proceeds without it; the verdict lands one segment later. That placement also ends the race against the transcript writer, which is why the staleness question below is no longer load-bearing.
 
 **It does not run when there is nothing to review.** A segment with no tool use is a question answered, not work done — the precondition is checked in the script, before any model is spawned, so an idle turn costs nothing at all.
 
 **It reads the session history only.** No diff, no test output, no repository access. Both of its inputs are short and fixed — the declared traces and a bounded slice — which is what makes a small model a safe choice rather than a cheap one. It never sees the skill bodies: the traces live in a reviewer-only sibling file (slice 2).
+
+**Adding a `Stop` hook is itself a change site, and this repository guards it.** No `Stop` hook is wired today — `.claude/settings.json` carries `SessionStart`, `UserPromptSubmit` and `PreToolUse` and nothing else — so the new event lands in three files in the same change: the repo's own settings, `hooks/hooks.json` for the plugin, and the bootstrap's `references/hooks/settings.json`. `test-wiring-parity.sh` and `test-bootstrap-sync.sh` fail on any one of them being missed. An unlisted change site is what the survey rule exists to catch, and this plan does not get an exemption from it.
+
+**Both model-calling layers get an off switch, defaulting off.** `.claude/t4.json` already carries `autoMerge` and `requireGreenCI`, so the pattern exists and the marker is already read by every hook. The classifier and the reviewer each get a flag, and each stays off until the baseline says it earns its place. A layer that spends a model call on every turn with no way to stop it short of editing hooks is not something to hand a developer.
 
 **The slice excludes what the hooks themselves wrote.** Hook output is persisted into the transcript — 142 copies of the current reminder's text in this session alone — so an unfiltered reviewer reads its own predecessor's finding inside its segment and either counts it as evidence or raises it again. Filtering `attachment` and hook-written records removes the whole class.
 
@@ -144,20 +162,31 @@ The quantity this design would need is `now − timestamp(last record)`, sampled
 
 **This plan has no success number, and the failure it is fixing is exactly the failure of shipping without one.** The current reminder hook fires on every prompt, its measured effect is zero (#134), and that went unnoticed for a long time because nothing was counted before or after.
 
-So the first work is not slice 0. It is a measurement, and the material for it already exists: six transcripts in this repository's project directory, 12,507 lines. Counted over them, before a line of hook code changes:
+So the first work is not slice 0. It is a measurement, and the material for it already exists: six transcripts in this repository's project directory, 12,507 lines.
+
+**It has to be taken twice, because one of the three numbers cannot exist yet.** Trace absence is not measurable before slice 2 declares the traces, so a single "baseline before slice 0" would quietly skip it — and a metric nobody could have taken is worse than one nobody took, because the plan reads as though it were covered.
+
+**Baseline A — before slice 0.** Everything decidable from transcripts as they stand:
 
 - how often a turn's work matched a route and the skill was **not** loaded — the rate slice 1 claims to reduce
-- how often a loaded skill's declared trace is **absent** — the rate slice 3 claims to surface
-- how many rules fall to `delegated` and to undecidable once the census is re-cut
+- how often the routing decision is wrong or absent, table and classifier counted separately
+- the delegation census: how many of the 68 traces are produced by the master and how many inside a delegate
 
-Then the same three counts after each slice lands. **A slice that cannot move its own number is not finished, it is unfalsifiable** — and this is a repository whose own rule is that a documented claim without a test is a defect.
+**Baseline B — after slice 2 freezes the trace declarations, before slice 3 is switched on.** Replayed over the same historical transcripts, now that there is something to look for:
+
+- how often a declared trace is absent when the skill was loaded — the rate slice 3 claims to surface
+- the reviewer's accuracy against a hand-labelled gold set drawn from those transcripts, **including its false-positive rate**, which is the number that decides whether it may raise a finding at all
+
+Then the matching counts after each slice lands. **A slice that cannot move its own number is not finished, it is unfalsifiable** — and this is a repository whose own rule is that a documented claim without a test is a defect.
 
 ---
 
 ## What is not known, and will not be assumed
 
 - **Whether a small model matches traces reliably**, and in particular whether it returns `partial` correctly — the verdict the entire cross-segment mechanism rests on. Untested. It must be measured against real sessions before it is allowed to raise a finding at all.
+- **The reviewer's false-positive rate.** It is the number that decides whether this layer is usable at all: nothing here blocks anything, so a reviewer that cries wolf has spent the only asset it has. Baseline B measures it; nothing ships past it unmeasured.
 - **How well the classifier routes a Thai prompt**, and at what latency. Both are the deciding facts for slice 1's second layer, and neither has been sampled.
+- **Whether the master will use the receipt.** `F-019 DISMISS` is checkable once written, but nothing compels it to be written, and an unresolved finding is a legal outcome by design. How often it actually gets used is a fact about behaviour that only real sessions can supply.
 - **How far behind the transcript is at read time.** Never measured; see slice 3 for why the design is arranged not to depend on it.
 - **Whether `type: "prompt"` or `type: "agent"` works from a plugin's `hooks/hooks.json`.** The vendor reference neither permits nor forbids it. Verified only from a settings file — which is the path `t4-project-bootstrap` writes, so bootstrapped repos are covered either way.
 - **Whether a blocking `Stop` hook has a retry ceiling.** Untested, and it only matters if the non-blocking decision is ever revisited.

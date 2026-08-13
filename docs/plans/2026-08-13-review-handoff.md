@@ -8,7 +8,11 @@
 
 ## Why a memoryless reviewer needs anything at all
 
-A **segment** is one unit of review: from a `UserPromptSubmit` record to the `Stop` that ends that turn. A fresh reviewer takes one segment and nothing else, which is what bounds its input by the segment rather than by the session — a master agent at 800k tokens still produces a reviewer input of one segment. That property is the reason a small model is a safe choice here rather than merely a cheap one, and nothing in this file may cost it.
+A **segment** is one unit of review: **from the previous `Stop` to this `Stop`.**
+
+The obvious definition — from a `UserPromptSubmit` to the `Stop` that ends that turn — is wrong, and measurably so. **The developer does not start every turn.** Measured on session `179dfafc`: 51 task-notification records and 10 `TaskCreate` calls, each of which wakes the agent to work with no prompt submitted. Under the prompt-to-stop definition those turns are either never reviewed or their records are attached to the previous segment, and they are not idle turns — they are where delegated results land and get acted on. Anchoring on `Stop` at both ends covers both cases with no special-casing, because every turn ends the same way regardless of what began it.
+
+A fresh reviewer takes one segment and nothing else, which is what bounds its input by the segment rather than by the session — a master agent at 800k tokens still produces a reviewer input of one segment. That property is the reason a small model is a safe choice here rather than merely a cheap one, and nothing in this file may cost it.
 
 Three things break under that isolation. They look like three problems and are one: **evidence that outlives the segment it appeared in.**
 
@@ -30,7 +34,7 @@ The idea transfers: **a fresh reader starts at zero, so give it exactly what exi
 | Don't duplicate what other artifacts hold; reference by path | **Reference transcript records by line and uuid.** Never quote the work. The transcript is the artifact; this file points into it. |
 | Save outside the workspace | `.claude/state/`, gitignored. It is derived state, and a stale copy read as truth is worse than its absence. |
 | Redact anything sensitive | Stronger: it carries **no content at all** — no code, no diffs, no message text. Only rule ids, record pointers and verdicts. Redaction becomes structural rather than a judgment the small model has to make. |
-| A "suggested skills" section | The **`loaded` set** — which skills the next reviewer is still checking, and from which segment. |
+| A "suggested skills" section | The **`active` set** — which skills the next reviewer is still checking, and from which segment. |
 | Prose, written once, by the strongest model in the session | **A fixed schema, written every segment, by a script.** See below. |
 
 ---
@@ -64,9 +68,11 @@ One per session. Gitignored. Removed when its session ends. Never in the workspa
   "segment": 7,
   "last_boundary_record": 10441,
 
-  "loaded": [
-    { "skill": "t4-dev-workflow", "since_segment": 5, "record": 10460, "via": "skill_tool" },
-    { "skill": "t4-bro",          "since_segment": 7, "record": 10529, "via": "slash_command" }
+  "active": [
+    { "skill": "t4-dev-workflow", "since_segment": 5, "record": 10460, "via": "skill_tool",
+      "skill_sha": "8c72a1f", "trace_schema": 3 },
+    { "skill": "t4-bro",          "since_segment": 7, "record": 10529, "via": "slash_command",
+      "skill_sha": "d41e903", "trace_schema": 3 }
   ],
 
   "pending": [
@@ -87,13 +93,26 @@ One per session. Gitignored. Removed when its session ends. Never in the workspa
     }
   ],
 
-  "dismissed": [
-    { "rule": "simplify/after-code-change", "segment": 4, "by": "master", "record": 10488 }
+  "resolved": [
+    { "finding": "F-019", "rule": "simplify/after-code-change", "decision": "dismiss",
+      "by": "master", "segment": 4, "record": 10488 }
   ]
 }
 ```
 
-Four lists, and each one answers exactly one of the problems above. `loaded` says who is being checked; `pending` carries a half-seen trace across the boundary; `unknown` re-asks what the writer had not yet flushed; `dismissed` remembers what the master overruled.
+Four lists, and each one answers exactly one of the problems above. `active` says who is being checked; `pending` carries a half-seen trace across the boundary; `unknown` re-asks what the writer had not yet flushed; `resolved` remembers what the master decided.
+
+**`skill_sha` and `trace_schema` are not bookkeeping.** A skill can be edited mid-session — this repository edits its own skills constantly — and without them a reviewer at segment 6 checks version B's declared traces against behaviour produced under version A. Recording which version was loaded makes the check deterministic and makes a mismatch visible instead of silent: when the sha of the loaded skill differs from the sha the traces belong to, the verdict is `unknown` with that reason, not a finding.
+
+### `active` expires — it is not "everything this session loaded"
+
+The list is named `active`, not `loaded`, because the invariant is the point:
+
+> **active for segment N = skills invoked or routed in segment N + skills referenced by an open `pending` row + skills referenced by an open `unknown` row.**
+
+At the end of each segment, any skill with no open row is dropped. **Nothing stays in scope merely because it was once invoked.**
+
+Without this the isolation is decorative: a session that used `tdd` at segment 5, `design` at 8 and `debug-mantra` at 15 would have its segment-15 reviewer still holding all three, and the reviewer's input would grow with the **age of the session** — exactly the property the per-segment design exists to prevent. With it, the input grows only with **work that has not finished**, which is bounded by how much the master leaves open, not by how long anyone has been working.
 
 **`via` exists because there are two ways to invoke a skill and only one of them is obvious.** Measured on this repository's session `179dfafc`, 2026-08-13: `Skill` `tool_use` blocks name 12 distinct skills, while `<command-name>` records name four more that produce no `tool_use` block at all — `/t4-bro` twice, `/handoff` twice, `/to-prd` and `/t4-afk` once each. A detector that greps only `"name":"Skill"` reports `t4-bro` as never loaded in a session that loaded it three times. Both record types count.
 
@@ -138,7 +157,7 @@ Hook output is persisted into the transcript — measured, 142 copies of the cur
 
 1. this file,
 2. the transcript slice for its own segment,
-3. the declared traces of the skills in `loaded`.
+3. the declared traces of the skills in `active`, at the sha those skills were loaded at.
 
 **Returns one fixed shape**, per rule it evaluated:
 
@@ -164,7 +183,32 @@ The declared traces are **not** read out of the skill body. They live in a sibli
 
 **4. Every `pending` row expires.** `expires_after_segment` is set when the row is created. At expiry it becomes a finding or an `unknown` — never nothing. Otherwise *awaiting: plan* sits open forever and no rule ever concludes.
 
-**5. A `dismissed` rule is not re-raised for the rest of the task.** This is the only rule whose purpose is the master's trust rather than correctness, and it is the one most likely to be dropped as an optimisation.
+**5. A dismissed finding is not re-raised for the rest of the task.** This is the only rule whose purpose is the master's trust rather than correctness, and it is the one most likely to be dropped as an optimisation. It requires a receipt — below.
+
+**6. At most one finding is delivered per turn.** A segment can fail several traces at once, and injecting all of them turns a correction into a wall of text that gets skimmed. Rank by the position of the missing step in the workflow, deliver the earliest, and leave the rest as `pending` rows. If the earliest one was a misread, the master says so and the next reviewer moves on to the second; if it was real, fixing it usually resolves the rest anyway.
+
+---
+
+## The finding must be resolved by a receipt, not by prose
+
+Rule 5 needs the script to know that the master decided. **It must never infer that from natural language** — *"this one isn't right, because…"* is a sentence a classifier would have to judge, which puts a model back in the persistent layer that this design just removed it from.
+
+So a finding is delivered with an id, and the master resolves it with a stated, checkable action:
+
+```
+F-019 DISMISS  reason: the survey is in the issue body, not the transcript
+F-019 ACCEPT
+```
+
+The script greps for the id and the verb. That is a deterministic check on a record the harness wrote, in the same class as the skill-invocation check that the whole plan rests on — no model, nothing to hallucinate, and the transcript carries the receipt:
+
+```json
+{ "finding": "F-019", "decision": "dismiss", "by": "master", "record": 10882 }
+```
+
+**This is also what makes the authority real rather than rhetorical.** The design says the reviewer may object and the master decides. Without a receipt the objection has no terminating state: the master ignores it, the reviewer raises it again, and the loop ends only when someone turns the reviewer off. With one, the cycle closes — reviewer objects, master considers, master resolves, script records — and the master's decision is the thing that ends it.
+
+**Silence is a legal outcome and must be named as one.** A non-blocking hook cannot compel a resolution, so a finding with no receipt after a stated number of segments expires as `unresolved` and is counted. It is not re-raised, and it is not recorded as agreement.
 
 ---
 
@@ -184,7 +228,7 @@ The rule is *survey before plan*, and the work takes three prompts.
 
 ## What this design accepts rather than solves
 
-- **A rule can still straddle a compaction boundary.** The boundary resets `loaded`, deliberately: what the harness carries across a compaction is **truncated** — measured on this session, `clink-subagents` and `clink-brainstorm` returned cut mid-file — and truncation removes the end of a skill, where several of ours keep their rules. A skill that looks present may be missing exactly the section under test, so a carry is not a load. `pending` rows survive the boundary; the skills they belong to may not, in which case those rows expire to `unknown` and say so.
+- **A rule can still straddle a compaction boundary.** The boundary clears `active`, deliberately: what the harness carries across a compaction is **truncated** — measured on this session, `clink-subagents` and `clink-brainstorm` returned cut mid-file — and truncation removes the end of a skill, where several of ours keep their rules. A skill that looks present may be missing exactly the section under test, so a carry is not a load. `pending` rows survive the boundary; the skills they belong to may not, in which case those rows expire to `unknown` and say so.
 - **Findings on the final segment of a session reach nobody.** Either the next `UserPromptSubmit` carries them, or the design states plainly that the last turn is unreviewed. Silence is not an option here.
 - **The master is never compelled to answer a finding.** A non-blocking hook cannot compel a response — stating otherwise is the fictional enforcement `docs/adr/0001` warns about, and #159's first draft did exactly that.
 
@@ -200,7 +244,12 @@ The seam is the merged file, exactly as every suite in `tests/hooks/` asserts on
 - the `pending` cap → oldest expires to `unknown` **and the drop is logged**
 - an expired row → becomes a finding or an `unknown`, never silently vanishes
 - a `dismissed` rule → not re-emitted on a later segment
-- a skill invoked as a slash command → appears in `loaded` with `via: "slash_command"`
+- a skill invoked as a slash command → appears in `active` with `via: "slash_command"`
+- a turn opened by a task notification rather than a prompt → still forms a segment, still reviewed
+- a skill with no open `pending` or `unknown` row → dropped from `active` at segment end
+- a skill edited mid-session → sha mismatch resolves to `unknown`, never to a finding
+- `F-019 DISMISS` in the transcript → the finding is not re-raised; no receipt after the stated span → expires `unresolved` and is counted, not treated as agreement
+- two traces failing in one segment → exactly one finding delivered, the other left `pending`
 - a segment containing a delegation → the delegated rule returns `delegated`, never `violated`
 - a segment containing hook-injected text that names a rule → filtered out, no verdict derived from it
 - a reviewer that has not finished when the next prompt arrives → the prompt is not blocked, the row carries forward
