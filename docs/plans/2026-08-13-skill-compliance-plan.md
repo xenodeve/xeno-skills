@@ -8,10 +8,11 @@
 
 ## The shape
 
-Three slices, in this order. The middle one is a precondition for the last, which is the only reason the order is not the obvious one.
+Four slices, in this order. The middle one is a precondition for the last, which is the only reason the order is not the obvious one.
 
 | | | Fixes |
 |---|---|---|
+| **0** | Stop injecting `using-t4` at session start — it is the wrong router and its measured effect is zero | 33 KB per session spent on one family's map |
 | **1** | Before the turn: name the skill this task needs, if it has not been loaded | #134 — the reminder fired every prompt and the skill was never loaded |
 | **2** | Write into each rule the trace it leaves in the sequence of work | nothing on its own; makes slice 3 possible |
 | **3** | At turn end: the skill was loaded — did its steps appear? | #130 — both skills invoked, in context, step still never ran |
@@ -20,9 +21,31 @@ Code correctness is not in this plan at any point. That is CI's job and the tier
 
 ---
 
+## Slice 0 — stop injecting the T4 map at session start
+
+`hooks/t4-session-start` injects `using-t4` verbatim on `startup`, `clear` **and** `compact`. Measured: **8,222 B per injection**, and this session took four of them (one start, three compactions) — roughly 33 KB spent on one family's map.
+
+Two things are wrong with that. It is the **wrong router**: `using-t4` covers the seven T4 skills and none of the nine under `clink-*` and `design*`, which is the gap `ask-xeno` was built to close. And its only measured effect is #134 — the rules were in context, injected, and the agent still did not follow them.
+
+**Stop injecting it.** What `using-t4` uniquely carries — the non-negotiable rules and the red-flags table — arrives instead when a task needs it, through slice 1, which can also verify that it arrived. That is strictly better than injecting it unconditionally and never knowing.
+
+**The seam** is `tests/hooks/test-dispatcher-content.sh`, which today pins a 9000-byte budget and five exact phrases against `using-t4`. Whatever is injected instead inherits that test; the budget and the pinned phrases move with it. `.claude/hooks/using-t4.snapshot.md` and `tests/skills/test-repo-self-bootstrap.sh` move too, or a plugin-less install ships the wrong file.
+
+---
+
 ## Slice 1 — say what is missing, before the work
 
 Replace the constant text in `hooks/t4-prompt-reminder` with a check: match the user's prompt against a small routing table, read which skills this session has actually invoked, and emit one short line naming a required skill only when it is absent. Emit nothing otherwise.
+
+**The hook does the routing; it does not hand over a map.** An earlier draft of this plan injected a compact route table on every prompt so the agent could route itself. That is the wrong shape twice over: a table short enough to be cheap (335 B) cannot say that recording a decision, running unattended and writing to the developer are all T4 work, and a table long enough to say it (711 B, or 1,287 B for the whole of `ask-xeno`) costs more per session than everything being replaced. Measured against this session's 55 turns: 18 KB, 39 KB and 71 KB respectively, against 57 KB today.
+
+The hook already matched the prompt. It should emit the **answer**, not the map:
+
+- matched, and the skill is loaded → **emit nothing**
+- matched, not loaded → *"this is feature work; `t4-dev-workflow` has not been loaded this session"*
+- **no match** → emit the compact route list, because this is the one case where the agent has to route itself
+
+So the route list is paid for on unmatched turns only. `ask-xeno` stays the file an agent reads when it wants the full picture, and it is what slice 0 leaves reachable rather than resident.
 
 **Why it can work when the current reminder does not.** The current hook emits the same four sentences every turn regardless of state; after the first turn it carries no new information. This one speaks only when there is something to say, and what it says is derived from **what happened**, not from what the agent claims: the transcript is written by the harness, and the only way to produce a `Skill` `tool_use` block is to make the call.
 
