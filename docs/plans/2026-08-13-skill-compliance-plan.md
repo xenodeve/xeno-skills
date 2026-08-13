@@ -10,6 +10,13 @@
 
 Four slices, in this order, **after the baseline below is counted**. The middle one is a precondition for the last, which is the only reason the order is not the obvious one.
 
+**The operating context this is being built for, because it changes what counts as proportionate.** This is not one repository's guard rail: it is the layer T4 Labs develops software through, so its cost amortises across every repository and every session rather than against the work in this one. And delegation is a main path, not an edge — 35 of this session's 40 delegations went through `clink`, and the PAL tools are in the workflow daily.
+
+Two consequences follow, and the second is the one that is easy to get backwards:
+
+- **Being the primary system raises the reliability bar rather than lowering it.** Machinery that is always in the way must fail safe: every layer off by default, every layer independently disableable, and **no layer may stand between the developer and their work when it breaks.** A guard used occasionally can afford to be brittle; this one cannot.
+- **The blind spot is proportional to how much work flows through the channel, so `clink` is the largest of them, not the smallest.** An earlier reading of this plan ranked the clink-side reviewer last on the grounds that it cost the most and covered the least. The second half was wrong: most of the work goes through that channel, so the unreviewed fraction there is the biggest one in the system.
+
 | | | Fixes |
 |---|---|---|
 | **0** | Stop injecting `using-t4` at session start — it is the wrong router and its measured effect is zero | 33 KB per session spent on one family's map |
@@ -186,6 +193,23 @@ So the first work is not slice 0. It is a measurement, and the material for it a
 - the reviewer's accuracy against a hand-labelled gold set drawn from those transcripts, **including its false-positive rate**, which is the number that decides whether it may raise a finding at all
 
 Then the matching counts after each slice lands. **A slice that cannot move its own number is not finished, it is unfalsifiable** — and this is a repository whose own rule is that a documented claim without a test is a defect.
+
+### The premise underneath all four slices, measured first
+
+**Every layer here assumes the master changes what it does when it is told something.** #134 is the standing evidence against it: the rules were injected on every prompt, they were in context, and behaviour did not change. The reason to expect a different result is that these layers speak only when there is something to say and name one specific missing thing — plausible, and **unproven**.
+
+So it is measured at slice 1, before slice 2 or 3 is paid for: **of the turns where the hook named a missing skill, in how many was that skill then loaded?** If that number is near zero, the fault is not in trace declarations or reviewer accuracy and no amount of either fixes it — and every layer above would be printing more precise notices for a reader that does not act on them.
+
+### The stopping rules, written now rather than after the work
+
+A gate written after the effort has been spent is a gate nobody uses. These are the conditions under which a slice does **not** get built, and they are decided by the counts above rather than by argument:
+
+- **the routed-then-loaded rate at slice 1 is near zero** → stop. The premise is refuted, and the next two slices rest entirely on it.
+- **Baseline B shows the reviewer's false-positive rate above the stated bar** → slice 3 does not raise findings. It may still count silently, which is useful and harmless.
+- **the census re-cut leaves too few rules with master-side traces to matter** → slice 2 shrinks to those rules, and slice 3 is scoped to them rather than built out.
+- **any layer cannot be turned off cleanly, or can stall the developer's work** → it does not ship in that state, whatever its accuracy.
+
+**Stopping at slice 1 is a complete outcome, not an abandoned project.** It is the cheapest layer, it rests on the only fact here that is fully verified, and it addresses the largest measured hole. The rest earns its place with numbers or does not get built.
 
 ---
 

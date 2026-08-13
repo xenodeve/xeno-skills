@@ -192,6 +192,7 @@ That split decides where this tier is real:
 - **Provenance.** The reviewer seat is a **fresh `continuation_id`**, and a different client where the lane allows it. A worker asked to review itself defends itself; `clink-debug` says this about falsify seats and it is the same seat here.
 - **Observation travels with the verdict.** Every entry carries what was seen — the event, the quote — not only the judgment. Without it the master cannot disagree, and a tier the master cannot overrule is not advisory, whatever the document says.
 - **Bounded.** It runs only on delegations that were handed skills, correction rounds are capped at a stated number, and the reviewer takes the cheap house lane. A clink call already costs 20–530 seconds; an unbounded review loop multiplies the slowest thing in the system.
+- **It never stands between the master and its work.** Delegation is a main path here — 35 of this session's 40 — so a review loop wrapped *around* the return would put the slowest, newest and least proven component directly in front of the work the developer is waiting for. The worker's result goes back the moment it is ready; the review runs alongside and its record arrives when it arrives, late or not at all. **A reviewer that can stall the main path is a worse failure than the drift it was built to catch**, and the same rule already governs the master-side reviewer for the same reason.
 
 ### The boundary is ours to change — PAL is developed alongside this repo
 
