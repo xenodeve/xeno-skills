@@ -5,7 +5,7 @@ description: The single home for delegating a bug hunt to clink agents — read 
 
 # clink-debug
 
-> **Requires the same PAL MCP setup as [`clink-subagents`](../clink-subagents/SKILL.md) and [`clink-brainstorm`](../clink-brainstorm/SKILL.md).** This skill adds no new call shape — it sequences those two and constrains who may sit in which phase. Read whichever of them you are about to use for its own rules; this file does not repeat them.
+> **Requires the same OpenClink setup as [`clink-subagents`](../clink-subagents/SKILL.md) and [`clink-brainstorm`](../clink-brainstorm/SKILL.md).** This skill adds no new call shape — it sequences those two and constrains who may sit in which phase. Read whichever of them you are about to use for its own rules; this file does not repeat them.
 
 ## Start cheap — most bugs end here
 

@@ -1,6 +1,6 @@
 ---
 name: using-clink
-description: The entry point for delegating to another AI CLI agent through PAL's clink tool. Decides which of the four clink skills you actually want before you spend a call — executing a scoped subtask, convening a panel for judgment, hunting a bug across agents, or deciding who may do the work at all. Reach for it whenever you are about to delegate, whenever you are choosing between a subagent and a panel, and whenever a delegation came back wrong and you are not sure the routing was right. Triggers include "delegate this", "ask the other AIs", "get a second opinion", "run this in parallel", "which model should review this".
+description: The entry point for delegating to another AI CLI agent through OpenClink's clink tool. Decides which of the four clink skills you actually want before you spend a call — executing a scoped subtask, convening a panel for judgment, hunting a bug across agents, or deciding who may do the work at all. Reach for it whenever you are about to delegate, whenever you are choosing between a subagent and a panel, and whenever a delegation came back wrong and you are not sure the routing was right. Triggers include "delegate this", "ask the other AIs", "get a second opinion", "run this in parallel", "which model should review this".
 ---
 
 # Using Clink

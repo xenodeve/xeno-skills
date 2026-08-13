@@ -43,7 +43,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | #88 trust boundary — the second routing axis (#73 slice 5) | 🟡 | blocked | Unblocks when #73 is approved. |
 | #89 cost as representative value + spread (#73 slice 6) | 🟡 | blocked | Unblocks when #73 is approved. |
 | #90 consume the per-call cost report (#73 slice 7) | 🟡 | blocked | Unblocks when #73 is approved. |
-| #71 enforcement layer for supervised clink delegation | 🟡 | ready-for-human | Pairs with pal-mcp-server#11. |
+| #71 enforcement layer for supervised clink delegation | 🟡 | ready-for-human | Pairs with openclink#11. |
 
 ## Track 5 — cross-repo conventions
 

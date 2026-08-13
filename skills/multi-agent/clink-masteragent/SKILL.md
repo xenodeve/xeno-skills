@@ -82,17 +82,17 @@ Applies whichever instrument you chose. Each item is marked **[D]** discipline y
 | A | **Acceptance** — write the success criterion before the call. Exploratory work gets required questions and evidence standards instead of pass/fail tests. | [D] |
 | B | **Feasibility** — a read-heavy delegation takes 400–530s against a real repo. Under a 60–120s transport ceiling that is **infeasibility, not latency**. | [D] |
 | C | **Ops preflight** — which quota lane does this spend? Prefer each client's house lane. | [D] |
-| D | **Containment** — an isolated workspace, not a shared tree; two subagents can otherwise mutate one checkout. | [T] `pal#20` — **does not exist yet** |
+| D | **Containment** — an isolated workspace, not a shared tree; two subagents can otherwise mutate one checkout. | [T] `openclink#20` — **does not exist yet** |
 | E | **Selection** — axis → harness → context → model+effort → right-size to the cheapest point that clears the bar. Escalate only after a real failure. | [D] |
 | F | **Prompt and output contract** — the worker has zero conversation context. Absolute paths, the exact I/O contract, "return ONLY X". | [D] |
-| G | **Dispatch safety** — run id, idempotency key, process-tree ownership, bounded I/O. A retry without an idempotency key double-launches. | [T] `pal#20` — **does not exist yet** |
-| H | **Recovery** — a timeout is not a death certificate; the child may still be running. | [T] `pal#20` |
+| G | **Dispatch safety** — run id, idempotency key, process-tree ownership, bounded I/O. A retry without an idempotency key double-launches. | [T] `openclink#20` — **does not exist yet** |
+| H | **Recovery** — a timeout is not a death certificate; the child may still be running. | [T] `openclink#20` |
 | I | **Promotion** — derive what changed from the workspace; an agent-authored manifest is not authoritative. | [D] |
 | J | **Master verification** — yours, always. Mutate a delegated core. | [D] |
 
-**The [T] rows are the honest part of this table.** Those protections are described in `pal-mcp-server#20` and are *not implemented*. Until they are, treat them as discipline you keep manually and state that you did — do not read the row as a guarantee.
+**The [T] rows are the honest part of this table.** Those protections are described in `openclink#20` and are *not implemented*. Until they are, treat them as discipline you keep manually and state that you did — do not read the row as a guarantee.
 
-A related gap worth knowing while you delegate: the model catalog is enforced by reading the command PAL builds, and codex also takes a model from `~/.codex/config.toml` and `--profile`. So a model can arrive with nothing on the argv (`pal-mcp-server#39`).
+A related gap worth knowing while you delegate: the model catalog is enforced by reading the command OpenClink builds, and codex also takes a model from `~/.codex/config.toml` and `--profile`. So a model can arrive with nothing on the argv (`openclink#39`).
 
 ## Case list
 

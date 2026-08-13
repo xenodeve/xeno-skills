@@ -160,16 +160,16 @@ The order — no step skipped because the answer "looks obvious":
 
 ## Capability router (optional)
 
-Route by the *capability* a task needs, not a hardcoded tool name — the capability is stable; the tool/command is repo/runtime config that `t4-project-bootstrap` populates from the installed MCP/PAL tools.
+Route by the *capability* a task needs, not a hardcoded tool name — the capability is stable; the tool/command is repo/runtime config that `t4-project-bootstrap` populates from the installed MCP/OpenClink tools.
 
 | Capability | Tool (repo-configured — examples) |
 |---|---|
-| Code review | `mcp__pal__codereview` |
-| Debug / diagnose | `mcp__pal__debug` |
-| Architecture review | `mcp__pal__analyze` |
-| Security audit | `mcp__pal__secaudit` |
-| Test / QA planning | `mcp__pal__testgen` |
-| Deep reasoning / second opinion | `mcp__pal__thinkdeep` / `consensus` |
+| Code review | `mcp__openclink__codereview` |
+| Debug / diagnose | `mcp__openclink__debug` |
+| Architecture review | `mcp__openclink__analyze` |
+| Security audit | `mcp__openclink__secaudit` |
+| Test / QA planning | `mcp__openclink__testgen` |
+| Deep reasoning / second opinion | `mcp__openclink__thinkdeep` / `consensus` |
 
 If nothing is configured for a capability, use the general skills directly.
 

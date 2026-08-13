@@ -28,7 +28,7 @@ as written — in code identifiers, PR descriptions, issue titles, and team conv
 
 | Term | Definition | Aliases to avoid |
 |------|-----------|-----------------|
-| **clink** | PAL's CLI-delegation tool; orchestrates independent CLI agents (Codex, Antigravity). Not configured in this environment. | — |
+| **clink** | OpenClink's CLI-delegation tool; orchestrates independent CLI agents (Codex, Antigravity). Not configured in this environment. | — |
 | **delegation** | Handing a bounded chunk of work to a subagent via clink; verify everything it returns. | — |
 | **brainstorm** | Fanning a question out to multiple independent agents and synthesizing one recommendation. | — |
 | **effort ladder** | The model×effort routing ladder calibrated by docs/research. | — |
@@ -74,7 +74,7 @@ glossary คำศัพท์มาตรฐานของ xeno-skills เม�
 
 | คำศัพท์ | นิยาม | alias ที่ควรเลี่ยง |
 |------|-----------|-----------------|
-| **clink** | เครื่องมือ delegating ของ PAL; orchestrate CLI agent อิสระ (Codex, Antigravity) ยังไม่ config ใน environment นี้ | — |
+| **clink** | เครื่องมือ delegating ของ OpenClink; orchestrate CLI agent อิสระ (Codex, Antigravity) ยังไม่ config ใน environment นี้ | — |
 | **delegation** | มอบหมายงานที่มีขอบเขตชัดให้ subagent ผ่าน clink; ต้อง verify ทุกอย่างที่มันคืนมา | — |
 | **brainstorm** | กระจายคำถามไปยัง agent อิสระหลายตัวแล้วสังเคราะห์เป็นข้อเสนอเดียว | — |
 | **effort ladder** | routing ladder แบบ model×effort ที่ปรับเทียบจาก docs/research | — |

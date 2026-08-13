@@ -97,11 +97,11 @@ graph TD
 
 ---
 
-## 6. รีโปคู่ — `xenodeve/pal-mcp-server`
+## 6. รีโปคู่ — `xenodeve/openclink`
 
-รีโปนี้คือ **ชั้นบังคับ agent**: skill ที่ตัดสินว่า master agent ต้องทำตัวอย่างไร ส่วน [`xenodeve/pal-mcp-server`](https://github.com/xenodeve/pal-mcp-server) คือ **ชั้นเครื่องมือ**: ตัวเชื่อม `clink` ที่ skill เหล่านั้นขับ งาน `clink` ส่วนใหญ่มีคู่ของมันอยู่ที่นั่น และ **การแก้ฝั่งเดียวมักไม่สมบูรณ์ในตัวเอง**
+รีโปนี้คือ **ชั้นบังคับ agent**: skill ที่ตัดสินว่า master agent ต้องทำตัวอย่างไร ส่วน [`xenodeve/openclink`](https://github.com/xenodeve/openclink) คือ **ชั้นเครื่องมือ**: ตัวเชื่อม `clink` ที่ skill เหล่านั้นขับ งาน `clink` ส่วนใหญ่มีคู่ของมันอยู่ที่นั่น และ **การแก้ฝั่งเดียวมักไม่สมบูรณ์ในตัวเอง**
 
-| ที่นี่ (agent — master *ต้องทำตัวอย่างไร*) | pal-mcp-server (tools — `clink` *ทำอะไรได้*) |
+| ที่นี่ (agent — master *ต้องทำตัวอย่างไร*) | openclink (tools — `clink` *ทำอะไรได้*) |
 |---|---|
 | **#71** enforcement layer สำหรับการส่งงานแบบมีผู้ควบคุม | **#11** supervised subagent sessions (epic; phase #12–#16) |
 | **#74** เช็คลิสต์ก่อนส่งงานของ master agent — การยอมรับ, ความเป็นไปได้, การจำกัดขอบเขต, ความหมายของความล้มเหลว, การตรวจสอบ | **#20** อายุของ subagent — ไม่มี deadline ตายตัว, เป็นเจ้าของ process tree, ยกเลิก/เก็บกวาด |
@@ -112,11 +112,11 @@ graph TD
 
 - **ความสามารถของเครื่องมือลงที่นั่น** → skill ที่เคยบอก agent ให้ชดเชยการไม่มีของมันจะผิดทันที `#74` ติดป้ายทุกข้อในเช็คลิสต์ว่า `discipline` หรือ `tool` **พร้อมระบุ issue** ที่ส่งมอบมัน ข้อที่ต้องกลับมาแก้จึงหาได้เชิงกลไก
 - **ตัวเลขเปลี่ยนที่นั่น** (ราคา, rate card, model/effort เริ่มต้น) → ตัวเลขใน skill ที่อ้างอิงมันจะเก่า `#73` เพิ่ม contract test เพื่อให้เรื่องนี้ทำให้เทสต์แตก แทนที่จะทำให้ agent เข้าใจผิดแบบเงียบๆ
-- **skill เริ่มต้องการสิ่งที่เครื่องมือทำไม่ได้** → นั่นคือช่องว่างของเครื่องมือ ให้เปิด issue ที่ pal-mcp-server
+- **skill เริ่มต้องการสิ่งที่เครื่องมือทำไม่ได้** → นั่นคือช่องว่างของเครื่องมือ ให้เปิด issue ที่ openclink
 
 ความต้องการสี่ข้อตอนนี้ **ไม่อยู่ใน issue ใดของทั้งสองรีโป**: argument allowlisting, การป้องกัน prompt injection ที่มากับเนื้อหาใน repository, resource admission และ conflict-aware promotion — บันทึกไว้ใน `#74`
 
-> ความไม่สมมาตรของ tracker: pal-mcp-server มี triage label ของ T4 (`ready-for-agent`, `clink`, `Feature`, `security`, …) ส่วนรีโปนี้ตอนนี้มีแต่ค่าเริ่มต้นของ GitHub issue จึงไม่มี label อย่าอ่านว่า label ที่หายไปแปลว่าไม่ได้ triage — `t4-project-bootstrap` คือสิ่งที่ปิดช่องว่างนี้
+> ความไม่สมมาตรของ tracker: openclink มี triage label ของ T4 (`ready-for-agent`, `clink`, `Feature`, `security`, …) ส่วนรีโปนี้ตอนนี้มีแต่ค่าเริ่มต้นของ GitHub issue จึงไม่มี label อย่าอ่านว่า label ที่หายไปแปลว่าไม่ได้ triage — `t4-project-bootstrap` คือสิ่งที่ปิดช่องว่างนี้
 
 ---
 

@@ -8,7 +8,7 @@
 # MUTUALLY EXCLUSIVE for every model agy serves. Measured 2026-08-04 against the
 # real binary: an untiered id gives "--effort is not supported for model X", a
 # tiered one gives "--model X conflicts with --effort=Y", and `--effort` alone
-# with no `--model` succeeds. PAL refuses the pair before spawn (pal#43, PR #45).
+# with no `--model` succeeds. OpenClink refuses the pair before spawn (openclink#43, PR #45).
 #
 # And the flag is HONOURED, not merely accepted: same prompt, `low` produced 0
 # thinking tokens and `high` produced 446. Argv shape proves nothing on this
@@ -43,7 +43,7 @@ has "$BRAIN" "mutually exclusive" "clink-brainstorm states it as well"
 has "$SUB"   "one or the other, not both" "and says what to do about it"
 
 echo
-echo "PAL refuses the pair before spawn, so this is not merely advice:"
+echo "OpenClink refuses the pair before spawn, so this is not merely advice:"
 has "$SUB" "refuses the pair before spawn" "the pre-spawn refusal is named"
 
 echo

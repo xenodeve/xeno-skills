@@ -82,13 +82,13 @@ All four occurred in one session on 2026-08-03, **with the developer present** �
 guidance existed and had been consulted in every case. The developer's reply was
 *"ไม่ใช่ว่าเราทำการ prd และตัดสินใจไปหมดแล้วหรอ"* — didn't we already do the PRD and decide all this?
 
-**1 — A decision the plan explicitly delegated.** `pal-mcp-server#22` says *"Whether existing callers
+**1 — A decision the plan explicitly delegated.** `openclink#22` says *"Whether existing callers
 are given a grace period is the one open question **for the implementer**."* The agent read "open
 question", filed the slice `needs-info`, and wrote *"an unattended agent must not pick the answer"* —
 which inverts the sentence. The plan was handing the call over; it was received as withholding it.
 **Fill the park sentence and it collapses:** blank one cannot be filled, because the plan does say.
 
-**2 — New information appearing to reopen a settled decision.** `pal-mcp-server#23` specifies four
+**2 — New information appearing to reopen a settled decision.** `openclink#23` specifies four
 fields including *"a placeholder for cost that this slice leaves absent"*. A reviewer objected that the
 placeholder locks in nothing. The agent kept the field — correctly — and then escalated the objection
 anyway. **Record it, keep the decision, escalate only on an invalidated premise.** The premise here was
@@ -101,7 +101,7 @@ source."* There was no choice — there was an unmet dependency on #72. The agen
 answer was in a structured section its own summary had dropped. **This is the case for re-reading
 rather than recalling.**
 
-**4 — Ordinary unstarted work counted as a blocked decision.** `pal-mcp-server#20` and `xeno-skills#74`
+**4 — Ordinary unstarted work counted as a blocked decision.** `openclink#20` and `xeno-skills#74`
 were reported as *"not split yet — splitting either is a scope decision"*. Splitting a PRD into issues
 is `/to-issues`. Listing work-bound items beside genuine blockers makes the queue look decision-bound
 when it is not.

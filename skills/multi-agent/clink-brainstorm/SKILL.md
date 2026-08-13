@@ -1,13 +1,13 @@
 ---
 name: clink-brainstorm
-description: Fan out a question to multiple independent AI agents (Gemini/Antigravity, OpenAI/Codex, Cursor, and optionally a further model of your choice) through PAL's clink tool, then synthesize their answers into one recommendation. Use for multi-agent brainstorming, getting a second/third opinion on a design or plan, sanity-checking a decision across model families, or when the user says "ask the other AIs", "brainstorm with multiple models", or "get other perspectives".
+description: Fan out a question to multiple independent AI agents (Gemini/Antigravity, OpenAI/Codex, Cursor, and optionally a further model of your choice) through OpenClink's clink tool, then synthesize their answers into one recommendation. Use for multi-agent brainstorming, getting a second/third opinion on a design or plan, sanity-checking a decision across model families, or when the user says "ask the other AIs", "brainstorm with multiple models", or "get other perspectives".
 ---
 
 # clink-brainstorm
 
 > **Requires [PAL MCP server](https://github.com/BeehiveInnovations/pal-mcp-server)** connected as an MCP server, with its `clink` tool configured for at least two independent CLI agents. This skill is a prompting/orchestration layer on top of `clink` — it does nothing standalone without PAL installed and reachable. See Prerequisites below.
 
-Drive 3+ independent AI agents on the **same well-specified question**, then synthesize the answers yourself into one recommendation. This is "manual consensus" — PAL's native `consensus` tool cannot mix clink CLI agents with its own model provider roster, so the orchestration is done by hand, here.
+Drive 3+ independent AI agents on the **same well-specified question**, then synthesize the answers yourself into one recommendation. This is "manual consensus" — OpenClink's native `consensus` tool cannot mix clink CLI agents with its own model provider roster, so the orchestration is done by hand, here.
 
 ## What this skill is, and what the other one is
 
@@ -30,33 +30,33 @@ This skill assumes [PAL MCP server](https://github.com/BeehiveInnovations/pal-mc
 
 If you want the extra agents referenced below:
 - **`cursor`** (Cursor's headless `cursor-agent`) needs no new code at all — `BaseCLIAgent` already pipes the prompt over stdin and appends `--model`, which is exactly its interface. It is a `constants.py` entry plus a config file, both shipped in the fork below. Fixed args are `-p --trust --output-format text`: `--trust` is mandatory or a non-interactive run in an unseen directory aborts with *"Workspace Trust Required"*, and its JSON shape is not Claude Code's so `claude_json` cannot parse it.
-- **`antigravity`** (Google's Gemini-CLI successor, `agy`) needs a small platform-specific fix — plain piped subprocesses get empty output from `agy` unless it's driven through a real pseudo-console. A ready-made fix (Windows, via `pywinpty`) lives in [this PAL fork](https://github.com/xenodeve/pal-mcp-server) — see its `CHANGES-FORK.md`.
+- **`antigravity`** (Google's Gemini-CLI successor, `agy`) needs a small platform-specific fix — plain piped subprocesses get empty output from `agy` unless it's driven through a real pseudo-console. A ready-made fix (Windows, via `pywinpty`) lives in [this OpenClink fork](https://github.com/xenodeve/openclink) — see its `CHANGES-FORK.md`.
 - **A third model behind an alternate gateway** (this doc uses `claude-9arm` as a running example — Claude Code CLI pointed at a non-Anthropic OpenAI-compatible backend via `--settings`/`--model`) is just a config file, no code — see the same fork's `conf/cli_clients/claude-9arm.json.example`. Swap in whatever gateway you actually use; the pattern is generic.
 
-None of this is required to use the skill — two or three agents from any mix of `clink` CLIs (or PAL's own `chat`/`consensus` for a non-agentic angle) is enough for a brainstorm round. Adjust the example `cli_name`s below to whatever you actually have configured.
+None of this is required to use the skill — two or three agents from any mix of `clink` CLIs (or OpenClink's own `chat`/`consensus` for a non-agentic angle) is enough for a brainstorm round. Adjust the example `cli_name`s below to whatever you actually have configured.
 
 ## Available agents (example roster — adjust to your setup)
 
 | Call | Backend model | Cognitive lens | Mechanism | Typical latency |
 |---|---|---|---|---|
-| `mcp__pal__clink(cli_name="antigravity")` | Gemini via Google's `agy`. Roster: Gemini 3.6 / 3.5 Flash (High\|Medium\|Low), **Gemini 3.1 Pro (High\|Low)**, plus Claude Sonnet/Opus 4.6 (Thinking) and GPT-OSS 120B | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
-| `mcp__pal__clink(cli_name="codex")` | OpenAI Codex — **`gpt-5.6-sol` only here**, at `medium`/`high` | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s for a trivial prompt, but **400-530s for a read-heavy round** against a real repo (measured 2026-07-31, recorded in `xeno-skills` issue #55) — budget minutes, not seconds |
-| `mcp__pal__clink(cli_name="cursor")` | Cursor's `cursor-agent` — the widest roster of any client: **Grok 4.5** (xAI), **Composer 2.5**, **Kimi K3 / K2.7 Code** (Moonshot), **GLM 5.2** (Zhipu), plus Opus/Sonnet/Fable, the GPT-5.x line, and Gemini | **Breadth-centric** — the only route to the xAI / Moonshot / Zhipu families | subprocess, `-p` + prompt over stdin; on Windows genuinely agentic **only if its config overrides `env.SHELL`** — a bash `SHELL` inherited from the caller makes its tools fail silently and it degrades to a text-only responder (see `clink-subagents` gotchas) | ~25-30s even for a trivial prompt |
-| `mcp__pal__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | **Logic-centric** — reasoning soundness, efficiency, logical consistency | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
-| `mcp__pal__chat(model=<your-provider-model>, ...)` | same model as above, direct PAL route — no clink | **Conceptual-centric** — broad ideas, theory, alternative approaches (non-agentic) | PAL's own provider call | usually faster, no CLI bootstrap overhead |
-| `mcp__pal__clink(cli_name="claude")` | Anthropic Claude | general | subprocess | upstream default preset |
-| `mcp__pal__clink(cli_name="gemini")` | — | — | **dead as of mid-2026** — Gemini CLI binary was retired in favor of `agy`/Antigravity. Re-confirmed 2026-07-30: the preset still loads, but the call fails with `Executable 'gemini' not found in PATH` | n/a |
+| `mcp__openclink__clink(cli_name="antigravity")` | Gemini via Google's `agy`. Roster: Gemini 3.6 / 3.5 Flash (High\|Medium\|Low), **Gemini 3.1 Pro (High\|Low)**, plus Claude Sonnet/Opus 4.6 (Thinking) and GPT-OSS 120B | **System-centric** — big-picture integration, cross-file deps, directory structure | ConPTY-driven subprocess (see fork) | ~20-25s |
+| `mcp__openclink__clink(cli_name="codex")` | OpenAI Codex — **`gpt-5.6-sol` only here**, at `medium`/`high` | **Code-centric** — syntax correctness, implementation details, edge cases | subprocess, `--json` | ~10-15s for a trivial prompt, but **400-530s for a read-heavy round** against a real repo (measured 2026-07-31, recorded in `xeno-skills` issue #55) — budget minutes, not seconds |
+| `mcp__openclink__clink(cli_name="cursor")` | Cursor's `cursor-agent` — the widest roster of any client: **Grok 4.5** (xAI), **Composer 2.5**, **Kimi K3 / K2.7 Code** (Moonshot), **GLM 5.2** (Zhipu), plus Opus/Sonnet/Fable, the GPT-5.x line, and Gemini | **Breadth-centric** — the only route to the xAI / Moonshot / Zhipu families | subprocess, `-p` + prompt over stdin; on Windows genuinely agentic **only if its config overrides `env.SHELL`** — a bash `SHELL` inherited from the caller makes its tools fail silently and it degrades to a text-only responder (see `clink-subagents` gotchas) | ~25-30s even for a trivial prompt |
+| `mcp__openclink__clink(cli_name="claude-9arm")` (example name — use your own gateway config) | any model your gateway exposes | **Logic-centric** — reasoning soundness, efficiency, logical consistency | subprocess, real `claude` CLI routed through `--settings`/`--model` | ~8-10s |
+| `mcp__openclink__chat(model=<your-provider-model>, ...)` | same model as above, direct OpenClink route — no clink | **Conceptual-centric** — broad ideas, theory, alternative approaches (non-agentic) | OpenClink's own provider call | usually faster, no CLI bootstrap overhead |
+| `mcp__openclink__clink(cli_name="claude")` | Anthropic Claude | general | subprocess | upstream default preset |
+| `mcp__openclink__clink(cli_name="gemini")` | — | — | **dead as of mid-2026** — Gemini CLI binary was retired in favor of `agy`/Antigravity. Re-confirmed 2026-07-30: the preset still loads, but the call fails with `Executable 'gemini' not found in PATH` | n/a |
 
 The **cognitive lens** column matters most during adversarial rounds (see below) — when you need to challenge a consensus, tailor each agent's probe to its natural strength rather than sending the same generic "find flaws" prompt to everyone.
 
-If a clink agent and `chat` hit the **same underlying model**, they are NOT interchangeable — `chat` has no file/tool access at all (a single-shot text completion via PAL's provider routing), while a `clink` CLI agent is a full agent loop that can genuinely read real files (verified: a real repo file was correctly read and quoted back, with `num_turns: 2` in the response confirming an actual Read-tool round-trip, not a guess). **This changes which one belongs in a brainstorm round:**
+If a clink agent and `chat` hit the **same underlying model**, they are NOT interchangeable — `chat` has no file/tool access at all (a single-shot text completion via OpenClink's provider routing), while a `clink` CLI agent is a full agent loop that can genuinely read real files (verified: a real repo file was correctly read and quoted back, with `num_turns: 2` in the response confirming an actual Read-tool round-trip, not a guess). **This changes which one belongs in a brainstorm round:**
 - **Question is about the actual codebase** (review an implementation, verify a claim against real code, anything where "read this file" would help) → use the agentic `clink` agent, not `chat`. `chat` literally cannot check anything against the real repo — asking it a codebase question makes it guess from whatever text you pasted, with no verification.
 - **Question is purely conceptual/architectural** (answerable without touching a file) → `chat` is fine and faster (no CLI bootstrap tax).
 - If unsure, default to the agentic `clink` call — it can still answer conceptual questions fine, just costs a bit more latency; the reverse (using `chat` when the question needed real files) silently produces a worse-grounded answer with no error to signal it.
 
 ## Why you can't just call `consensus` with all of them
 
-`mcp__pal__consensus`'s `models[]` roster only accepts PAL-configured provider models — it has no concept of a clink CLI agent (they live in a completely separate registry: `clink/registry.py` + `conf/cli_clients/*.json`). There is no single tool call that spans both. Orchestrate manually instead (see below).
+`mcp__openclink__consensus`'s `models[]` roster only accepts OpenClink-configured provider models — it has no concept of a clink CLI agent (they live in a completely separate registry: `clink/registry.py` + `conf/cli_clients/*.json`). There is no single tool call that spans both. Orchestrate manually instead (see below).
 
 ## How to run a brainstorm round
 
@@ -64,36 +64,36 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 2. **Fire agents in parallel** — put multiple tool calls in a single message (independent calls, no shared state) rather than sequentially. Sequential stacks latencies; parallel is bounded by the slowest single agent. **And a round past two minutes is moved to a background task, at which point it is not a reason to wait** — start synthesising what has already returned, or take other work; the notification will find you. A panel fired in one message pays that block once for the whole round.
    - **Codebase question** (needs real file access — see the `chat` vs agentic split above) — use your agentic clink agents, not `chat`:
      ```
-     mcp__pal__clink(prompt=Q, cli_name="antigravity")
-     mcp__pal__clink(prompt=Q, cli_name="codex")
-     mcp__pal__clink(prompt=Q, cli_name="claude-9arm")
+     mcp__openclink__clink(prompt=Q, cli_name="antigravity")
+     mcp__openclink__clink(prompt=Q, cli_name="codex")
+     mcp__openclink__clink(prompt=Q, cli_name="claude-9arm")
      ```
    - **Purely conceptual question** (no file grounding needed) — `chat` is fine and adds a free extra angle since it usually returns fastest:
      ```
-     mcp__pal__clink(prompt=Q, cli_name="antigravity")
-     mcp__pal__clink(prompt=Q, cli_name="codex")
-     mcp__pal__clink(prompt=Q, cli_name="claude-9arm")
-     mcp__pal__chat(prompt=Q, model=<your-provider-model>, working_directory_absolute_path=<project root>)
+     mcp__openclink__clink(prompt=Q, cli_name="antigravity")
+     mcp__openclink__clink(prompt=Q, cli_name="codex")
+     mcp__openclink__clink(prompt=Q, cli_name="claude-9arm")
+     mcp__openclink__chat(prompt=Q, model=<your-provider-model>, working_directory_absolute_path=<project root>)
      ```
    Either way, if a clink agent and a `chat` call are the same underlying model, treat that pair as one vote when weighing convergence, not two independent ones.
 3. **Read each response for what it actually says**, not just whether it returned 200. Note where they agree (signal — independent agents converging is real validation), where they diverge (the interesting part — dig into *why* before picking a side), and any agent that clearly misread the question (these may be smaller/different models than your main one; treat their output as input to your judgment, not a vote to average blindly).
 4. **Synthesize and present your own recommendation** — don't just paste the raw responses at the user. State what the agents converged on, what they disagreed about, and your own read on which is right and why (you have the full session context they don't).
 5. **Use `continuation_id`** (returned in each clink/chat response) to follow up with the *same* agent in the *same* thread if you want to push back or ask a clarifying question — it preserves that agent's prior context, so you don't have to re-explain the whole question from scratch.
 
-## Dialing model + effort per call (this PAL fork)
+## Dialing model + effort per call (this OpenClink fork)
 
-The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional per-call** `clink` params — `model` and `reasoning_effort` — so you can tune each agent's capability *per round* without editing config (which is cached at server start). For brainstorming this is a real lever: match depth to the question, and widen cognitive diversity by routing an agent to a different backend family.
+The [xenodeve OpenClink fork](https://github.com/xenodeve/openclink) adds two **optional per-call** `clink` params — `model` and `reasoning_effort` — so you can tune each agent's capability *per round* without editing config (which is cached at server start). For brainstorming this is a real lever: match depth to the question, and widen cognitive diversity by routing an agent to a different backend family.
 
-`mcp__pal__clink(prompt, cli_name, model?, reasoning_effort?, role?, continuation_id?)`
+`mcp__openclink__clink(prompt, cli_name, model?, reasoning_effort?, role?, continuation_id?)`
 
 | Back-end | `model` (per call) | `reasoning_effort` (per call) |
 |---|---|---|
 | `codex` | ✅ `-m` — **`gpt-5.6-sol` for every brainstorm round** (the panel's output is reasoning; the small model is a `clink-subagents` instrument) (validated; invalid → 400) | ✅ `low\|medium\|high\|xhigh\|max` — **`medium` by default, `high` for the round that matters; `xhigh` and `max` are past the value cliff** |
-| `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ✅ `--effort low|medium|high` — real, but **mutually exclusive** with `--model`; agy refuses the pair for every model it serves, and the tiered label (`(Low/Medium/High)`, `(Thinking)`) is the other way to say it. PAL refuses the pair before spawn (`pal-mcp-server#43`). |
+| `antigravity` | ✅ `--model "<label>"` — the label exactly as `agy` lists it, e.g. `Gemini 3.1 Pro (High)`, `Claude Opus 4.6 (Thinking)` | ✅ `--effort low|medium|high` — real, but **mutually exclusive** with `--model`; agy refuses the pair for every model it serves, and the tiered label (`(Low/Medium/High)`, `(Thinking)`) is the other way to say it. OpenClink refuses the pair before spawn (`openclink#43`). |
 | `cursor` | ✅ `--model` — id form, e.g. `cursor-grok-4.5-high`, `kimi-k3-max`, `composer-2.5`, `gpt-5.6-sol-xhigh` | ➖ baked into the model id, **ladder differs per model** — derive it with [`references/cursor-params.py`](references/cursor-params.py) rather than assuming a suffix exists |
 | `claude-9arm` | ✅ `--model` — limited to what the gateway serves | ❌ no-op (this gateway has only thinking on/off) |
 
-Omit both → the CLI's config default. (`mcp__pal__chat` takes its own `model` param directly.)
+Omit both → the CLI's config default. (`mcp__openclink__chat` takes its own `model` param directly.)
 
 **Four scales are in play and none converts into another.** Ranking a number from one against a number from another produces a false ordering, so every figure here states its scale.
 
@@ -131,7 +131,7 @@ installed skill**. The full ladder including the small model is in
 - **Widen the *model* spread, not just the CLI spread.** Real cognitive diversity comes from *different backend families*, not the same model three times. A strong cheap round: `codex` → `gpt-5.6-sol` at `medium`, `antigravity` → `Gemini 3.1 Pro (High)`, `cursor` → `cursor-grok-4.5-high`, gateway model via `claude-9arm` — four genuinely different lineages in one fan-out. Pick the client by **whose quota it spends**, not merely by whether it carries the model — see *Quota routing* below.
 - **Steep diminishing returns on effort.** The four rungs in the table span 5.3 index points while the burn rises more than threefold, and the last rung alone costs about 60% more than the one below it for roughly a point. That is why `medium`/`high` is the whole usable range and `xhigh`/`max` are capped out. Blanket-`max` on a 3-agent × 3-round loop is a multi-minute, quota-heavy operation for almost no marginal signal.
 - **Don't assume a higher tier buys accuracy — measure it on your own tasks.** A same-prompt A/B on `cursor-grok-4.5-low` vs `-high` (two probes: a 6-step modular-arithmetic chain, and "list every defect a caller could hit" on a function that sorts its argument in place) produced **no observable difference**: both tiers got the arithmetic right, both led their defect list with the in-place mutation, and latency overlapped (46–55s either way). Note the ceiling that test was working against — Grok 4.5's ladder stops at `high`, so it was the shortest ladder available. Treat the result as scoped: *no difference on mid-difficulty work at the top of a 3-rung ladder*, not evidence the knob is inert. The house-lane models are exactly the ones with short ladders, so a test that would actually separate the tiers costs the foreign lane.
-- These per-call params are the **only** way to vary model/effort without restarting PAL — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
+- These per-call params are the **only** way to vary model/effort without restarting OpenClink — reach for them instead of editing `conf/cli_clients/*.json` mid-session.
 
 ## Quota routing — pick the client by whose allowance it spends
 
