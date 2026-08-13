@@ -47,9 +47,11 @@ It is also what makes the file testable. A schema a script writes can be asserte
 
 ## Where it lives
 
-`.claude/state/review-<session_id>.json`
+`.claude/state/review-<hash of transcript path>.json`
 
-One per session. Gitignored. Removed when its session ends. Never in the workspace and never committed.
+**Keyed on the transcript path the hook is handed, not on a session id.** The path arrives in the hook's own payload, so the key needs no assumption about whether a session id survives a resume or a rename — the question stops being one that has to be answered.
+
+One per session. Gitignored. Removed when its session ends. Never in the workspace and never committed. Written to a temporary file and renamed into place, so a crash mid-write leaves the previous state rather than a truncated file that reads as *no state at all* — which would silently drop every open row.
 
 ---
 
@@ -97,6 +99,39 @@ Four lists, and each one answers exactly one of the problems above. `loaded` say
 
 ---
 
+## Delegated work — what is visible and what is not
+
+**Measured on session `179dfafc`, 2026-08-13:** the master delegated 35 times through `mcp__pal__clink` and 5 times through the native `Agent` tool. **No file under the project's transcript directory contains a single `isSidechain: true` record** — six transcripts, 12,507 lines, zero. The delegate's internal steps are not written anywhere the reviewer can reach, for either channel.
+
+So a rule whose trace would be produced *inside* a delegate — the worker ran the test first, the worker surveyed before editing — is not decidable from the master's transcript at any effort. A reviewer that treats its absence as a violation accuses the master of skipping a step a delegate performed, systematically, in a repository that delegates constantly.
+
+**Two things are visible, and they are the same for both channels:** the prompt the master sent out, and the result that came back. That is enough for the rules that are actually the master's:
+
+- **what the master handed over** — the clink prompt text is a `tool_use` input and is in the transcript verbatim, so *"the worker was given `debug-mantra`"* or *"the worker was told to return a sentinel proving the command ran"* is directly checkable
+- **what the master did with what came back** — *"verify everything a subagent returns"* leaves a trace in the master's own segment: a tool call after the result, not a paraphrase of it
+
+**A fifth verdict, `delegated`,** covers the rest. It is neither a pass nor a violation: it records that the trace's site moved outside the transcript, names the delegation record it moved to, and is counted separately. Silence would read as compliance; `violated` would be a false accusation; `delegated` is the true statement.
+
+---
+
+## When the reviewer runs — never while the developer is waiting
+
+The reviewer is spawned at `Stop`, **detached**, and the turn ends immediately. It writes its verdict into the state file. The finding is delivered at the **next `UserPromptSubmit`**, which is the moment before the master takes on the next task — the only moment at which a correction is any use.
+
+That placement is not just a latency saving, though it is that: the reviewer runs during the developer's own reading and typing time, which is dead time, so the cost per turn to the developer is zero rather than a few seconds forever.
+
+**It also disposes of the staleness problem.** The reviewer is no longer racing the transcript writer — it has the whole of the developer's think time, and by the time the next prompt arrives the segment's records are long written. The anchor rule still governs (judge only once the segment's closing record is present), but the case where the wait expires becomes rare rather than routine.
+
+If the developer replies faster than the reviewer finishes, the prompt hook waits a stated fraction of a second, then proceeds without it; the verdict lands one segment later through the same `unknown` carry-forward that already exists. **Nothing blocks on the reviewer, ever.**
+
+## The slice must exclude what the hooks themselves wrote
+
+Hook output is persisted into the transcript — measured, 142 copies of the current reminder's text in this one session. Left unfiltered, each reviewer reads the previous reviewer's finding inside its own segment and either counts it as evidence or raises it again.
+
+**Filter by record type before the slice reaches the model:** `attachment` records and hook-injected context are the system talking to itself, not the master doing work. This is a two-line filter and an entire class of self-contamination.
+
+---
+
 ## What the reviewer receives, and what it returns
 
 **Receives exactly three things.** No repository access, no diff, no test output — the constraint from #159's correction, unchanged:
@@ -108,10 +143,12 @@ Four lists, and each one answers exactly one of the problems above. `loaded` say
 **Returns one fixed shape**, per rule it evaluated:
 
 ```json
-{ "rule": "...", "verdict": "satisfied | violated | partial | unknown",
+{ "rule": "...", "verdict": "satisfied | violated | partial | delegated | unknown",
   "evidence": [ { "record": 10473, "uuid": "..." } ],
   "awaiting": "plan" }
 ```
+
+The declared traces are **not** read out of the skill body. They live in a sibling file the reviewer alone reads, because the master would otherwise pay for them on every load — and a load is not free: `/tdd` was invoked three times in this session and each invocation re-injected the full skill, 3,744 / 3,712 / 3,715 bytes.
 
 `partial` is the verdict that makes cross-segment rules work: it says *this much appeared, this much has not yet*, and the script turns it into a `pending` row. Without it the reviewer must choose between a false pass and a false accusation on every straddling rule.
 
@@ -164,6 +201,10 @@ The seam is the merged file, exactly as every suite in `tests/hooks/` asserts on
 - an expired row → becomes a finding or an `unknown`, never silently vanishes
 - a `dismissed` rule → not re-emitted on a later segment
 - a skill invoked as a slash command → appears in `loaded` with `via: "slash_command"`
+- a segment containing a delegation → the delegated rule returns `delegated`, never `violated`
+- a segment containing hook-injected text that names a rule → filtered out, no verdict derived from it
+- a reviewer that has not finished when the next prompt arrives → the prompt is not blocked, the row carries forward
+- an interrupted write → the previous state survives intact, never a truncated file
 - file size across a long synthetic session → bounded, asserted as a number rather than described
 
 ---

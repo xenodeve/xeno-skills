@@ -47,6 +47,17 @@ The hook already matched the prompt. It should emit the **answer**, not the map:
 
 So the route list is paid for on unmatched turns only. `ask-xeno` stays the file an agent reads when it wants the full picture, and it is what slice 0 leaves reachable rather than resident.
 
+**The routing decision is made twice, by two mechanisms, and their answers are unioned.** A single mechanism that fails to fire produces exactly the silence this slice exists to remove, so neither is allowed to be the only one:
+
+- **a deterministic table** — fast, no model, and it **must carry Thai trigger terms**: the developer writes in Thai, and 2,060 lines of this session's transcript contain Thai text, so a table built from English keywords matches almost nothing. It would not merely fail to fire — it would fall through to the unmatched branch on nearly every turn, which is the branch that emits the route list, and the per-turn cost this slice was designed to avoid comes back in full.
+- **a classifier**, run only when the table did not match — a small model given the user's prompt and the closed list of skills from `ask-xeno`, returning a skill id, a confidence, and the phrase it matched. **A closed list and a structured return, never prose**: it selects from the routes that exist, it does not describe what it thinks the task is. Below the threshold it returns nothing, and nothing is emitted.
+
+**Union, not intersection.** If either names a skill, the skill is named. Requiring both would mean each is a single point of failure for the other's coverage.
+
+`ask-xeno` stays what it was: the file the master reads when it wants to route itself, and the source of the closed list both mechanisms select from. Three layers, and a task has to slip all three to go unrouted.
+
+**The cost lands where the developer feels it**, and that is the constraint on the classifier: prompt-time is the one moment a hook makes a person wait. It runs only on a table miss, under a stated time cap, and on expiry the turn proceeds unrouted rather than delayed.
+
 **Why it can work when the current reminder does not.** The current hook emits the same four sentences every turn regardless of state; after the first turn it carries no new information. This one speaks only when there is something to say, and what it says is derived from **what happened**, not from what the agent claims: the transcript is written by the harness, and the only way to produce a `Skill` `tool_use` block is to make the call.
 
 **It must not claim** to enforce loading. It reports an absence.
@@ -87,7 +98,11 @@ That is a sequence fact. It is not a quality criterion, and the difference is th
 
 The census in #159 sorts 126 rules into 33 already machine-decidable, 68 needing a trace, and 25 not decidable from a transcript at any effort. **Only the 68 are in scope.** The 25 get a line saying they are out of scope, because an unmarked gap reads as coverage.
 
-**Constraint:** `using-t4` is injected verbatim every session against a 9000-byte budget with roughly 26 bytes spare, and `tests/hooks/test-dispatcher-content.sh` pins five exact phrases. Traces do not go there. They go beside the rule they describe, in the leaf skill.
+**Traces do not go in the skill body.** They go in a sibling file that only the reviewer reads. The master gains nothing from a machine-readable trace declaration and would pay for it on every load — and a load is not free: measured on this session, `/tdd` was invoked three times and each invocation re-injected the whole skill, 3,744 / 3,712 / 3,715 bytes. Sixty-eight declarations inline would be charged to the master, repeatedly, for data only the reviewer consumes.
+
+The rule's prose stays where it is; the sibling file references it by id, and a test pins the two together so a rule cannot be reworded out from under its trace.
+
+**And they certainly do not go in `using-t4`**, which is injected verbatim against a 9000-byte budget with roughly 26 bytes spare, with five exact phrases pinned by `tests/hooks/test-dispatcher-content.sh`.
 
 **The seam** is the shipped skill text, as with every `tests/skills/test-*-rule.sh`. A trace that is added and then softened by a later rewrite must fail — so the test needs a negative assertion, not only a positive one.
 
