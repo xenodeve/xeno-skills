@@ -118,18 +118,32 @@ Without this the isolation is decorative: a session that used `tdd` at segment 5
 
 ---
 
-## Delegated work — what is visible and what is not
+## Delegated work — the two channels are not alike, and an earlier draft of this file got it wrong
 
-**Measured on session `179dfafc`, 2026-08-13:** the master delegated 35 times through `mcp__pal__clink` and 5 times through the native `Agent` tool. **No file under the project's transcript directory contains a single `isSidechain: true` record** — six transcripts, 12,507 lines, zero. The delegate's internal steps are not written anywhere the reviewer can reach, for either channel.
+**Correction, recorded rather than quietly edited.** An earlier version of this section stated that a delegate's internal steps reach no file the reviewer can read, for either channel. It was concluded from a listing that did not descend into subdirectories, and it is **false for native subagents**. The measurement below replaces it.
 
-So a rule whose trace would be produced *inside* a delegate — the worker ran the test first, the worker surveyed before editing — is not decidable from the master's transcript at any effort. A reviewer that treats its absence as a violation accuses the master of skipping a step a delegate performed, systematically, in a repository that delegates constantly.
+**Native subagents are fully readable.** Measured on session `179dfafc`, 2026-08-13:
 
-**Two things are visible, and they are the same for both channels:** the prompt the master sent out, and the result that came back. That is enough for the rules that are actually the master's:
+```
+projects/<slug>/<session_id>.jsonl                          the master, 10,517 lines
+projects/<slug>/<session_id>/subagents/agent-<id>.jsonl     one per Agent call — 5 files, 20-90 lines
+projects/<slug>/<session_id>/subagents/workflows/wf_*/      workflow agents, same shape
+```
+
+Each file carries `isSidechain: true`, an `agentId`, the full prompt the master sent, and every tool call the delegate made — one of the five shows 11 `Read` calls and a `Glob`. **The join needs nothing invented:** the same `agentId` appears in the master's transcript, five distinct ids for five `Agent` calls, and it is also the filename. A reviewer that meets a delegation in its segment follows the pointer and reads the delegate's own record, and the read stays cheap — the largest of the five is 90 lines against the master's 10,517.
+
+**So for native delegation the segment extends through the pointer, and `delegated` does not apply.** The rules keep their ordinary verdicts; the evidence simply lives one file over. Which side of the boundary each trace was produced on is recorded, because *"the worker ran the test first"* and *"the master ran the test first"* are different facts and only one of them is the master's.
+
+**clink is a different case and stays one.** 35 of this session's 40 delegations went through `mcp__pal__clink` to a foreign CLI — `codex`, `cursor`, `antigravity` — each its own product running its own process. Nothing under `.claude/` records what happened inside, and building on whatever session format each of those CLIs writes would mean depending on three unstable foreign formats at once.
+
+**What is visible at the clink boundary is enough for the rules that are genuinely the master's**, and both halves sit in the master's own transcript:
 
 - **what the master handed over** — the clink prompt text is a `tool_use` input and is in the transcript verbatim, so *"the worker was given `debug-mantra`"* or *"the worker was told to return a sentinel proving the command ran"* is directly checkable
 - **what the master did with what came back** — *"verify everything a subagent returns"* leaves a trace in the master's own segment: a tool call after the result, not a paraphrase of it
 
-**A fifth verdict, `delegated`,** covers the rest. It is neither a pass nor a violation: it records that the trace's site moved outside the transcript, names the delegation record it moved to, and is counted separately. Silence would read as compliance; `violated` would be a false accusation; `delegated` is the true statement.
+**A fifth verdict, `delegated`, and it narrows to clink alone.** It is neither a pass nor a violation: it records that the trace's site left the readable surface, names the record it left at, and is counted separately, so the size of the blind spot is a number rather than a silence. Silence would read as compliance; `violated` would be a false accusation; `delegated` is the true statement.
+
+**For clink the discipline belongs at the boundary, and that is the right layer rather than a workaround.** A worker that cannot be inspected has to be *instructed*, and `clink-subagents` already carries the instrument: the sentinel a worker can only produce by having actually run the thing. That makes the returned receipt the evidence, and the receipt lands in the master's transcript where the reviewer reads it — so a clink rule is written as a trace on **what the master sent and what came back**, never on what the worker did in private.
 
 ---
 
@@ -163,9 +177,12 @@ Hook output is persisted into the transcript — measured, 142 copies of the cur
 
 ```json
 { "rule": "...", "verdict": "satisfied | violated | partial | delegated | unknown",
-  "evidence": [ { "record": 10473, "uuid": "..." } ],
+  "evidence": [ { "source": "master", "record": 10473, "uuid": "..." },
+                { "source": "agent-a287239d03a82fc75", "record": 12 } ],
   "awaiting": "plan" }
 ```
+
+**`source` names which transcript the evidence came from** — the master, or a native subagent followed through its `agentId`. Without it a trace produced by a delegate and a trace produced by the master are indistinguishable in the record, and the distinction is the whole point of following the pointer.
 
 The declared traces are **not** read out of the skill body. They live in a sibling file the reviewer alone reads, because the master would otherwise pay for them on every load — and a load is not free: `/tdd` was invoked three times in this session and each invocation re-injected the full skill, 3,744 / 3,712 / 3,715 bytes.
 
@@ -250,7 +267,9 @@ The seam is the merged file, exactly as every suite in `tests/hooks/` asserts on
 - a skill edited mid-session → sha mismatch resolves to `unknown`, never to a finding
 - `F-019 DISMISS` in the transcript → the finding is not re-raised; no receipt after the stated span → expires `unresolved` and is counted, not treated as agreement
 - two traces failing in one segment → exactly one finding delivered, the other left `pending`
-- a segment containing a delegation → the delegated rule returns `delegated`, never `violated`
+- a segment containing a **native** delegation → the `agentId` is followed, the subagent file is read, evidence carries `source: agent-<id>`
+- an `agentId` in the segment with no matching file → `unknown`, never a finding
+- a segment containing a **clink** delegation → `delegated`, never `violated`, and counted
 - a segment containing hook-injected text that names a rule → filtered out, no verdict derived from it
 - a reviewer that has not finished when the next prompt arrives → the prompt is not blocked, the row carries forward
 - an interrupted write → the previous state survives intact, never a truncated file

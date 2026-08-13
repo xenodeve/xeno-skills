@@ -116,7 +116,13 @@ The census in #159 sorts 126 rules into 33 already machine-decidable, 68 needing
 
 **Those three numbers are inherited, not verified here.** They were taken before the delegation finding below existed, and no one has re-counted them since; treat them as a hypothesis carrying the register they were written in, and make the re-count part of the work rather than a formality after it.
 
-**The census has to be re-cut for delegated work**, and this was not known when it was taken. Nothing a delegate does is written to the master's transcript — measured, 35 `clink` calls and 5 native `Agent` calls this session against zero `isSidechain: true` records in any of the six transcripts in the project directory. A rule whose trace would be produced *inside* the delegate is undecidable here no matter how it is worded, so each of the 68 needs a second question asked of it: **is this trace produced by the master, or by whoever the master handed the work to?** The ones in the second group are rewritten to the part that is the master's — what it put in the delegate's prompt, and what it did with the result — or they move to the undecidable pile with a stated reason.
+**The census has to be re-cut for delegated work**, and each of the 68 needs a second question asked of it: **is this trace produced by the master, by a native subagent, or inside a foreign CLI?** The three answers have three different fates, and only the last one loses anything.
+
+- **Native subagents are readable.** Measured: `projects/<slug>/<session_id>/subagents/agent-<id>.jsonl`, one file per `Agent` call — five this session, 20 to 90 lines each, each carrying `isSidechain: true`, the full prompt and every tool call. The `agentId` appears in the master's transcript and is the filename, so the join costs a glob. These rules keep their ordinary verdicts; the reviewer follows the pointer and records which side of the boundary the evidence came from.
+- **`clink` is not readable** — 35 of this session's 40 delegations, each to a foreign CLI running as its own product. Those rules are rewritten to the part that is genuinely the master's: what it put in the worker's prompt, and what it did with the result. Both are in the master's transcript verbatim.
+- **What cannot be rewritten that way** moves to the undecidable pile with a stated reason, and is counted, so the blind spot is a number.
+
+**An earlier draft of this section said no delegate's work reaches any readable file, for either channel.** That came from a directory listing that did not descend, and it is corrected here rather than silently: the negative was real, the conclusion drawn from it was not. Design: [`2026-08-13-review-handoff.md`](2026-08-13-review-handoff.md).
 
 **Traces do not go in the skill body.** They go in a sibling file that only the reviewer reads. The master gains nothing from a machine-readable trace declaration and would pay for it on every load — and a load is not free: measured on this session, `/tdd` was invoked three times and each invocation re-injected the whole skill, 3,744 / 3,712 / 3,715 bytes. Sixty-eight declarations inline would be charged to the master, repeatedly, for data only the reviewer consumes.
 
@@ -170,7 +176,7 @@ So the first work is not slice 0. It is a measurement, and the material for it a
 
 - how often a turn's work matched a route and the skill was **not** loaded — the rate slice 1 claims to reduce
 - how often the routing decision is wrong or absent, table and classifier counted separately
-- the delegation census: how many of the 68 traces are produced by the master and how many inside a delegate
+- the delegation census, three-way: how many of the 68 traces are produced by the master, how many inside a native subagent (readable, joinable by `agentId`), and how many inside a foreign CLI (not readable — this count *is* the blind spot)
 
 **Baseline B — after slice 2 freezes the trace declarations, before slice 3 is switched on.** Replayed over the same historical transcripts, now that there is something to look for:
 
