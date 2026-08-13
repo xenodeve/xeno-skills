@@ -227,6 +227,18 @@ It also inherits the two hazards that epic already names, and neither had occurr
 
 **All of it belongs in that repository's tracker, and the first action there is to read #11 and #12 rather than to file anything.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
 
+### Five constraints from the PAL code scan that this design must respect
+
+A twelve-reader scan of the PAL fork was recorded on 2026-08-13 as [`pal-mcp-server/docs/reports/2026-08-13-deep-scan-architecture-safety-and-direction.md`](https://github.com/xenodeve/pal-mcp-server/blob/main/docs/reports/2026-08-13-deep-scan-architecture-safety-and-direction.md). Five findings bear directly on the reviewer tier, and each changes something above rather than merely informing it.
+
+- **The clink timeout cannot report.** `clink/agents/base.py:284-292` wraps `communicate()` in `wait_for`, then on timeout calls `process.kill()` and awaits `communicate()` again **with no deadline** — and a grandchild inheriting the stdout pipe makes that second call never return, so `CLIAgentError("timed out")` is never raised. **A review loop that lengthens a delegation is stacked on a timeout that does not fire.** The bound has to come from the reviewer's own budget; PAL's cannot be relied on until that is fixed.
+- **The reviewer must not be a synchronous provider call.** The scan's largest event-loop finding is not in clink at all: `provider.generate_content(...)` is a plain synchronous HTTP call from an `async def execute` (`tools/simple/base.py:444`, plus three more sites), freezing the loop for the whole round trip. A reviewer implemented that way would stall every other in-flight delegation. It has to be a subprocess or an offloaded call.
+- **There is no concurrency control of any kind** — no semaphore, queue or admission cap anywhere in production code — so a tier that adds a second call per delegation doubles an unbounded number, not a bounded one.
+- **Read the events, never the stored turn.** clink writes the **post-limit** text into conversation memory (`tools/clink.py:343-347, 367`), so a 25,000-character answer leaves the thread holding only its `<SUMMARY>` block. The stored turn is a lossy copy carrying no marker that it is one; the reviewer's evidence must come from the event stream, before the prune.
+- **PAL's threads die with the client session.** Storage is a process-local dict and the transport is stdio, so the server is a subprocess of the host. There is no persistence in PAL to build reviewer state on — which is why the state in this document lives on our side.
+
+**And one that changes the enforcement story rather than the design:** `clink` advertises `readOnlyHint: True` (`tools/clink.py:156-157`) while its shipped configs launch foreign agents with approvals bypassed. A host that auto-approves on that annotation is auto-approving arbitrary execution — so the delegation path the master uses most is the one carrying the least host-side scrutiny.
+
 ---
 
 ## When the reviewer runs — never while the developer is waiting
