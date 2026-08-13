@@ -134,16 +134,34 @@ Each file carries `isSidechain: true`, an `agentId`, the full prompt the master 
 
 **So for native delegation the segment extends through the pointer, and `delegated` does not apply.** The rules keep their ordinary verdicts; the evidence simply lives one file over. Which side of the boundary each trace was produced on is recorded, because *"the worker ran the test first"* and *"the master ran the test first"* are different facts and only one of them is the master's.
 
-**clink is a different case and stays one.** 35 of this session's 40 delegations went through `mcp__pal__clink` to a foreign CLI — `codex`, `cursor`, `antigravity` — each its own product running its own process. Nothing under `.claude/` records what happened inside, and building on whatever session format each of those CLIs writes would mean depending on three unstable foreign formats at once.
+**clink is different, but far less blind than an earlier draft of this file claimed** — and *"and stays one"* was wrong outright, because PAL is ours. 35 of this session's 40 delegations went through `mcp__pal__clink` to a foreign CLI — `codex`, `cursor`, `antigravity` — each its own product running its own process, so what the worker did in private is not written under `.claude/`. That much holds. What does not hold is the conclusion that the boundary therefore carries little.
 
-**What is visible at the clink boundary is enough for the rules that are genuinely the master's**, and both halves sit in the master's own transcript:
+**The single most load-bearing clink rule is a fact about the master's own prompt, and it is in the transcript verbatim.** `clink-subagents:140` requires the master to hand the worker its skills — `karpathy-guidelines` on every call, `tdd` whenever the worker writes code — and `clink-brainstorm:243` names pasting the skill's content directly into the prompt as the reliable method, with the absolute-path form at `:249` as the alternative. Either way **the handoff is inside the `tool_use` input**, which means:
 
-- **what the master handed over** — the clink prompt text is a `tool_use` input and is in the transcript verbatim, so *"the worker was given `debug-mantra`"* or *"the worker was told to return a sentinel proving the command ran"* is directly checkable
+- *was the worker given `karpathy-guidelines`* → a string match on a record the harness wrote
+- *was it given `tdd` on a call that changed code* → the same, conditioned on the same record
+- *was it given the current version* → the pasted content can be hashed against the shipped file, so a stale paste is detectable, not merely present
+
+That is the strongest class of trace this design has — deterministic, no model, nothing to hallucinate — and it lands on exactly the rule that decides whether the delegate had any discipline at all. **A whole family of rules that looked undecidable is decidable at the top tier, because the skill handoff is the master's action, not the worker's.**
+
+**What is visible at the clink boundary**, then, is three things, all in the master's own transcript:
+
+- **which skills the worker was handed** — pasted content or absolute path, both inside the `tool_use` input; and for a bug hunt, whether `debug-mantra` went with it, which `clink-debug` requires of every Observe and Falsify seat
+- **what discipline the prompt imposed** — the sentinel a worker can only produce by having run the command; and whether a falsify or repair seat got a **fresh `continuation_id`**, which `clink-debug`'s provenance rule requires and which is a parameter on the call, therefore a fact about the call
 - **what the master did with what came back** — *"verify everything a subagent returns"* leaves a trace in the master's own segment: a tool call after the result, not a paraphrase of it
 
-**A fifth verdict, `delegated`, and it narrows to clink alone.** It is neither a pass nor a violation: it records that the trace's site left the readable surface, names the record it left at, and is counted separately, so the size of the blind spot is a number rather than a silence. Silence would read as compliance; `violated` would be a false accusation; `delegated` is the true statement.
+**A fifth verdict, `delegated`, and it narrows to what the worker did in private.** Not to the clink call as a whole — the three facts above are ordinary verdicts. `delegated` records that *this particular trace's* site left the readable surface, names the record it left at, and is counted, so the blind spot is a number rather than a silence. Silence would read as compliance; `violated` would be a false accusation; `delegated` is the true statement.
 
-**For clink the discipline belongs at the boundary, and that is the right layer rather than a workaround.** A worker that cannot be inspected has to be *instructed*, and `clink-subagents` already carries the instrument: the sentinel a worker can only produce by having actually run the thing. That makes the returned receipt the evidence, and the receipt lands in the master's transcript where the reviewer reads it — so a clink rule is written as a trace on **what the master sent and what came back**, never on what the worker did in private.
+**And that residue is the same ceiling the master already has.** Whether a worker followed a skill it was handed is exactly the question #130 leaves open about the master itself — a skill invoked, in context, and the step still not run. It is not a clink weakness; it is the honest limit of the whole approach, showing up one level down.
+
+### The boundary is ours to change — PAL is developed alongside this repo
+
+The fork at `xenodeve/pal-mcp-server` is the same project's other half, so *"a foreign CLI writes formats we cannot depend on"* is a statement about today's implementation, not a constraint. Two changes there would move clink from *boundary-readable* to *first-class*:
+
+- **the server records each call** — client, model, effort, prompt, response, `continuation_id` — into one local JSONL in **our** format, which the reviewer reads directly instead of parsing three foreign session formats
+- **a `skills` parameter** so the master names the skills and the server resolves, attaches and records them; the handoff stops being a string match against a pasted blob and becomes a structured fact, and the version sent is recorded rather than inferred from a hash
+
+**Both belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
 
 ---
 
