@@ -154,14 +154,54 @@ That is the strongest class of trace this design has — deterministic, no model
 
 **And that residue is the same ceiling the master already has.** Whether a worker followed a skill it was handed is exactly the question #130 leaves open about the master itself — a skill invoked, in context, and the step still not run. It is not a clink weakness; it is the honest limit of the whole approach, showing up one level down.
 
+### A reviewer inside clink — the tier that closes the residue
+
+The residue above is *whether the worker followed what it was handed*, and it is only unreachable because nothing inside the delegation is watching. **PAL can put something there**, and the shape mirrors the tiers that already exist: the master has a reviewer, so the clink worker gets one too, and the two reviewers talk.
+
+```
+masteragent            ── reviews ──>  master-side reviewer   (segment, per Stop)
+    │ delegates                              ▲
+    ▼                                        │ compliance record
+clink worker           ── reviews ──>  clink-side reviewer    (inside the delegation)
+```
+
+The clink-side reviewer answers one narrow question and reports it upward: **did the worker follow the skills it was handed, how many times was it corrected, and what were the corrections?** It may object to the worker in-thread and let it fix the work; what it may not do is decide anything. The record returns with the result, the master-side reviewer reads it as ordinary evidence in its segment, and **the masteragent judges** — including judging the clink reviewer wrong. If the worker still did not comply, that is the master's problem to solve, which is where it belonged all along.
+
+**PAL must return the record as data, not prose**, because it is consumed by a script and then by a small model:
+
+```json
+{ "skills_handed": ["karpathy-guidelines", "tdd"],
+  "verdicts": [ { "skill": "tdd", "followed": false,
+                  "observed": "edited src/x.ts at event 41; no test file written before it" } ],
+  "corrections": 2,
+  "final": "complied | not-complied | unknown",
+  "reviewer": { "cli": "cursor", "model": "...", "continuation_id": "fresh" } }
+```
+
+**The deciding constraint is what the reviewer can actually see, and it differs per client — verified in the PAL source, not assumed.** `clink/parsers/codex.py`, `claude.py` and `opencode.py` each retain the worker's full event stream in `metadata["events"]`. `cursor` has no parser module at all and `antigravity`'s keeps no events, so those two return **final text only**.
+
+That split decides where this tier is real:
+
+- **codex, claude, opencode** — the reviewer reads what the worker *did*. A genuine trace, and the same class of evidence the master-side reviewer works from.
+- **cursor, antigravity** — the reviewer can read only what the worker *said about itself*. That is a self-report, and reviewing it produces a verdict about a claim.
+
+**On those two clients this tier must not be built as-is, and the reason is not fastidiousness.** `docs/adr/0001` warns about a receipt the agent authors itself; wrapping a self-report in a review loop does not fix that, it **launders** it — the same failure `clink-debug` names, where ceremony manufactures confidence the process never earned. A verdict that arrives with a reviewer's name on it is harder to reopen than a bare claim. So either the client's parser is extended to retain events first, or its record is returned with `final: "unknown"` and a stated reason.
+
+**Three rules the tier has to carry**, all of them ours already:
+
+- **Provenance.** The reviewer seat is a **fresh `continuation_id`**, and a different client where the lane allows it. A worker asked to review itself defends itself; `clink-debug` says this about falsify seats and it is the same seat here.
+- **Observation travels with the verdict.** Every entry carries what was seen — the event, the quote — not only the judgment. Without it the master cannot disagree, and a tier the master cannot overrule is not advisory, whatever the document says.
+- **Bounded.** It runs only on delegations that were handed skills, correction rounds are capped at a stated number, and the reviewer takes the cheap house lane. A clink call already costs 20–530 seconds; an unbounded review loop multiplies the slowest thing in the system.
+
 ### The boundary is ours to change — PAL is developed alongside this repo
 
 The fork at `xenodeve/pal-mcp-server` is the same project's other half, so *"a foreign CLI writes formats we cannot depend on"* is a statement about today's implementation, not a constraint. Two changes there would move clink from *boundary-readable* to *first-class*:
 
 - **the server records each call** — client, model, effort, prompt, response, `continuation_id` — into one local JSONL in **our** format, which the reviewer reads directly instead of parsing three foreign session formats
 - **a `skills` parameter** so the master names the skills and the server resolves, attaches and records them; the handoff stops being a string match against a pasted blob and becomes a structured fact, and the version sent is recorded rather than inferred from a hash
+- **event retention for `cursor` and `antigravity`**, which is the precondition for the clink-side reviewer above being anything more than a reader of self-reports — and the cheapest of the three to specify, since `codex.py` already shows the shape
 
-**Both belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
+**All three belong in that repository's tracker, not folded into this plan.** They are a separate track with a separate review, and naming them here is the point at which this design stops treating the clink wall as given. Until one of them lands, the string match on the pasted prompt is the mechanism, and it is a good one.
 
 ---
 
