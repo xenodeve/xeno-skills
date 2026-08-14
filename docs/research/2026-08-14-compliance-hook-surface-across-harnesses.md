@@ -935,7 +935,54 @@ And **agy cannot run shell commands through this transport at all** — its firs
 headless, and it only succeeded once the prompt forbade commands outright and told it to read files. Its
 answer was still the most valuable of the three.
 
-### What a software layer has to supply, per client
+### The axis this document measured agy on was the wrong one
+
+Every row above asks what a **hook** can do. On agy that under-describes the host badly, and the
+correction came from a `codex` research pass reading Antigravity's own documentation — not from these
+probes, which had been looking for a hook event named `Subagent*` and concluding from its absence.
+
+**agy carries a full agent runtime, and its collaboration verbs are ordinary tools.** From the binary:
+`invoke_subagent` x69, `send_message` x60, `manage_subagents` x13, `define_subagent` x4. So the tool
+hooks already cover the subagent lifecycle, and no subagent-named event is needed.
+
+**Probed live, one run with every payload kept — two conversations, each hooking itself:**
+
+| Conversation | Events fired |
+|---|---|
+| master | `SessionStart`, `PreToolUse`/`PostToolUse` on **`invoke_subagent`**, `Stop` x2 |
+| child | its **own** `SessionStart`, `PreToolUse`/`PostToolUse` on `run_command` and on `send_message`, its **own** `Stop` |
+
+Three consequences, and the third changes designs:
+
+- **`PreToolUse` with a matcher on `invoke_subagent` is a delegation gate** — it sees the tool name and
+  its arguments *before* the delegation runs. No other host here has been shown to offer that.
+- **Hooks fire inside native subagents, each payload carrying that agent's own `conversationId`.** One
+  config covers a whole agent tree, and a finding keys on the agent that produced it.
+- **The reviewer on agy need not be a hook handler at all.** `Q5 evaluator in the harness = no` is true of
+  its *hook* layer and misleading about the host: a compliance reviewer can be a **native subagent** with
+  its own model tier and a restricted toolset. That is a better home for judgement than a hook, because
+  it is not on the critical path — which is what the rest of this day established the hard way.
+
+**The capability vocabulary needs extending**, because a table whose only evaluator column is
+`CAP_BUILTIN_MODEL_EVALUATOR` will keep concluding *agy must borrow PAL's evaluator*, now known to be a
+false constraint:
+
+```text
+CAP_NATIVE_SUBAGENT              CAP_NATIVE_AGENT_MESSAGING
+CAP_NATIVE_SUBAGENT_MODEL_SELECT CAP_NATIVE_AGENT_REAWAKE
+CAP_NATIVE_SUBAGENT_TOOL_SCOPING CAP_NATIVE_SHARED_TRANSCRIPTS
+CAP_DELEGATION_GATE              CAP_HOOK_INJECT_TOOLCALL
+CAP_RECURSIVE_HOOK_INHERITANCE
+```
+
+**`CAP_DELEGATION_GATE` and `CAP_RECURSIVE_HOOK_INHERITANCE` are verified on agy**; `CAP_NATIVE_SUBAGENT`
+is verified on agy, Claude Code and codex; the rest are documentation-grade and named here so they get
+probed rather than assumed.
+
+**Two things remain unprobed and they decide how far this goes:** whether
+`PreInvocation.injectSteps.toolCall` can inject `invoke_subagent` or `send_message` — which would let the
+software layer schedule the reviewer without the master deciding to — and whether an idle agy subagent
+wakes with its context intact when messaged. Both documented; neither measured.
 
 ### What a software layer has to supply, per client
 

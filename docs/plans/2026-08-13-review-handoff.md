@@ -196,6 +196,37 @@ That split decides where this tier is real:
 - **Bounded.** It runs only on delegations that were handed skills, correction rounds are capped at a stated number, and the reviewer takes the cheap house lane. A clink call already costs 20–530 seconds; an unbounded review loop multiplies the slowest thing in the system.
 - **It never stands between the master and its work.** Delegation is a main path here — 35 of this session's 40 — so a review loop wrapped *around* the return would put the slowest, newest and least proven component directly in front of the work the developer is waiting for. The worker's result goes back the moment it is ready; the review runs alongside and its record arrives when it arrives, late or not at all. **A reviewer that can stall the main path is a worse failure than the drift it was built to catch**, and the same rule already governs the master-side reviewer for the same reason.
 
+### Addendum 2026-08-14 — two corrections from a day of live probing
+
+**One: the reviewer does not have to be a clink worker when the master is agy.** This section places the
+clink-side reviewer inside PAL because a foreign CLI's trace is only readable there. That reasoning holds
+for codex, claude and opencode. **It does not describe agy, whose collaboration verbs — `invoke_subagent`,
+`send_message`, `manage_subagents`, `define_subagent` — are ordinary tools of a full agent runtime.**
+
+Measured: one agy run with a subagent produced **two conversations, each firing its own hooks**. The
+master fired `SessionStart`, `PreToolUse`/`PostToolUse` on `invoke_subagent`, and `Stop`; the child fired
+its **own** `SessionStart`, its own tool hooks, and its own `Stop`, with its own `conversationId` in every
+payload.
+
+So on agy the compliance reviewer can be a **native subagent** — its own model tier, its own restricted
+toolset, off the critical path — rather than a PAL-hosted judge reading a pruned event stream. The three
+rules this section already imposes carry over unchanged: fresh seat, observation travels with the verdict,
+bounded, never between the master and its work. **What changes is where the seat lives, not what it may
+do.** `reviewer observes; master judges` is untouched.
+
+**Two: a delegation can be gated *before* it runs, on agy.** This plan reviews compliance after the fact.
+`PreToolUse` with a matcher on `invoke_subagent` sees the tool name and its arguments before the call
+executes, which is a seam for a *required-shape* check on the delegation itself — the thing
+`clink-brainstorm` currently asks a skill to enforce by persuasion. The same contract would be validated
+server-side for a clink call, since PAL is ours; the check is one and the seam is two.
+
+**Both of these are proposals resting on measured capability, not measured designs.** The capability is
+`[L]`; the architecture is not built. Two things they depend on are still unprobed and are named so they
+are not assumed: whether `PreInvocation.injectSteps.toolCall` can inject `invoke_subagent` or
+`send_message` — which would let the layer schedule the reviewer without the master deciding to — and
+whether an idle agy subagent wakes with its context intact. Evidence:
+`docs/research/2026-08-14-compliance-hook-surface-across-harnesses.md`.
+
 ### The boundary is ours to change — PAL is developed alongside this repo
 
 The fork at `xenodeve/pal-mcp-server` is the same project's other half, so *"a foreign CLI writes formats we cannot depend on"* is a statement about today's implementation, not a constraint. Two changes there would move clink from *boundary-readable* to *first-class*:
