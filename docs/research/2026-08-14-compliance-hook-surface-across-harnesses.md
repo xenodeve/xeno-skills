@@ -575,6 +575,12 @@ from no hook at all.** That is `#207`'s defect class on a new path, and it is wo
 command hook, because a typo in a model name is a plausible edit that leaves the reviewer silently
 disabled while the configuration still looks correct.
 
+**cursor behaves identically, which answers Q8 for it.** The same probe — a `prompt` hook carrying
+`"model": "definitely-not-a-real-model-xyz"` beside a `command` hook on `beforeShellExecution` — left
+the command hook firing and the prompt hook dead, with the command allowed and no diagnostic. So the
+`model` field is read on cursor too, and the same silent-death applies. **Two independent vendors, the
+same failure, on the field most likely to be edited.** Filed as `#212`.
+
 ### Windows quoting, a third form
 
 Each host mangles it differently, and each cost a probe:
