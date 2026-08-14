@@ -408,6 +408,38 @@ These reports are not stronger than current source/docs, but they are strong eno
 
 ---
 
+## Addendum — cursor-agent and agy probed, 2026-08-14: not demonstrated
+
+**Neither fired a hook in headless mode in this environment.** Stated as *not demonstrated* rather than *absent*, because the failure mode and the evidence differ from codex in a way that matters.
+
+### cursor-agent 2026.08.11-e8db854
+
+Probed with a project `.cursor/hooks.json`, run as `cursor-agent -p --force --trust`. Two config shapes were tried — the documented `{"version":1,"hooks":{"stop":[{"command":…}]}}` and the same with an explicit `"type":"command"` — and finally a command with no external program at all (`cmd.exe /c echo FIRED>hook.log`), the exact form that succeeded on codex. **Nothing ran**, and cursor's own per-project `worker.log` contains no occurrence of the word *hook*.
+
+What the shipped bundle does confirm, at binary grade:
+
+- the project path is `<project>/.cursor/hooks.json`, alongside a user path, a team path, and `C:\ProgramData\Cursor\hooks.json` on Windows
+- a separate **`claudeUserConfigPath`**, and a translation table from Claude Code's event names to cursor's own — `PreToolUse→preToolUse`, `Stop→stop`, `UserPromptSubmit→beforeSubmitPrompt`, and **`PermissionRequest→null`**, meaning cursor has no equivalent of that event
+- `shouldSkipHookDueToLoopLimit` applies to `stop` and `subagentStop` only, reading `loop_count` against `loop_limit`
+- the continuation path is real: `[hooks] Stop hook returned followup_message, queueing (loop …)`, queued as a `userMessageAction`
+- injected context is size-capped, with a dedicated `HookAdditionalContextTooLargeError`
+
+So the machinery exists in the binary. What is not established is the **entry schema of the project config file**, and without a diagnostic channel — cursor printed no warning for any of the three attempts — a wrong shape and an unloaded file look identical.
+
+### agy 1.1.12
+
+Probed with `<workspace>/.agents/hooks.json` and `agy --print "…"`. The turn ran and answered; **no hook ran**, and `agy hooks list` produced no output. As with cursor, the config shape came from vendor documentation rather than from the binary, and no diagnostic was emitted.
+
+### Why this is a finding rather than a gap
+
+**codex told us when we were wrong.** Every failed codex attempt produced either a parse warning naming the file and the line, or a `hook: Stop Failed` line. That is what made four failed probes converge on a working configuration in one session.
+
+**cursor and agy said nothing at all.** The same class of mistake produces silence, so a wrong config and an absent capability are indistinguishable from outside — which is precisely the defect `xeno-skills#207` records for Claude Code, appearing here on two more clients.
+
+**Consequence for the reviewer design.** A per-client capability probe cannot be *"configure a hook and see if it fires"* on a host that stays silent, because a negative result there is uninformative. It has to be a probe with a **positive control** — a configuration known to fire — before any negative can be trusted.
+
+---
+
 # Cursor Agent / Cursor CLI
 
 ## 1. Does a hook system exist?
