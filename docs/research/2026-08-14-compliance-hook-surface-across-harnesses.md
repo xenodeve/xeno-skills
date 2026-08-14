@@ -509,7 +509,25 @@ control in the same configuration; anything not probed is written as such rather
 | **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p` | **yes**, with a runaway hazard |
 | **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `hookSpecificOutput.additionalContext`, quoted back verbatim | **yes** — via the pre-action gate's reason | **no** — `PreToolUse`/`PostToolUse` never fire |
 | **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, and the `model` field is read | **no** — `prompt hooks are not supported yet` (binary) | **yes** — `type: "prompt"` denied a command and its reason reached the agent | **no** — `prompt hooks are not currently supported` (its own log) |
-| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` (binary) | not probed | not probed |
+| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` (binary) | **no** — and an `agent` entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
+| **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL, plus `tool_response` in the payload | **yes** — but the file holds `tool_use` and **no `tool_result`**; the command's `output` is in the hook payload instead | **yes** — `transcriptPath`, plus `artifactDirectoryPath` and `terminationReason` |
+| **Q8 per-hook `model`** | **yes, read** — and a wrong value kills the hook silently | n/a — no evaluator | **yes, read** — same silent death | n/a — no evaluator |
+| **Q9 global gate** | not probed | hash trust (documentation grade) | **not probed** | **not probed** |
+
+**Reading the rows.** *yes* / *no* mean a run with a positive control in the same configuration
+settled it. *not probed* means exactly that. Q9 was left open deliberately: it changes installation,
+not design, and surfaces on first install.
+
+### What a software layer has to supply, per client
+
+Follows directly from the matrix; recorded here so the design does not have to re-derive it.
+
+| Client | What the layer supplies | The constraint that shapes it |
+|---|---|---|
+| **codex** | **the model, and nothing else** | Block, mid-turn delivery and a rich payload (`tool_response`, `transcript_path`, `turn_id`, `tool_use_id`) are all native. Thinnest integration of the four. |
+| **cursor** | **nothing — but the design must move** | It has the evaluator *and* mid-turn delivery in one mechanism, and no turn-end callback. The reviewer belongs at the pre-action gate. Capture evidence **at the hook**, since `afterShellExecution` hands over the command's `output` that the transcript omits. Cross-segment state can key off the `turn_ended` record, which the transcript carries even though the `stop` hook does not fire. |
+| **agy** | **the model *and* mid-turn delivery** | Mid-turn delivery **cannot come from the hook layer at all** — the tool events do not fire — so it has to come from wherever the process pipe is already owned, or the host accepts turn-end review only. Any blocking `Stop` must carry its own release condition; `{"decision":"continue"}` loops to timeout with no limit. |
+| **all four** | **a liveness self-check, first** | On two of four hosts a plausible config edit — one mistyped model name — disables the layer with no signal anywhere. Tracked as `#212`. |
 
 **Claude Code is the only host with all four**, and until this probe none of its four had been verified
 here — Q5 and Q6 in particular were carried on vendor documentation while the design leaned on them.
