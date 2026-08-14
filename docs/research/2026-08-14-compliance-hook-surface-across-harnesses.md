@@ -498,6 +498,60 @@ Fired: `SessionStart` ✔, `Stop` ✔. `PreToolUse` and `PostToolUse` did not fi
 
 Q2 in full, Q6, Q7, Q8 and Q9 — and on agy, Q4 and Q5 as well. Nothing above establishes any of them.
 
+### The four-way matrix, live grade only
+
+Added after probing the remaining gaps, including Claude Code itself — which had never been tested on
+the two capabilities the whole design rests on. Every cell below was produced by a run with a positive
+control in the same configuration; anything not probed is written as such rather than inferred.
+
+| | Claude Code | codex 0.147.0-alpha.6.5 | cursor 2026.08.11 | agy 1.1.12 |
+|---|---|---|---|---|
+| **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p` | **yes**, with a runaway hazard |
+| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `hookSpecificOutput.additionalContext`, quoted back verbatim | **yes** — via the pre-action gate's reason | **no** — `PreToolUse`/`PostToolUse` never fire |
+| **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, and the `model` field is read | **no** — `prompt hooks are not supported yet` (binary) | **yes** — `type: "prompt"` denied a command and its reason reached the agent | **no** — `prompt hooks are not currently supported` (its own log) |
+| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` (binary) | not probed | not probed |
+
+**Claude Code is the only host with all four**, and until this probe none of its four had been verified
+here — Q5 and Q6 in particular were carried on vendor documentation while the design leaned on them.
+
+**Q6 matters more than its row suggests.** `#208` frames the reviewer as needing three things no single
+hook type has — a model, a file read, a file write. A `type: "agent"` hook has the first two: it read
+`rule.txt` from disk, judged the transcript against it, and blocked. That removes the need to inline the
+rule census into a prompt, which is the constraint that issue is blocked on.
+
+**Two negatives that are genuinely negative**, because a control fired in the same run:
+
+- **cursor** — `beforeShellExecution` fired while `stop` and `beforeSubmitPrompt` did not.
+- **agy** — the `Stop` control fired while `PreToolUse` and `PostToolUse` did not, **with and without a
+  `matcher`**, across a file read *and* a shell command whose output could not be fabricated
+  (`(Get-Date).Ticks`).
+
+### A new silent-failure path, on Claude Code's prompt hook
+
+Two runs differing **only** in the hook's `model` field:
+
+| `model` | Result |
+|---|---|
+| absent | the prompt hook evaluated, blocked, and the agent obeyed |
+| `"definitely-not-a-real-model-xyz"` | **nothing** — no block, no error, no diagnostic; the turn ended normally and the command control fired once instead of twice |
+
+So the field is read and routes the call — and **a prompt hook whose model is wrong is indistinguishable
+from no hook at all.** That is `#207`'s defect class on a new path, and it is worse here than for a
+command hook, because a typo in a model name is a plausible edit that leaves the reviewer silently
+disabled while the configuration still looks correct.
+
+### Windows quoting, a third form
+
+Each host mangles it differently, and each cost a probe:
+
+- **codex** — `commandWindows` required, backslashes eaten; quote the interpreter path
+- **agy** — splits the command itself and **rejects a quoted path**: `'\"C:\…\mark.cmd\"' is not recognized as an internal or external command`. Pass the path bare.
+- **cursor** — no problem observed with either form
+
+Plus one flag trap: agy's `--dangerously-skip-permissions` is a Go bool flag, and written bare before the
+prompt it **swallows the prompt** — the agent then answers a question about the flag itself, and any
+tool-event hook has nothing to fire on. It must be `--dangerously-skip-permissions=true`.
+
 ### Corrections owed to the summary table at the top of this file
 
 The table is the delegated research's output and is left as written, so its provenance stays legible. Two of its cells are now known to be wrong for headless use, and this addendum is the correction layer:
