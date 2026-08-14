@@ -553,8 +553,13 @@ Three things follow, and the third is a hazard:
 
 - **agy's channel is the richest of the four.** The others deliver a string; agy's oneof can inject a
   user message, an ephemeral message, a system message, or **a tool call** the model then executes.
-- **The JSON is snake_case.** `{"injectSteps":[{"hookUserMessage":{"content":"…"}}]}` — the camelCase
-  form the proto descriptor advertises — was **rejected**. `inject_steps` / `user_message` works.
+- **The accepted step variants are three, and they are not the seven in the proto.** `toolCall`,
+  `userMessage`, `ephemeralMessage` — nothing else. **Corrected:** an earlier revision of this file said
+  the JSON must be snake_case because a camelCase attempt was rejected. That was the wrong diagnosis of
+  the right observation. The rejected payload used `hookUserMessage` and `systemMessage`, which exist in
+  the proto descriptor and **are not accepted by the implementation**. Retested with a documented
+  variant, `{"injectSteps":[{"userMessage":"…"}]}` works, and so does the snake_case form. **The casing
+  was never the problem; the variant name was.** A descriptor is not a contract.
 - **A malformed injection kills the turn.** The camelCase attempt returned
   `unknown injected step type: <nil>` and the run ended with `Error: Agent execution terminated due to
   error`. Everywhere else in this document a bad hook fails open and silently; **on agy's injection path
@@ -566,6 +571,37 @@ here came from testing the event names one host uses against a host that names t
 positive control proves the *mechanism* is reachable; it says nothing about whether the *name* you
 chose is the one that host uses. Enumerate the host's own event names from its own artifact first —
 which is exactly what was done for codex and cursor, and skipped for agy.
+
+### agy documents all of this itself, in a file shipped with the CLI
+
+**Found by asking agy to inventory its own hook surface, not by searching for it.** The file is
+`~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/hooks.md`, 10,421 bytes, and it
+carries the complete contract: five events (`PreToolUse`, `PostToolUse`, `PreInvocation`,
+`PostInvocation`, `Stop`), the config search order, the input payload per event, and the output contract
+per event. Every probe above would have been shorter if it had been read first.
+
+Three things in it that the probes did not reach, and one that reframes a probe result:
+
+- **`PostInvocation` carries `terminationBehavior`** — `"force_continue"` forces the execution loop to
+  continue, `"terminate"` forces it to stop. A second control point the matrix does not have a column for.
+- **Config discovery walks `.agents/` from the working directory up to the repository root**, with
+  `~/.gemini/config/` as the global layer. That is why the earlier probe found the file only once the
+  directory was a git root — the walk needs a root to terminate at, and `--add-dir` was incidental.
+- **`Stop`'s `decision: "continue"` is documented as "block the stop and re-enter the loop"**, with any
+  other value allowing the stop and `reason` injected as a system message when continuing. **So the
+  168-turn runaway recorded above is the documented contract working exactly as specified, not a bug** —
+  the mistake was mine, reading `continue` with Claude Code's sense of the word. It remains a hazard for
+  anyone carrying that assumption across, which is the reason to keep it written down.
+
+And the line that matters most to any design built on this:
+
+> *Hooks run synchronously and block the agent loop (no async execution).*
+
+**On agy a reviewer hook is on the critical path by construction.** There is no detached form. Any design
+whose first principle is *nothing waits on the reviewer* cannot put judgement inside an agy hook at all —
+the hook may only read a verdict that is already sitting in a file, and must be fast enough to be
+invisible. The same document also states plainly that only `type: "command"` is supported, *"no HTTP or
+prompt hooks yet"*, which independently confirms the two live refusals recorded above.
 
 ### What a software layer has to supply, per client
 

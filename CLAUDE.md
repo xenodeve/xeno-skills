@@ -75,10 +75,12 @@ before acting — don't work from memory; skills evolve. The non-negotiable rule
 verdict, root cause before fix, proof before skipping, PRD → issues → PR, TDD, bilingual tracker)
 are carried by `using-t4` — load it at session start and follow it through the session.
 
-**clink-masteragent wiring:** NOT wired. `clink` (PAL MCP) is not configured in this environment,
-so the delegation tier is not a session default. If `clink` is added, decide between *invoke before
-any `clink` call* (cheap) and *load at session start* (~19 KB every session) and record the choice
-here — until then this stands as a deliberate decision, not an omission.
+**clink-masteragent wiring:** wired, and the choice this paragraph asked for is **invoke before any
+`clink` call** — not loaded at session start. `clink` is reachable here as `mcp__pal__clink`, carrying
+`antigravity`, `claude`, `claude-9arm`, `codex`, `cursor` (verified 2026-08-14 by six successful calls
+across three of them). It is used in a minority of sessions, so paying ~19 KB of every session for a
+tier most of them never reach is the worse trade. **Load `using-clink` first, then the instrument
+skill, then `clink-masteragent` before the call that spends a lane.**
 
 ## Dev notification
 
@@ -160,10 +162,11 @@ companion ecosystem (superpowers, mattpocock, 9arm) ให้ invoke ก่อ�
 เพราะ skills มีการพัฒนา กฎที่ไม่ negotiable (หลักฐานก่อน verdict, root cause ก่อน fix, proof ก่อน
 skip, PRD → issues → PR, TDD, bilingual tracker) อยู่ใน `using-t4` — โหลดตอนเริ่ม session และทำตามทั้ง session
 
-**clink-masteragent wiring:** NOT wired — `clink` (PAL MCP) ยังไม่ได้ config ใน environment นี้
-ดังนั้น delegation tier จึงไม่ใช่ค่าเริ่มต้นของ session ถ้าเพิ่ม `clink` ให้ตัดสินใจระหว่าง
-*invoke ก่อนทุก `clink` call* (ประหยัด) กับ *โหลดตอนเริ่ม session* (~19 KB ทุก session) แล้วจดไว้ที่นี่
-— จนกว่าจะถึงตอนนั้น นี่คือการตัดสินใจที่ตั้งใจ ไม่ใช่การมองข้าม
+**clink-masteragent wiring:** wired แล้ว และคำตอบของคำถามที่ย่อหน้านี้ตั้งไว้คือ **invoke ก่อนทุก
+`clink` call** ไม่ใช่โหลดตอนเริ่ม session · `clink` เรียกได้ในชื่อ `mcp__pal__clink` มี `antigravity`,
+`claude`, `claude-9arm`, `codex`, `cursor` (ยืนยัน 2026-08-14 ด้วยการเรียกสำเร็จหกครั้งบนสามตัว) ·
+มีไม่กี่ session ที่ใช้มัน การจ่าย ~19 KB ทุก session ให้ tier ที่ส่วนใหญ่ไม่ได้แตะจึงเป็นการแลกที่แย่กว่า ·
+**โหลด `using-clink` ก่อน แล้วค่อย skill ของเครื่องมือ แล้วค่อย `clink-masteragent` ก่อน call ที่จะจ่ายโควตา**
 
 ## การแจ้งเตือน developer
 
