@@ -255,6 +255,24 @@ times** in a run containing a subagent where every single-agent run today fired 
 *before* a delegation happens, which no other host in this table has as cleanly, and which is where a
 required-shape check on the delegation request would sit.
 
+**And hooks fire *inside* the subagent, each carrying that agent's own identity.** One run, every payload
+kept, two distinct `conversationId`s:
+
+| Conversation | Events it fired |
+|---|---|
+| `317f8229` — the **master** | `SessionStart`, `Pre`/`Post` on `invoke_subagent`, `Stop` ×2 |
+| `7edbb319` — the **child** | its **own** `SessionStart`, `Pre`/`Post` on `run_command` (the shell command the child was asked to run), `Pre`/`Post` on `send_message`, its **own** `Stop` |
+
+**So agy gives recursive enforcement nearly free**, keyed on `conversationId`: the same hook config
+applies to every agent in the tree, each agent's payload identifies itself, and the child's own tool
+calls are gated by the same rules as the parent's. No other host in this table has been shown to do that.
+
+**This reverses agy's position on this tier from worst to arguably best.** It has the delegation gate
+(`PreToolUse` on `invoke_subagent`, with the arguments visible before the call runs), per-agent hook
+firing, per-agent identity, and a `Stop` per agent. What it lacks — a model evaluator *inside a hook* —
+is now clearly the wrong thing to have been measuring it on, because its judgement can run as a **native
+subagent** rather than as a hook handler.
+
 **On cursor this tier is still not available**, and the clink tier covers delegation there instead.
 
 **What the clink tier can see, from the earlier PAL source review** (`2026-08-13-review-handoff.md`,
