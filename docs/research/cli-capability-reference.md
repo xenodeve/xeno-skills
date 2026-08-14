@@ -48,6 +48,24 @@ Only the tool name the gate matches differs: `Agent` (Claude Code), `invoke_suba
 
 ---
 
+## Per-CLI tool surface — a separate, deeper reference
+
+`docs/research/cli/` holds a tool-surface document per harness, built from vendor documentation and, for
+codex, the official source registry. **It answers a different question from this file** — *what tools
+exist on this CLI* rather than *what the compliance design can use* — and it grades every row
+`[DOC]` / `[SRC]` / `[GATED]` / `[EXT]` / `[RUNTIME]`.
+
+**One finding from it changes this document.** codex carries a full multi-agent surface, and **all of it
+is present in the `0.147` binary probed here**, verified by string scan: `spawn_agent` ×58,
+`wait_agent` ×22, `send_input` ×13, `close_agent` ×13, `resume_agent` ×10, plus the V2 set —
+`followup_task` ×4, `interrupt_agent` ×3, `list_agents` ×3 — and `MultiAgentVersion` ×2.
+
+**So waking an idle agent is not agy's alone.** `followup_task` sends work *and triggers a turn if the
+target is idle*, where `send_message` delivers without triggering one; `interrupt_agent` redirects a
+running agent without destroying it. That is the persistent-peer-reviewer shape, on codex, at **[B]**.
+It has not been seen to fire, and the source's own router can hide a registered tool per turn — but the
+architecture can no longer treat that shape as agy-specific.
+
 ## Claude Code
 
 **Build almost nothing.** It is the only host carrying every capability in the table, including the model
