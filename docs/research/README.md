@@ -14,7 +14,12 @@ this library composes with the ecosystems it sits on top of. One dated file per 
   judge what a command returned there. `SubagentStop` on codex and cursor is a native worker-side
   continuation point carrying the child's transcript path. Closing recommendation: normalise the
   *capabilities*, not the client names. **Documentation-grade except where noted** — the research
-  environment had none of the three CLIs installed, which the file states up front.
+  environment had none of the three CLIs installed, which the file states up front. **Three addenda carry
+  the live probes, and the third refutes the second:** all three CLIs run hooks headless. Cursor's native
+  `prompt` evaluator is verified live, mid-turn delivery with it — but its `stop` event does not fire
+  under `-p`. agy blocks at `Stop` and obeys the reason, and **`{"decision":"continue"}` there loops the
+  agent 168 turns to a timeout while silence is what releases it.** Both clients do report their errors,
+  just not to stdout, which is why the earlier "both are silent" reading was wrong.
 - [2026-07-16 — Subagent delegation log](2026-07-16-subagent-delegation-log.md) — qwen / codex /
   antigravity delegation runs (latency, quality, failure modes) + the real-task sandbox experiments
   + the **graduated difficulty-ladder (R0–R3 breaking points)** that fed the `clink-subagents` skill

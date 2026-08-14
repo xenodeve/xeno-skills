@@ -440,6 +440,74 @@ Probed with `<workspace>/.agents/hooks.json` and `agy --print "…"`. The turn r
 
 ---
 
+## Addendum — cursor and agy verified live with a positive control, 2026-08-14
+
+**The addendum above is superseded on its central claim, and the "both are silent" finding is refuted.** Both clients run hooks headless. The earlier probes failed on the config's **shape** and, for agy, its **location** — and both clients do report, just not to stdout: cursor collects parse errors into a structure it never prints, and agy writes them to `--log-file`, which the earlier probe never opened.
+
+The rule that addendum derived still stands, and is what produced this one.
+
+### The method that changed the outcome
+
+**The positive control was a hook whose only job is to append a line to a file** — no dependency on any output contract, any exit-code convention, or the host printing anything. Control and test events live in the same file and run in the same invocation, so a control that fires makes the test's silence informative.
+
+### cursor-agent 2026.08.11-e8db854 — hooks work headless
+
+Schema read from the shipped bundle (`versions/2026.08.11-e8db854/190.index.js`), not from documentation:
+
+- file shape `{"version":1,"hooks":{"<event>":[entry]}}`
+- **the entry is flat** — `{"type":"command","command":"<string>"}`, or `{"type":"prompt","prompt":"…","model":"…"}`. There is **no Claude-style matcher wrapper**; an entry nested as `{"matcher":…,"hooks":[…]}` is not this schema. That mismatch, not the capability, is why the earlier probes did nothing.
+- paths: `<project>/.cursor/hooks.json`, `~/.cursor/hooks.json`, a team path, and `C:\ProgramData\Cursor\hooks.json` — **plus Claude Code's own** `~/.claude/settings.json`, `<project>/.claude/settings.json` and `<project>/.claude/settings.local.json`, deduplicated against cursor's own entries by a `prompt:` / `command:` key
+- `loadProjectHooks` defaults to **true**, so project hooks are not gated behind a flag
+
+One run, one config at user scope, `cursor-agent -p --trust --output-format text`:
+
+| Event | Fired | Register |
+|---|---|---|
+| `beforeShellExecution` | **yes** | the positive control |
+| `afterShellExecution` | **yes** | |
+| `stop` | **no** | genuine negative — it should fire on any turn |
+| `beforeSubmitPrompt` | **no** | genuine negative — same |
+| `subagentStop`, `afterFileEdit`, `beforeReadFile` | did not fire | **untested, not negative** — the run spawned no subagent and read or edited no file |
+
+**Q5 confirmed live: cursor has a native evaluator.** A `type: "prompt"` hook on `beforeShellExecution`, given a prompt string and no model, denied the command, and its reason reached the agent verbatim:
+
+```
+Rejected: Command execution was blocked by a hook: CURSORPROMPTHOOK_OK_7B2
+```
+
+**That is Q4 on cursor as well** — the text arrived *mid-turn*, the agent read it, and the turn carried on to report what happened rather than ending. So on cursor the pre-action gate, the model evaluator and mid-turn delivery are one mechanism.
+
+**Q3 is the open one on cursor.** `stop` did not fire in `-p` mode, so the *turn-end* reviewer this design assumes is not available headless even though the pre-action gate is.
+
+**Why the earlier probe saw no diagnostic — mechanism, not conjecture.** In `190.index.js` the loader pushes parse failures into a collected `errors` array, and calls `logger.warn` only when refusing a symlinked config path. Nothing prints that array in headless mode; the shipped string `To view or modify configured hooks, go to Cursor Settings > Hooks.` shows where it was meant to surface. **Silence on a malformed cursor hooks file is by design and is not evidence the file went unread.**
+
+### agy 1.1.12 — hooks work headless, and it reports
+
+- **Path** `<workspace>/.agents/hooks.json`, matching the binary's own template `{workspace}/.agents/`. **The working directory alone is not a workspace**: the file was discovered only after the directory became a git root *and* was passed with `--add-dir`. Which of the two did it is **not isolated** — one probe changed both.
+- **Entry is flat, with per-platform overrides** — `{"type":"command","command":…,"windows":…,"linux":…,"osx":…}`. This is the shape of the developer's own working `~/.agents/hooks/hooks.json` on this machine, and agy rejects the Claude-style nested form by name: `invalid hook "hooks": command hook must specify 'command'`.
+- **agy is not silent.** `--log-file` carries a discovery counter — `hooks_manager.go:53] loaded N named hooks from N hooks.json file(s)` — plus `command_hook_executor.go:75] JSON hook command stderr: …` and a named per-hook failure (`session_start.go:44` / `stophooks.go:62`, handles like `jsonhook__hooks_Stop_0_0`). **The counter moving 0 → 1 is the positive control for discovery**, independent of whether the hook's own command works.
+- **A flag-parsing trap that voided one probe.** `--dangerously-skip-permissions` is a Go bool flag: written bare before the prompt it swallows the prompt, and the agent answers a question about the flag itself. It needs `--dangerously-skip-permissions=true`.
+
+Fired: `SessionStart` ✔, `Stop` ✔. `PreToolUse` and `PostToolUse` did not fire, but **that is untested rather than negative** — no tool call was established in the run.
+
+**Q3 confirmed live on agy, with a hazard worth more than the confirmation.** A `Stop` hook returning `{"decision":"block","reason":"…state the token…"}` on its first call and **nothing** on the second produced `PONG`, then the demanded token exactly once, then a clean end. Returning `{"decision":"continue"}` on every later call instead ran **168 extra turns** and died on `Error: timeout waiting for response`.
+
+**Silence releases the turn; `"continue"` does not, and no loop limit intervened.** A blocking `Stop` hook on agy therefore needs its own release condition in the hook, or it will spend the entire turn budget. Note this is the opposite of what the loop-limit machinery does on cursor (`shouldSkipHookDueToLoopLimit`, `loop_count` vs `loop_limit`), which is a difference the capability normalisation has to carry rather than hide.
+
+### Still untested on both
+
+Q2 in full, Q6, Q7, Q8 and Q9 — and on agy, Q4 and Q5 as well. Nothing above establishes any of them.
+
+### Corrections owed to the summary table at the top of this file
+
+The table is the delegated research's output and is left as written, so its provenance stays legible. Two of its cells are now known to be wrong for headless use, and this addendum is the correction layer:
+
+- **Cursor, "3. Stop / redirect: yes — followup loop"** — the `stop` event did not fire under `-p`; what works there is the pre-action gate.
+- **Cursor, columns 4 and 5** — right in substance, but they were documentation-grade and are now live-grade.
+- **Antigravity, "9. Global gate: UNKNOWN"** — still unknown, but discovery is now observable through the log counter, so it is measurable rather than opaque.
+
+---
+
 # Cursor Agent / Cursor CLI
 
 ## 1. Does a hook system exist?
