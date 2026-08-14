@@ -390,8 +390,9 @@ properties of an event that does not fire.
 
 ## The converged architecture — one core, two adapters
 
-agy and cursor were expected to want different designs and do not. **One loop covers both**, and the
-only per-host difference is the name of the tool the gate matches:
+agy and cursor were expected to want different designs and do not — **and Claude Code turns out to sit on
+the same loop.** One design covers three hosts, and the only per-host difference is the name of the tool
+the gate matches:
 
 ```text
 Gate the delegation  →  enforce recursively inside every child session
@@ -400,14 +401,14 @@ Gate the delegation  →  enforce recursively inside every child session
                      →  return a finding to the master
 ```
 
-| | agy | cursor |
-|---|---|---|
-| Gate matches | `PreToolUse` on `invoke_subagent` | `preToolUse` on `Task` |
-| Spawn arguments visible before the call | **[L]** yes | **[L]** yes |
-| Hooks inherited by children | **[L]** yes | **[L]** yes |
-| Per-child identity | **[L]** `conversationId` | **[L]** `session_id` |
-| Child has its own transcript | **[L]** yes | **[L] yes, but the path is unreliable** — `transcript_path` came back `null` in several payloads of the same session where others carried it |
-| Worker resumes in place after a finding | unprobed | **[L] no** — the event that would do it never fires |
+| | Claude Code | agy | cursor |
+|---|---|---|---|
+| Gate matches | **[L]** `PreToolUse` on `Agent` | **[L]** `PreToolUse` on `invoke_subagent` | **[L]** `preToolUse` on `Task` |
+| Spawn arguments visible before the call | **[L]** yes | **[L]** yes | **[L]** yes |
+| Hooks inherited by children | **[L]** yes — the child's `Read` and `Bash` calls hooked | **[L]** yes | **[L]** yes |
+| Per-child identity | **[L]** `agent_id` — same session, distinct agent | **[L]** `conversationId` | **[L]** `session_id` |
+| Child has its own transcript | **[L]** yes — `agent_transcript_path` | **[L]** yes | **[L] yes, but the path is unreliable** — `transcript_path` came back `null` in several payloads of the same session where others carried it |
+| Worker resumes in place after a finding | **[L]** yes — a `SubagentStop` block reached the child | unprobed | **[L] no** — the event that would do it never fires |
 
 **The capability vocabulary should be semantic, not vendor-shaped.** The names this document used —
 `CAP_SUBAGENT_STOP` and friends — encode one host's spelling and produced the error that started this
