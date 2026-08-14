@@ -217,7 +217,7 @@ uninstall rather than operation.
 
 | Feature the plan needs | Claude Code | codex | cursor | agy |
 |---|---|---|---|---|
-| A hook around the subagent's life | **[L]** `SubagentStart` + `SubagentStop` | **[L]** both fired | **[B]** wiring exists, backend-driven, never seen to fire | **none exist** |
+| A hook around the subagent's life | **[L]** `SubagentStart` + `SubagentStop` | **[L]** both fired | **[B]** wiring exists, backend-driven, never seen to fire | **[L] yes, by another route** — no subagent-named event, but `invoke_subagent` / `send_message` are **ordinary tools**, so the tool hooks cover them; `Stop` fired **3×** in a run with a subagent against 1× normally |
 | The child's **own** transcript | **[L]** `agent_transcript_path`, distinct from the parent's | **[L]** a separate rollout file, distinct from the parent's | — | — |
 | Deliver an objection **into the subagent** | **[L]** blocked at `SubagentStop`; **the subagent itself emitted the demanded token** | **[L]** same — the payload's `last_assistant_message` came back as `SUBPING3 CXSUBBLOCK_8W4` | — | — |
 | A loop guard for the correction count | **[L]** `stop_hook_active` in the payload | **[L]** `stop_hook_active` | — | — |
@@ -244,9 +244,18 @@ cautionary: **a `SubagentStop` hook must read `stop_hook_active` and release on 
 counter increments exactly where that flag flips. A blocking hook without that check does not degrade —
 it destroys the turn and bills for it.
 
-**On cursor and agy this tier is not available**, and the clink tier covers delegation there instead —
-which is the strongest design argument yet for having built the clink tier at all, since it is the one
-layer that behaves the same on every host.
+**Correction — agy does have this tier, and the earlier entry here was wrong.** It was written from the
+absence of a `Subagent*` **event name**, which is the wrong thing to look for on that host: agy exposes
+`invoke_subagent`, `define_subagent`, `send_message` and `manage_subagents` as **ordinary tools**
+(69, 4, 60 and 13 occurrences in the binary), so the tool hooks already cover the subagent lifecycle.
+Probed live: a `PreToolUse` hook captured a `send_message` call between agents, and `Stop` fired **three
+times** in a run containing a subagent where every single-agent run today fired it once.
+
+**That makes `PreToolUse` with a matcher on `invoke_subagent` a delegation gate** — a software seam
+*before* a delegation happens, which no other host in this table has as cleanly, and which is where a
+required-shape check on the delegation request would sit.
+
+**On cursor this tier is still not available**, and the clink tier covers delegation there instead.
 
 **What the clink tier can see, from the earlier PAL source review** (`2026-08-13-review-handoff.md`,
 verified in source rather than measured here): `codex`, `claude` and `opencode` parsers retain the
