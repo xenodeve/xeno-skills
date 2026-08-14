@@ -935,6 +935,32 @@ And **agy cannot run shell commands through this transport at all** — its firs
 headless, and it only succeeded once the prompt forbade commands outright and told it to read files. Its
 answer was still the most valuable of the three.
 
+### The probe record standard — what every capability claim here should have carried
+
+Distilled with a `codex` research pass after this document produced **five** false negatives in one day,
+each from a different cause: a wrong event name, a wrong config shape, a wrong path, a wrong launch mode,
+and a config that died silently. They share nothing except the conclusion they produced.
+
+**Every capability probe records a control and a target, and the verdict is a function of both:**
+
+```text
+probe:
+  control:
+    capability: <an event already known to fire on this host>
+    fired: true
+  target:
+    capability: subagentStop
+    fired: false
+  verdict: unsupported_in_this_launch_mode
+```
+
+**If the control did not fire, the verdict is `probe_invalid` — never `unsupported`.** That single rule
+would have prevented four of the five. The fifth, the wrong event *name*, needs the other half: enumerate
+the host's own vocabulary from the host's own artifact before choosing what to test.
+
+**And the verdict names the launch mode**, because `unsupported` and `unsupported under `-p`` are
+different claims and this document has had to separate them twice.
+
 ### The axis this document measured agy on was the wrong one
 
 Every row above asks what a **hook** can do. On agy that under-describes the host badly, and the

@@ -388,6 +388,72 @@ and has to run through the master — which is the arrangement the rest of this 
 `agent_transcript_path` is the child's, and whether `followup_message` resumes the same worker, are
 properties of an event that does not fire.
 
+## The converged architecture — one core, two adapters
+
+agy and cursor were expected to want different designs and do not. **One loop covers both**, and the
+only per-host difference is the name of the tool the gate matches:
+
+```text
+Gate the delegation  →  enforce recursively inside every child session
+                     →  capture evidence synchronously
+                     →  judge asynchronously
+                     →  return a finding to the master
+```
+
+| | agy | cursor |
+|---|---|---|
+| Gate matches | `PreToolUse` on `invoke_subagent` | `preToolUse` on `Task` |
+| Spawn arguments visible before the call | **[L]** yes | **[L]** yes |
+| Hooks inherited by children | **[L]** yes | **[L]** yes |
+| Per-child identity | **[L]** `conversationId` | **[L]** `session_id` |
+| Child has its own transcript | **[L]** yes | **[L] yes, but the path is unreliable** — `transcript_path` came back `null` in several payloads of the same session where others carried it |
+| Worker resumes in place after a finding | unprobed | **[L] no** — the event that would do it never fires |
+
+**The capability vocabulary should be semantic, not vendor-shaped.** The names this document used —
+`CAP_SUBAGENT_STOP` and friends — encode one host's spelling and produced the error that started this
+section: *no `Subagent*` event ⇒ no subagent tier*, which was false. Replace with what is actually being
+asked:
+
+```text
+CAP_DELEGATION_PRE_GATE        CAP_CHILD_HOOK_INHERITANCE     CAP_DETACHED_PROCESS
+CAP_DELEGATION_ARGS_VISIBLE    CAP_CHILD_IDENTITY             CAP_ASYNC_REVIEW_TRIGGER
+CAP_END_TURN_SIGNAL            CAP_CHILD_TRANSCRIPT           CAP_FINDING_DELIVERY
+CAP_AGENT_MESSAGING            CAP_IDLE_AGENT_REAWAKE         CAP_CHILD_RESUME
+```
+
+The question each answers is one question: **when the master spawns a child, does software enforcement
+follow it in?** On agy and cursor, today, yes.
+
+### A hard requirement, not a preference
+
+> **The reviewer must never execute synchronously on a hook's critical path.**
+
+Stated as a requirement because every host blocks, so the exception that looked safe — Claude Code's
+native evaluator at Haiku prices — is still on the path. Cheap is not the same as free, and the
+principle was about *waiting*, not about cost.
+
+**The split that falls out, and it is cleaner than "hooks are actuators":**
+
+| Runs in the hook, deterministic, milliseconds | Runs detached, model, unbounded |
+|---|---|
+| schema and delegation-contract completeness · scope · permissions · read-before-edit · required sentinel · allowed files · evidence capture · state update | did the reasoning answer the objective · was the required evidence actually used · is the conclusion supported · anything needing semantic judgement |
+
+A hook may **gate** deterministically and **deliver** a finding computed earlier. It may not judge.
+
+### The dimension that replaces "which agent type"
+
+The plan classified nodes as *master*, *native subagent*, *foreign clink worker*. A better axis is
+**whether enforcement exists at that node**:
+
+```text
+enforcement present   →  master session, and every native child that inherits hooks
+enforcement absent    →  a foreign clink child, until OpenClink installs it
+```
+
+That reframes OpenClink's job precisely: **move foreign children from the right column to the left.**
+Today's cursor finding — that PAL can write a hooks config into a worker's own workspace and the worker
+will load it — is exactly that move, and it is measured.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
