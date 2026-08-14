@@ -140,6 +140,33 @@ plan had written off.
 output, and its `PostToolUse` return is not ingested at all. agy keeps `final: "unknown"` until something
 better is measured — the honest state, not a gap to paper over.
 
+## When the master is not Claude Code
+
+The design assumes Claude Code as the master and the other three as workers. Asked the reverse — **cursor
+as master, delegating through clink to agy, codex and Claude Code** — it holds, with one asymmetry that
+is a property of the *rules*, not of the plumbing.
+
+**The clink tier does not care who the master is.** It watches the worker from inside PAL. The record it
+returns — corrections, per-skill verdicts, final — is identical whichever CLI is driving.
+
+**The master-side reviewer fires on the delegation itself, verified.** cursor has `pal` configured as an
+MCP server, and a project-level hooks config caught the call: `beforeMCPExecution` and
+`afterMCPExecution` each fired once on an MCP tool call, alongside `preToolUse` and `postToolUse`. So
+*"delegated without handing over the skills"* is catchable **before the delegation runs**, which is
+earlier than Claude Code's turn-end reviewer can manage.
+
+**The asymmetry is which rules remain judgeable.** On Claude Code the master reviewer sees a whole
+segment at `Stop`. On cursor it only ever sees *about to do X*, because `stop` does not fire headless.
+So a rule of the form *the turn ended and verify was never run* **has no moment to fire when cursor is
+the master.** Those rules do not degrade gracefully — they simply have no trigger.
+
+**The route out is already measured and not yet in the plan:** cursor writes a `turn_ended` record into
+its transcript even though the callback is absent. A PAL-side tail of that file restores the turn
+boundary without a hook. That is the same component Phase 1.5 needs anyway, pointed at a different file.
+
+**Workers are the easy half.** codex and Claude Code retain a full event stream in PAL, so the clink
+reviewer reads what the worker *did*. agy remains the weak seat for the reasons stated above.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
