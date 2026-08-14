@@ -603,6 +603,135 @@ the hook may only read a verdict that is already sitting in a file, and must be 
 invisible. The same document also states plainly that only `type: "command"` is supported, *"no HTTP or
 prompt hooks yet"*, which independently confirms the two live refusals recorded above.
 
+### codex documents itself too — ten events, and a version trap
+
+**Produced by asking codex to inventory its own hook surface.** It worked from the release source matching
+its installed build (`rust-v0.144.4`), explicitly declining `main` because unreleased schema fields would
+not apply, and it proved one event live rather than claiming all ten.
+
+**Read the version line first.** It probed `codex-cli 0.144.4` — the build on `PATH` — while every live
+probe elsewhere in this document ran against `0.147.0-alpha.6.5` under `%LOCALAPPDATA%\OpenAI\Codex\bin\`.
+**Two builds, one machine**, so nothing below transfers to the newer one without checking.
+
+**Ten events**, from `codex-rs/config/src/hook_config.rs`: `PreToolUse`, `PermissionRequest`,
+`PostToolUse`, `PreCompact`, `PostCompact`, `SessionStart`, `UserPromptSubmit`, `SubagentStart`,
+`SubagentStop`, `Stop`. **`SessionEnd` is not among them in this release although current online
+documentation lists it** — a concrete instance of the version trap, found because the worker pinned its
+source to its own build.
+
+All ten dispatch from shared core paths rather than TUI-only code, so all ten are reachable headless.
+**Only `SessionStart` was live-proven** — configured, fired, marker read back verbatim — and the worker
+said so rather than generalising, which is the distinction this document keeps needing.
+
+**The output contract, which is richer than the probes reached:**
+
+- **Common to all:** `continue`, `stopReason`, `systemMessage`, `suppressOutput` (parsed, unsupported).
+- **`SessionStart` / `SubagentStart` / `UserPromptSubmit`** inject via
+  `hookSpecificOutput.additionalContext` — **and plain stdout also injects context**, which is a simpler
+  path than the structured form used in the probe above.
+- **`PreToolUse`** carries `permissionDecision` (`deny` / `allow`) plus **`updatedInput`, which rewrites
+  the tool call** rather than merely denying it. Legacy `{decision:"block",reason}` and exit `2` with
+  stderr also deny.
+- **`PostToolUse`'s `{decision:"block",reason}` replaces the completed tool result with the hook's
+  feedback.** That is a stronger mid-turn mechanism than `additionalContext` — the model reads the
+  objection *as the tool's output*, in the place it is already looking.
+- **`Stop` / `SubagentStop`:** `{decision:"block",reason}` requests another continuation; exit `2` with
+  stderr is equivalent.
+
+**Input payloads** always carry `session_id`, `transcript_path`, `cwd`, `hook_event_name`, `model`, plus
+per-event fields. **`SubagentStop` carries `agent_transcript_path`** — the child's own transcript, which
+is the seam a worker-side reviewer needs.
+
+**Q9 answered for codex**, and it is a list rather than a single switch: `[features] hooks=false` (alias
+`codex_hooks=false`); an admin `requirements.toml` that can force hooks off or set
+`allow_managed_hooks_only=true`; project layers being untrusted, with unreviewed handlers skipped unless
+`--dangerously-bypass-hook-trust`; `hooks.state.<key>.enabled=false` per handler; and `--ignore-user-config`.
+
+**One claim in this document is contested by that answer, and the isolation test says both are right.**
+The worker searched for `CODEX_.*HOOK` and `hook.*sandbox` and reports **no hook-disabling environment
+variable and no sandbox-policy gate** in `0.144.4` source. The first addendum here states the opposite
+from measurement — but that probe varied sandbox and trust together, so the mechanism was attributed
+rather than isolated.
+
+Isolated afterwards on `0.147.0-alpha.6.5`, one condition changed: `codex exec
+--dangerously-bypass-hook-trust --skip-git-repo-check` with **no sandbox flag**. The turn ran, `echo hi`
+executed, the agent answered `DONE` — and **the `PostToolUse` hook did not fire.** With the sandbox
+bypass added and nothing else changed, the same hook fires twice.
+
+So the observation stands on the newer build and the source claim stands on the older one. **What is
+still unresolved is the mechanism** — it may be a change between the two releases, or a gate the source
+search did not match because it is not spelled with the word *sandbox*. Recorded as version-scoped rather
+than explained.
+
+### cursor documents itself too — twenty-one events, and a third way to die silently
+
+**Produced by asking cursor-agent to inventory its own hook surface**, reading its own bundle at
+`versions/2026.08.11-e8db854/`. It proved two events live and marked the rest by grade.
+
+**Twenty-one event names**, from the `_E` map in `index.js`: `beforeShellExecution`,
+`beforeMCPExecution`, `afterShellExecution`, `afterMCPExecution`, `beforeReadFile`, `afterFileEdit`,
+`beforeTabFileRead`, `afterTabFileEdit`, `stop`, `beforeSubmitPrompt`, `afterAgentResponse`,
+`afterAgentThought`, `sessionStart`, `sessionEnd`, `preCompact`, `subagentStart`, `subagentStop`,
+`preToolUse`, `postToolUse`, `postToolUseFailure`, `workspaceOpen`. The probes above found eight.
+
+**`sessionStart` fires headless — proven live**, which the probes never tested. So cursor has a
+session-level hook in `-p` even though `stop` does not fire there, and that is a place to seed state at
+the start of a run.
+
+**The entry schema is larger than the probes used:** `command`, `type`, `timeout`, `matcher`,
+`failClosed`, `loop_limit`. `version` is a required positive integer. Config order is enterprise → team →
+user → project, plus the Claude-compat sources.
+
+**`type: "prompt"` is conditional** — implemented only when a `promptHookClient` exists; otherwise the
+entry is simply not queued. That is worth knowing before relying on the native evaluator, because its
+absence looks like a hook that did nothing.
+
+**Two file-level invalidation rules, both silent**, which explain and extend the finding above: an
+unknown `type` produces `Invalid hook type: "…"`, and an unknown **event key** produces `Unknown hook
+type: …` — and either **fails the whole file for that source**, while other sources still load.
+
+**And a third silent-death mechanism, found by the worker's own failed first attempt:** a `hooks.json`
+written with a **UTF-8 BOM** loads as nothing — *"agent OK, no hook file, no CLI diagnostic"*. Rewritten
+without the BOM, the same config loaded. **This is the default output of Windows PowerShell's
+`Set-Content -Encoding utf8`**, so it is a mistake anyone scripting hook installation on Windows will
+make, and it produces no signal anywhere. Filed with the other two on `#212`.
+
+**Q9 for cursor:** no dedicated kill switch found. `enableTeamHooks` and `enableWorkspaceOpenHook` gate
+their own scopes; a team **headless policy of `disabled` blocks `-p` entirely** rather than hooks alone;
+a symlinked config path is refused. Whether untrusted workspace fully kills hooks is `UNKNOWN` — they ran
+under `--trust`.
+
+**Output contract**, per-event validators in `index.js`: gate events take
+`permission: allow|deny|ask` with `user_message` / `agent_message`; `beforeSubmitPrompt` and
+`sessionStart` take `continue: false`; **exit code 2 is treated as a block on every event**;
+`additional_context` and `agent_message` are the mid-turn text paths; `stop` and `subagentStop` take
+`followup_message`; `failClosed: true` makes a hook failure block. Command hooks receive
+`CURSOR_PROJECT_DIR`, `CURSOR_VERSION`, `CURSOR_TRANSCRIPT_PATH` and `CLAUDE_PROJECT_DIR` in their
+environment.
+
+### What asking each CLI about itself actually bought
+
+Three self-probes, one per host, each told to read its own artifact and prove one claim by side effect.
+Set against a day of external probing, they produced:
+
+- **agy's own 10.4 KB hook contract**, which no external search found, plus the two corrections above
+- **codex's ten event names pinned to its installed release**, and `SessionEnd` documented online but
+  absent from that build
+- **cursor's twenty-one event names against the eight found externally**, `sessionStart` proven headless,
+  and the BOM failure
+
+**The pattern is one thing, and it is the same failure the positive-control rule addresses one level
+up.** Every external probe tested names and shapes carried from another vendor. Each host, asked about
+itself, answered from its own vocabulary — which is the only place that vocabulary exists.
+
+Two costs worth stating rather than burying. The codex worker ran **797 seconds** and returned a result
+whose transport blob was **59,685 characters**, of which 9,026 was the answer; cursor ran **904 seconds**.
+And **agy cannot run shell commands through this transport at all** — its first attempt was auto-denied
+headless, and it only succeeded once the prompt forbade commands outright and told it to read files. Its
+answer was still the most valuable of the three.
+
+### What a software layer has to supply, per client
+
 ### What a software layer has to supply, per client
 
 Follows directly from the matrix; recorded here so the design does not have to re-derive it.
