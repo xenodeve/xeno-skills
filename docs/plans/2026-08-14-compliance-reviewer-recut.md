@@ -218,14 +218,19 @@ uninstall rather than operation.
 | Feature the plan needs | Claude Code | codex | cursor | agy |
 |---|---|---|---|---|
 | A hook around the subagent's life | **[L]** `SubagentStart` + `SubagentStop` | **[L]** both fired | **[B]** wiring exists, backend-driven, never seen to fire | **none exist** |
-| The child's **own** transcript | **[L]** `agent_transcript_path`, distinct from the parent's | **[B]** the schema carries it | — | — |
-| Deliver an objection **into the subagent** | **[L]** blocked at `SubagentStop`; **the subagent itself emitted the demanded token** and the parent reported both lines | **[B]** same return shape | — | — |
-| A loop guard for the correction count | **[L]** `stop_hook_active` in the payload | **[B]** | — | — |
-| Identity to attribute a finding to | **[L]** `agent_id`, `agent_type`, `effort.level` | **[B]** `agent_id`, `agent_type` | — | — |
+| The child's **own** transcript | **[L]** `agent_transcript_path`, distinct from the parent's | **[L]** a separate rollout file, distinct from the parent's | — | — |
+| Deliver an objection **into the subagent** | **[L]** blocked at `SubagentStop`; **the subagent itself emitted the demanded token** | **[L]** same — the payload's `last_assistant_message` came back as `SUBPING3 CXSUBBLOCK_8W4` | — | — |
+| A loop guard for the correction count | **[L]** `stop_hook_active` in the payload | **[L]** `stop_hook_active` | — | — |
+| Identity to attribute a finding to | **[L]** `agent_id`, `agent_type`, `effort.level` | **[L]** `agent_id`, `agent_type`, `turn_id`, and the child's `model` | — | — |
 
-**The subagent tier is complete on Claude Code and only there, today.** The block reaching the *child*
-rather than the parent is the part that matters: it makes the tier an enforcement point rather than a
-reporting one.
+**The subagent tier is complete on Claude Code and codex.** The block reaching the *child* rather than the
+parent is the part that matters: it makes the tier an enforcement point rather than a reporting one, and
+both hosts demonstrated it the same way — the token the hook demanded came back inside the subagent's own
+last message.
+
+One incidental fact worth carrying: codex spawned its subagent on **`gpt-5.6-luna`**, its small tier, not
+on the parent's model. A reviewer judging that child is judging a cheaper model's work, which is an
+argument for the tier rather than against it.
 
 **On cursor and agy this tier is not available**, and the clink tier covers delegation there instead —
 which is the strongest design argument yet for having built the clink tier at all, since it is the one
