@@ -5,6 +5,11 @@ this library composes with the ecosystems it sits on top of. One dated file per 
 
 ## Index
 
+- [CLI capability reference](cli-capability-reference.md) — **the distilled answer, kept short enough to
+  read before implementing.** Per harness: what is native, what you build yourself, and the traps that
+  cost the most time. Claude Code needs almost nothing built; codex needs an evaluator; cursor needs four
+  things and carries four separate silent-death paths; agy needs three, one of them mandatory. Plus the
+  layer you build once regardless of host. Evidence and method live in the dated file below.
 - [2026-08-14 — The compliance-hook surface on codex, cursor-agent and agy](2026-08-14-compliance-hook-surface-across-harnesses.md)
   — can each foreign CLI run a compliance reviewer the way Claude Code can? Nine questions per client,
   commissioned for #176 and #208. **Only Cursor has a built-in model evaluator** (`prompt` hooks, fast
