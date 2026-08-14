@@ -254,6 +254,52 @@ worker's event stream; `cursor` and `antigravity` share a parser that retains no
 reviewer's evidence is real on three clients and a self-report on two — and today's finding gives cursor
 a way out that needs no parser change.
 
+## What plays PAL's part on the master and native-subagent side
+
+clink has PAL: a long-running process that owns the worker and can host a judge. The master side has no
+such process — a hook is a short-lived script with no shared memory and nothing supervising it. That is
+the real asymmetry, and it has a smaller answer than it looks.
+
+**The hook writes a pointer and returns. It talks to no service.**
+
+Every host hands the hook a `transcript_path` in its payload, and `SubagentStop` hands over
+`agent_transcript_path` — the child's own file, distinct from the parent's. **So the evidence never has to
+travel through the hook.** It records a path, a read offset and the event name — a few bytes — and the
+judge opens the transcript itself. That is also the answer to *"the plan never says how the server
+assembles session context"*: the host already assembled it, and the payload names the file.
+
+**The one host that needs more is cursor**, whose transcript carries `tool_use` and no `tool_result`. There
+the hook additionally spools the `output` field that `afterShellExecution` hands it. That is the only
+place evidence passes through a hook at all.
+
+**Who runs the judge, given that no long-running process is guaranteed.** A hook *can* start one:
+verified — a `PreToolUse` hook spawned a detached child, returned immediately, and the child completed
+**8 s after the hook had returned**, with the turn not extended. So the options are real rather than
+theoretical:
+
+- **PAL when it is running.** It already hosts the clink judge, so one judge serves all three tiers —
+  one rule set, one model choice, one liveness check. It needs no MCP call from the hook, only a spool
+  directory both sides agree on.
+- **A detached worker the hook starts when none is alive.** No install, no service, no new dependency,
+  and self-healing. The measurement above is what makes this viable.
+
+**Recommendation: the spool is the interface, and the consumer is interchangeable.** The hook's contract
+is two filesystem operations and knows nothing about who drains the queue. PAL drains it when present; a
+hook-spawned worker drains it otherwise. Neither is a dependency of the hook.
+
+**The native-subagent tier needs nothing extra.** `SubagentStop` gives the child's transcript path, so the
+same pointer mechanism covers it — plus the release rule: read `stop_hook_active`, release on it, and
+increment the correction count where it flips.
+
+**What this does not solve, stated rather than smoothed over:**
+
+- **cursor still needs one genuinely long-running component**, because its turn boundary is a record in a
+  file rather than a callback. That watcher cannot be hook-driven.
+- **agy's hook is on the critical path with a 30 s cap.** Two filesystem operations fit; nothing else may
+  be added there.
+- **Nobody owns the worker's lifetime**, and a spool that no one drains has no defined behaviour. That is
+  the next decision, and it is Phase 1.5's, not this section's.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
