@@ -176,14 +176,15 @@ that are not.
 | Host | Subagent events | Grade |
 |---|---|---|
 | **Claude Code** | `SubagentStart` **and** `SubagentStop` both fired around a real `Task` subagent, with `PreToolUse` and `Stop` as controls in the same run | **[L]** |
-| **codex** | `SubagentStart`, `SubagentStop` are in its exhaustive enum, and `SubagentStop` carries `agent_transcript_path` | **[B]** — never seen to fire |
-| **cursor** | `subagentStart`, `subagentStop` are in the bundle's map | **[B]** — never seen to fire |
+| **codex** | `SubagentStart` **and** `SubagentStop` both fired around a real subagent, control firing twice in the same run; **[B]** `SubagentStop` carries `agent_transcript_path` | **[L]** |
+| **cursor** | wiring is real — `hookExecutor.executeHookForStep(subagentStart, …)` sits behind a **server-driven request case**, not a local tool call. A probe asking for a subagent returned an answer while `sessionStart` and `preToolUse` fired and the subagent events did not; **whether a subagent actually ran is unestablished**, so this is not a clean negative | **[B]** |
 | **agy** | **none.** Its five events contain no subagent event of any kind | **[L/D]** |
 
-**So the tier is only proven where the master is Claude Code**, and it is *absent by construction* on agy —
-which means a native-subagent reviewer cannot exist there whatever else is built. On codex and cursor the
-names exist and nothing more; treating them as available is the `[D]`-grade mistake this research already
-made three times.
+**So the tier is proven on two of four.** It is *absent by construction* on agy — no subagent event of any
+kind — which means a native-subagent reviewer cannot exist there whatever else is built. cursor is the
+open one, and the shape of its wiring is the reason: the hook is driven by a **request from cursor's own
+backend**, so making it fire is not a matter of prompting harder. Until a probe sees it, treat cursor's
+native-subagent tier as unavailable and let the clink tier cover delegation there.
 
 ## Stated uncertainties
 
