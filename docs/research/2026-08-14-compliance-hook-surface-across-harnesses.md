@@ -507,21 +507,36 @@ control in the same configuration; anything not probed is written as such rather
 
 | | Claude Code | codex | cursor 2026.08.11 | agy 1.1.12 |
 |---|---|---|---|---|
-| **Q2 event names** | **31** in the binary, **9** documented — the undocumented ones are configurable and fire | **10**, pinned to `0.144.4` — `SessionEnd` is in the online docs and **not in that build** | **21**, from the bundle's own map | **5** |
-| **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p`, though `sessionStart` does | **yes**, and `decision:"continue"` means *keep going*, not *release* |
-| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `additionalContext`, and `PostToolUse` `{decision:"block"}` **replaces the tool result** with the objection | **yes** — via the pre-action gate's reason; `additional_context` / `agent_message` per event | **yes** — `PreInvocation` + `injectSteps` |
-| **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, `model` read | **no** — `prompt hooks are not supported yet` | **yes** — but queued **only if a `promptHookClient` exists** | **no** — *"no HTTP or prompt hooks yet"*, its own docs |
-| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` | **no** — and the entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
-| **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL + `tool_response`; **`SubagentStop` carries the child's own transcript** | **yes** — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload instead | **yes** — `transcriptPath` + `artifactDirectoryPath` |
-| **Q8 per-hook `model`** | **yes, read** — a wrong value kills the hook silently | n/a | **yes, read** — same silent death | n/a |
-| **Q9 global gate** | **`disableAllHooks`**, a settings key — no env var, no flag | `[features] hooks=false`, admin `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` — **plus a sandbox flag on `0.147`, unexplained** | no kill switch found; a team **headless policy of `disabled` blocks `-p` entirely** | **none** — per-hook `enabled:false` only, after a documented search |
-| **What makes a directory eligible** | the settings file it is given | `.codex/` walked up the working-directory ancestry | `<project>/.cursor/` | **a `.git` root, or a path in `trustedWorkspaces`** — a plain directory is not a workspace |
-| **Pre-action gate** | `PreToolUse` | `PreToolUse` + `PermissionRequest` | `beforeShellExecution` etc. | **`PreToolUse`** — fired 2× live once the structure was right |
-| **Does a hook block the agent loop?** | no | no — handlers carry `async` | not established | **yes** — *"hooks run synchronously and block the agent loop"* |
-| **Ways the config dies silently** | wrong `model` | — | wrong `model` · unknown type · unknown **event key** · **a UTF-8 BOM** | **a flat handler list on a tool event** — dropped with no diagnostic; and a malformed `injectSteps` kills the turn outright |
+| **Q2 event names** | **[L]** **31** in the binary, **9** documented — undocumented ones configurable and firing | **[B]** **10**, pinned to `0.144.4`; `SessionEnd` is in the online docs and **not in that build** | **[B]** **21**, from the bundle's own map | **[L/D]** **5** documented + `SessionStart`, which fires and is not in the docs |
+| **Q3 block at turn end** | **[L]** yes | **[L]** yes | **[L+B]** **no** — `stop` never fires under `-p`; the bundle shows it wired only to UI sites | **[L]** yes, and `decision:"continue"` means *keep going*, not *release* |
+| **Q4 deliver text mid-turn** | **[L]** yes — `PostToolUse` command hook, once per tool call | **[L]** yes — `additionalContext`; **[B]** `{decision:"block"}` replaces the tool result | **[L]** yes — via the pre-action gate's reason | **[L]** yes — `PreInvocation` + `injectSteps`; **[D]** `PostToolUse` ingests no return |
+| **Q5 evaluator in the harness** | **[L]** yes — `type: "prompt"`, and it is **Haiku 4.5**, named in `modelUsage` | **[B]** no — `prompt hooks are not supported yet` | **[L]** yes — **[B]** queued only if a `promptHookClient` exists | **[L]** no — `prompt hooks are not currently supported`, its own log |
+| **Q6 tool-using hook** | **[L]** yes — `type: "agent"` read a file off disk and blocked with its contents | **[B]** no | **[L]** no — and the entry **voids the whole file**, silently | **[L]** no — `unsupported hook type: "agent"`, file named |
+| **Q7 transcript path to a hook** | **[L]** yes | **[L]** yes; **[B]** `SubagentStop` carries the child's own transcript | **[L]** yes — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload | **[L]** yes — `transcriptPath` + `artifactDirectoryPath` |
+| **Q8 per-hook `model`** | **[L]** read — a wrong value kills the hook silently | n/a | **[L]** read — same silent death | n/a |
+| **Q9 global gate** | **[B]** `disableAllHooks`; no env var and no flag found | **[B]** `[features] hooks=false`, `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` · **[L]** plus a sandbox flag on `0.147`, unexplained | **[B]** no kill switch; a team headless policy of `disabled` blocks `-p` entirely | **[D]** none beyond per-hook `enabled:false`, after a documented search |
+| **What makes a directory eligible** | **[L]** the settings file it is given | **[B]** `.codex/` walked up the working-directory ancestry | **[B]** `<project>/.cursor/` | **[L+D]** a `.git` root, or a path in `trustedWorkspaces` — a plain directory is not a workspace |
+| **Pre-action gate** | **[L]** `PreToolUse` | **[B]** `PreToolUse` + `PermissionRequest` | **[L]** `beforeShellExecution` | **[L]** `PreToolUse` — fired 2× once the structure was right |
+| **Does a hook block the agent loop?** | **[L]** no | **[B]** no — handlers carry `async` | **[U]** not established | **[D]** yes — *"hooks run synchronously and block the agent loop"* |
+| **Ways the config dies silently** | **[L]** wrong `model` · **[L]** a prompt hook on `PostToolUse` burns a Haiku call and kills the turn either way | **[U]** none found | **[L]** wrong `model` · **[L]** unknown type · **[B]** unknown event key · **[L]** a UTF-8 BOM · **[B]** trailing commas, bad `version`, bad `matcher` regex | **[L]** a flat handler list on a tool event, dropped with no diagnostic · **[L]** a malformed `injectSteps` kills the turn |
 
-**Reading the rows.** *yes* / *no* mean a run with a positive control in the same configuration
-settled it, or the host's own artifact stated it. *not probed* and *UNKNOWN* mean exactly that.
+**Every cell carries its evidence grade, so nothing here needs re-testing unless the method improves.**
+
+| Mark | Means | Re-test? |
+|---|---|---|
+| **[L]** | **Live** — run on this machine with a positive control in the same configuration | No, unless the client version changes |
+| **[B]** | **Binary / bundle** — read out of the shipped artifact, not executed | Only if behaviour is what you need, not the schema |
+| **[D]** | **Documentation** — vendor or bundled docs, not tested | **Yes — this grade has been wrong twice today** |
+| **[U]** | **Unknown** — searched and not established, or never probed | Yes |
+
+**The reason the [D] grade is called out.** Three documented statements were checked against behaviour
+today. Claude Code's docs list 9 hook events and the binary carries 31, with the undocumented ones
+configurable and firing — **a subset presented as a list**. agy's docs list 5 events and omit
+`SessionStart`, which fires — **same shape**. And agy's per-event structure rule, which no probe had
+read, was the actual cause of three wrong negatives. Against that, one documented restriction held:
+prompt hooks really are unusable outside their four listed events, though *not* for the reason the doc
+implies. **A [D] cell is a hypothesis with a citation, and on this evidence it is wrong about as often
+as it is right.**
 
 **The last two rows are the ones that change designs.** agy is the only host where a hook is on the
 critical path by construction, so judgement cannot live inside one there. And the silent-death row is
@@ -804,10 +819,36 @@ spawned no subagent and created no task.
 
 > **Prompt-based** … Supported events: `Stop`, `SubagentStop`, `UserPromptSubmit`, `PreToolUse`.
 
-**`PostToolUse` is not on that list.** So the native evaluator cannot be attached to the mid-turn
-delivery point — a prompt hook can judge at turn end or before an action, and a *command* hook is the
-only thing available after one. That is a real constraint on `#208`'s split, and it was not visible from
-the outside.
+`PostToolUse` is not on that list. **Tested rather than inherited, because this same document
+under-reports events by 22 — and the answer is more specific than either "supported" or "not".**
+
+A `type: "prompt"` hook on `PostToolUse`, with a `command` hook beside it as the control:
+
+| Prompt hook returns | Control | Haiku in `modelUsage` | `terminal_reason` | `result` |
+|---|---|---|---|---|
+| `ok:false` | fired | **yes** — 637 in / 35 out | `hook_stopped` | empty |
+| `ok:true` | fired | **yes** — 646 in / 90 out | `hook_stopped` | empty |
+
+**The hook executes on `PostToolUse` — and the turn dies either way.** `ok:true` stops it exactly as
+`ok:false` does. So the event is not rejected, it is simply not wired to a continuation, and attaching a
+prompt hook there costs a real evaluator call and then destroys the turn.
+
+**The documentation's list is therefore correct about usability and wrong about mechanism**, and both
+halves matter: an implementer reading only the doc would not know the call is still billed, and an
+implementer reading only the probe would conclude it works.
+
+**The same run settles `#205` at live grade.** `modelUsage` names the evaluator outright:
+
+```
+claude-opus-5[1m]              in 2      out 153   costUSD 0.2392515
+claude-haiku-4-5-20251001      in 637    out 35    costUSD 0.000812
+```
+
+**The native evaluator is Haiku 4.5, and one judgement costs about three tenths of one percent of the
+main model's turn.** `#205` asks which model the reviewer calls and how a hook reaches it; on Claude Code
+the answer is that the harness makes the call itself, on Haiku, and `modelUsage` is a receipt that it
+happened. That receipt is also the cleanest liveness detector available for `#212` — **if a prompt hook
+ran, a second model appears in the usage breakdown.**
 
 **Q9 for Claude Code: `disableAllHooks`**, a settings key present 25 times in the binary. No
 `CLAUDE_CODE_DISABLE_HOOKS` environment variable and no `--no-hooks` flag were found.
