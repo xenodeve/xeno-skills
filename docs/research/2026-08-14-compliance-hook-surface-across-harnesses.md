@@ -507,7 +507,7 @@ control in the same configuration; anything not probed is written as such rather
 | | Claude Code | codex 0.147.0-alpha.6.5 | cursor 2026.08.11 | agy 1.1.12 |
 |---|---|---|---|---|
 | **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p` | **yes**, with a runaway hazard |
-| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `hookSpecificOutput.additionalContext`, quoted back verbatim | **yes** — via the pre-action gate's reason | **no** — `PreToolUse`/`PostToolUse` never fire |
+| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `hookSpecificOutput.additionalContext`, quoted back verbatim | **yes** — via the pre-action gate's reason | **yes** — `PreInvocation` + `inject_steps` (**corrected below**; the tool events are a dead end) |
 | **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, and the `model` field is read | **no** — `prompt hooks are not supported yet` (binary) | **yes** — `type: "prompt"` denied a command and its reason reached the agent | **no** — `prompt hooks are not currently supported` (its own log) |
 | **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` (binary) | **no** — and an `agent` entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
 | **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL, plus `tool_response` in the payload | **yes** — but the file holds `tool_use` and **no `tool_result`**; the command's `output` is in the hook payload instead | **yes** — `transcriptPath`, plus `artifactDirectoryPath` and `terminationReason` |
@@ -518,6 +518,55 @@ control in the same configuration; anything not probed is written as such rather
 settled it. *not probed* means exactly that. Q9 was left open deliberately: it changes installation,
 not design, and surfaces on first install.
 
+### Correction — agy has a mid-turn channel after all, and a richer one than the others
+
+**This overturns the `Q4 = no` this document carried for agy, and the correction was found by a review
+panel rather than by the probe.** A panellist pointed out that vendor documentation names
+`PreInvocation` / `PostInvocation` events, which had never been probed — every agy run above tested
+`PreToolUse` / `PostToolUse`, names carried over from Claude Code. **The events do not exist under those
+names; they exist under agy's own.** The negative was real for the events tested and useless as a
+statement about the host.
+
+The binary carries the whole contract:
+
+```
+PreInvocationHookArgs   { invocation_num, initial_num_steps }
+PreInvocationHookResult { repeated HookInjectedStep inject_steps }
+PostInvocationHookArgs  { invocation_num, initial_num_steps, model_output, model_thinking }
+
+HookInjectedStep = oneof {
+  tool_call | user_message | ephemeral_message | system_message
+  | error_message | hook_user_message | hook_ephemeral_message }
+```
+
+Probed live, with a `Stop` control in the same file: **`PreInvocation` and `PostInvocation` each fired
+twice in one turn** — once per model invocation — while `Stop` fired once. Then a `PreInvocation` hook
+returning
+
+```json
+{"inject_steps":[{"user_message":"COMPLIANCE NOTICE …"}]}
+```
+
+produced `PONG` followed by the notice, quoted back verbatim. **Mid-turn delivery works on agy.**
+
+Three things follow, and the third is a hazard:
+
+- **agy's channel is the richest of the four.** The others deliver a string; agy's oneof can inject a
+  user message, an ephemeral message, a system message, or **a tool call** the model then executes.
+- **The JSON is snake_case.** `{"injectSteps":[{"hookUserMessage":{"content":"…"}}]}` — the camelCase
+  form the proto descriptor advertises — was **rejected**. `inject_steps` / `user_message` works.
+- **A malformed injection kills the turn.** The camelCase attempt returned
+  `unknown injected step type: <nil>` and the run ended with `Error: Agent execution terminated due to
+  error`. Everywhere else in this document a bad hook fails open and silently; **on agy's injection path
+  it fails closed and takes the developer's turn with it**, which is a direct violation of the
+  fail-open principle and must be handled by the layer, not by the hook author.
+
+**The method note, since this is the second time it has bitten in one session.** Both wrong negatives
+here came from testing the event names one host uses against a host that names them differently. A
+positive control proves the *mechanism* is reachable; it says nothing about whether the *name* you
+chose is the one that host uses. Enumerate the host's own event names from its own artifact first —
+which is exactly what was done for codex and cursor, and skipped for agy.
+
 ### What a software layer has to supply, per client
 
 Follows directly from the matrix; recorded here so the design does not have to re-derive it.
@@ -526,7 +575,7 @@ Follows directly from the matrix; recorded here so the design does not have to r
 |---|---|---|
 | **codex** | **the model, and nothing else** | Block, mid-turn delivery and a rich payload (`tool_response`, `transcript_path`, `turn_id`, `tool_use_id`) are all native. Thinnest integration of the four. |
 | **cursor** | **nothing — but the design must move** | It has the evaluator *and* mid-turn delivery in one mechanism, and no turn-end callback. The reviewer belongs at the pre-action gate. Capture evidence **at the hook**, since `afterShellExecution` hands over the command's `output` that the transcript omits. Cross-segment state can key off the `turn_ended` record, which the transcript carries even though the `stop` hook does not fire. |
-| **agy** | **the model *and* mid-turn delivery** | Mid-turn delivery **cannot come from the hook layer at all** — the tool events do not fire — so it has to come from wherever the process pipe is already owned, or the host accepts turn-end review only. Any blocking `Stop` must carry its own release condition; `{"decision":"continue"}` loops to timeout with no limit. |
+| **agy** | **the model only** | Mid-turn delivery is native after all — `PreInvocation` + `inject_steps`, snake_case — so no stdin injection and no process-wrapper channel is needed. Two hard constraints instead: a blocking `Stop` must carry its own release condition (`{"decision":"continue"}` loops to timeout with no limit), and **a malformed injection terminates the turn**, so the layer must validate its own payload before emitting it. |
 | **all four** | **a liveness self-check, first** | On two of four hosts a plausible config edit — one mistyped model name — disables the layer with no signal anywhere. Tracked as `#212`. |
 
 **Claude Code is the only host with all four**, and until this probe none of its four had been verified
