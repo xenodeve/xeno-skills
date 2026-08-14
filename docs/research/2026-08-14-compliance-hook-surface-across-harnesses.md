@@ -526,6 +526,41 @@ rule census into a prompt, which is the constraint that issue is blocked on.
   `matcher`**, across a file read *and* a shell command whose output could not be fabricated
   (`(Get-Date).Ticks`).
 
+### Q6 and Q7 closed on cursor and agy
+
+**Q6 — a tool-using hook type exists on neither.**
+
+- **agy** says so itself, naming the file: `failed to parse hooks.json at …\.agents\hooks.json: unsupported hook type: "agent"`.
+- **cursor** does not say so, and the way it fails is the finding. A config with a `command` entry *and* an `{"type":"agent"}` entry on the same event ran **neither**; removing the `agent` entry and changing nothing else brought the `command` hook back. **An unrecognised entry voids every hook in the file, silently.** Filed as its own issue with the liveness self-check.
+
+**Q7 — both hosts hand a hook the transcript path, and the payloads are richer than expected.**
+
+cursor, `afterShellExecution`:
+
+```json
+{"conversation_id":"…","model":"grok-4.5","command":"echo PAYLOAD_PROBE",
+ "output":"PAYLOAD_PROBE\r\n","duration":5788.364,"sandbox":false,
+ "hook_event_name":"afterShellExecution","cursor_version":"2026.08.11-e8db854",
+ "workspace_roots":["…"],"user_email":"…",
+ "transcript_path":"C:\\Users\\…\\agent-transcripts\\<id>\\<id>.jsonl"}
+```
+
+agy, `Stop`:
+
+```json
+{"artifactDirectoryPath":"…/brain/<id>","conversationId":"<id>",
+ "modelName":"gemini-3.7-flash-high","terminationReason":"NO_TOOL_CALL",
+ "fullyIdle":true,"executionNum":0,
+ "transcriptPath":"…/brain/<id>/.system_generated/logs/transcript_full.jsonl",
+ "workspacePaths":["…"]}
+```
+
+**The "cursor omits tool outputs" claim holds — and its consequence inverts.** Reading the transcript that payload names: four records, containing the user query, an assistant `tool_use` with the command, the assistant's final text, and `{"type":"turn_ended","status":"success"}`. **There is no `tool_result` record.** So a history-only reviewer on cursor cannot see what a command returned.
+
+But **the hook payload carries `output` directly**, so the evidence is not missing — it is only missing *from the transcript*. The design consequence is therefore not a PAL sidecar to reconstruct it, but **capture at the hook**, where it is already handed over for free.
+
+One more thing that transcript shows: cursor writes a `turn_ended` record **even though the `stop` hook never fires headless**. The turn boundary exists in the file; only the callback is absent.
+
 ### A new silent-failure path, on Claude Code's prompt hook
 
 Two runs differing **only** in the hook's `model` field:
