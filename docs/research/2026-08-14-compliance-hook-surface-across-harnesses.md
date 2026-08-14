@@ -507,7 +507,7 @@ control in the same configuration; anything not probed is written as such rather
 
 | | Claude Code | codex | cursor 2026.08.11 | agy 1.1.12 |
 |---|---|---|---|---|
-| **Q2 event names** | **[L]** **31** in the binary, **9** documented — undocumented ones configurable and firing | **[B]** **10**, pinned to `0.144.4`; `SessionEnd` is in the online docs and **not in that build** | **[B]** **21**, from the bundle's own map | **[L/D]** **5** documented + `SessionStart`, which fires and is not in the docs |
+| **Q2 event names** | **[L]** **31** in the binary, **9** documented — undocumented ones configurable and firing | **[L+B]** **10 and that is all** — an exhaustive `HookEventName` enum, and an unknown key proven inert live | **[B]** **21**, from the bundle's own map | **[L/D]** **5** documented + `SessionStart`, which fires and is not in the docs |
 | **Q3 block at turn end** | **[L]** yes | **[L]** yes | **[L+B]** **no** — `stop` never fires under `-p`; the bundle shows it wired only to UI sites | **[L]** yes, and `decision:"continue"` means *keep going*, not *release* |
 | **Q4 deliver text mid-turn** | **[L]** yes — `PostToolUse` command hook, once per tool call | **[L]** yes — `additionalContext`; **[B]** `{decision:"block"}` replaces the tool result | **[L]** yes — via the pre-action gate's reason | **[L]** yes — `PreInvocation` + `injectSteps`; **[D]** `PostToolUse` ingests no return |
 | **Q5 evaluator in the harness** | **[L]** yes — `type: "prompt"`, and it is **Haiku 4.5**, named in `modelUsage` | **[B]** no — `prompt hooks are not supported yet` | **[L]** yes — **[B]** queued only if a `promptHookClient` exists | **[L]** no — `prompt hooks are not currently supported`, its own log |
@@ -518,7 +518,7 @@ control in the same configuration; anything not probed is written as such rather
 | **What makes a directory eligible** | **[L]** the settings file it is given | **[B]** `.codex/` walked up the working-directory ancestry | **[B]** `<project>/.cursor/` | **[L+D]** a `.git` root, or a path in `trustedWorkspaces` — a plain directory is not a workspace |
 | **Pre-action gate** | **[L]** `PreToolUse` | **[B]** `PreToolUse` + `PermissionRequest` | **[L]** `beforeShellExecution` | **[L]** `PreToolUse` — fired 2× once the structure was right |
 | **Does a hook block the agent loop?** | **[L]** no | **[B]** no — handlers carry `async` | **[U]** not established | **[D]** yes — *"hooks run synchronously and block the agent loop"* |
-| **Ways the config dies silently** | **[L]** wrong `model` · **[L]** a prompt hook on `PostToolUse` burns a Haiku call and kills the turn either way | **[U]** none found | **[L]** wrong `model` · **[L]** unknown type · **[B]** unknown event key · **[L]** a UTF-8 BOM · **[B]** trailing commas, bad `version`, bad `matcher` regex | **[L]** a flat handler list on a tool event, dropped with no diagnostic · **[L]** a malformed `injectSteps` kills the turn |
+| **Ways the config dies silently** | **[L]** wrong `model` · **[L]** a prompt hook on `PostToolUse` burns a Haiku call and kills the turn either way | **[L]** an unknown **event key** is ignored with no diagnostic, even under `--strict-config` · **[L]** `--ignore-user-config` also drops the *project* layer | **[L]** wrong `model` · **[L]** unknown type · **[B]** unknown event key · **[L]** a UTF-8 BOM · **[B]** trailing commas, bad `version`, bad `matcher` regex | **[L]** a flat handler list on a tool event, dropped with no diagnostic · **[L]** a malformed `injectSteps` kills the turn |
 
 **Every cell carries its evidence grade, so nothing here needs re-testing unless the method improves.**
 
@@ -852,6 +852,36 @@ ran, a second model appears in the usage breakdown.**
 
 **Q9 for Claude Code: `disableAllHooks`**, a settings key present 25 times in the binary. No
 `CLAUDE_CODE_DISABLE_HOOKS` environment variable and no `--no-hooks` flag were found.
+
+### "Is your own documentation a limit or a subset?" — asked of all four, answered three different ways
+
+The question was put to each host after Claude Code's documentation turned out to under-report its events
+by 22. **The answers do not generalise, which is itself the result.**
+
+| Host | Verdict | Evidence |
+|---|---|---|
+| **Claude Code** | **subset** — 9 documented, 31 in the binary, undocumented ones configurable and firing | **[L]** control + two undocumented events fired |
+| **agy** | **subset** — 5 documented, `SessionStart` fires and is not among them | **[L]** fired; **[D]** for anything further, it cannot grep its own binary |
+| **codex** | **accurate** — ten is the whole configurable surface | **[B]** exhaustive `HookEventName` enum at `protocol.rs:1483`; **[L]** an unknown key produced no marker while its sibling control did |
+| **cursor** | **larger than any doc** — 21 names read straight from the bundle's own map | **[B]** |
+
+**codex is the one that checked out, and it checked out for a reason worth copying:** its event list is an
+exhaustive Rust enum, so the documentation is generated from a closed set rather than curated from an open
+one. Its worker also ruled out the false positives by hand — `HookStarted` / `HookCompleted` are
+app-server notifications, and the `SessionEnd` string in the binary belongs to
+`flushTranscriptTailOnSessionEnd`, a realtime transcript setting, not a hook.
+
+**Two behaviours separate codex from cursor in a way that matters to a config generator:**
+
+- **An unsupported handler type on codex skips only that handler**, with an exact diagnostic naming the
+  file — `skipping prompt hook in …: prompt hooks are not supported yet` — and the sibling `command`
+  hook still fires. **On cursor the same mistake voids the entire file, silently.**
+- **But an unknown *event key* on codex is silently ignored**, because `HookEventsToml` has no
+  `deny_unknown_fields`, and **`--strict-config` does not catch it either.** So codex is the strictest
+  host about handler types and among the loosest about event names.
+
+**And a flag trap worth recording:** `--ignore-user-config` removed the *project* hook layer as well as
+the user layer in that probe, which cost the worker a run it correctly declined to draw conclusions from.
 
 ### What asking each CLI about itself actually bought
 
