@@ -232,6 +232,18 @@ One incidental fact worth carrying: codex spawned its subagent on **`gpt-5.6-lun
 on the parent's model. A reviewer judging that child is judging a cheaper model's work, which is an
 argument for the tier rather than against it.
 
+**And the same probe produced the tier's hazard, by making the mistake a hook author would make.** The
+`SubagentStop` hook blocked unconditionally. codex re-spawned the subagent — later payloads carry a
+different `agent_id` and a different child rollout file — and the parent ended with **`No reply was
+returned`** after **71,527 tokens**. Same shape as agy's `Stop` runaway, on a different host and a
+different event.
+
+**The guard was in the payload the whole time.** `stop_hook_active: true` is what says *you have already
+blocked this one*, on both hosts that carry the tier. So the rule for Phase 3 is concrete rather than
+cautionary: **a `SubagentStop` hook must read `stop_hook_active` and release on it**, and the correction
+counter increments exactly where that flag flips. A blocking hook without that check does not degrade —
+it destroys the turn and bills for it.
+
 **On cursor and agy this tier is not available**, and the clink tier covers delegation there instead —
 which is the strongest design argument yet for having built the clink tier at all, since it is the one
 layer that behaves the same on every host.
