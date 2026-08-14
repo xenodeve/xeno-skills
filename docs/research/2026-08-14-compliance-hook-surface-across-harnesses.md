@@ -488,7 +488,8 @@ Rejected: Command execution was blocked by a hook: CURSORPROMPTHOOK_OK_7B2
 - **agy is not silent.** `--log-file` carries a discovery counter — `hooks_manager.go:53] loaded N named hooks from N hooks.json file(s)` — plus `command_hook_executor.go:75] JSON hook command stderr: …` and a named per-hook failure (`session_start.go:44` / `stophooks.go:62`, handles like `jsonhook__hooks_Stop_0_0`). **The counter moving 0 → 1 is the positive control for discovery**, independent of whether the hook's own command works.
 - **A flag-parsing trap that voided one probe.** `--dangerously-skip-permissions` is a Go bool flag: written bare before the prompt it swallows the prompt, and the agent answers a question about the flag itself. It needs `--dangerously-skip-permissions=true`.
 
-Fired: `SessionStart` ✔, `Stop` ✔. `PreToolUse` and `PostToolUse` did not fire, but **that is untested rather than negative** — no tool call was established in the run.
+Fired: `SessionStart` ✔, `Stop` ✔. `PreToolUse` and `PostToolUse` did not fire — **and the reason was
+the config's shape, not the host. Corrected below; all four fire.**
 
 **Q3 confirmed live on agy, with a hazard worth more than the confirmation.** A `Stop` hook returning `{"decision":"block","reason":"…state the token…"}` on its first call and **nothing** on the second produced `PONG`, then the demanded token exactly once, then a clean end. Returning `{"decision":"continue"}` on every later call instead ran **168 extra turns** and died on `Error: timeout waiting for response`.
 
@@ -514,8 +515,9 @@ control in the same configuration; anything not probed is written as such rather
 | **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL + `tool_response`; **`SubagentStop` carries the child's own transcript** | **yes** — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload instead | **yes** — `transcriptPath` + `artifactDirectoryPath` |
 | **Q8 per-hook `model`** | **yes, read** — a wrong value kills the hook silently | n/a | **yes, read** — same silent death | n/a |
 | **Q9 global gate** | not probed | `[features] hooks=false`, admin `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` — **plus a sandbox flag on `0.147`, unexplained** | no kill switch found; a team **headless policy of `disabled` blocks `-p` entirely** | **UNKNOWN** — its own docs cover only per-hook `enabled:false` |
+| **Pre-action gate** | `PreToolUse` | `PreToolUse` + `PermissionRequest` | `beforeShellExecution` etc. | **`PreToolUse`** — fired 2× live once the structure was right |
 | **Does a hook block the agent loop?** | no | no — handlers carry `async` | not established | **yes** — *"hooks run synchronously and block the agent loop"* |
-| **Ways the config dies silently** | wrong `model` | — | wrong `model` · unknown type · unknown **event key** · **a UTF-8 BOM** | none silent — a malformed `injectSteps` **kills the turn** |
+| **Ways the config dies silently** | wrong `model` | — | wrong `model` · unknown type · unknown **event key** · **a UTF-8 BOM** | **a flat handler list on a tool event** — dropped with no diagnostic; and a malformed `injectSteps` kills the turn outright |
 
 **Reading the rows.** *yes* / *no* mean a run with a positive control in the same configuration
 settled it, or the host's own artifact stated it. *not probed* and *UNKNOWN* mean exactly that.
@@ -715,6 +717,52 @@ under `--trust`.
 `followup_message`; `failClosed: true` makes a hook failure block. Command hooks receive
 `CURSOR_PROJECT_DIR`, `CURSOR_VERSION`, `CURSOR_TRANSCRIPT_PATH` and `CLAUDE_PROJECT_DIR` in their
 environment.
+
+### The agy schema, read properly — and the third wrong negative it retires
+
+`hooks.md` gives a file format none of the probes above used. **The top-level key is a hook *name*, not
+the literal string `hooks`:**
+
+```json
+{ "lint-checker": {
+    "enabled": true,
+    "PostToolUse": [ { "matcher": "run_command", "hooks": [ { "type": "command", "command": "…" } ] } ] },
+  "reminder": {
+    "PreInvocation": [ { "type": "command", "command": "…" } ] } }
+```
+
+Every probe here wrote `{"hooks": {...}}`, which worked **by accident** — `hooks` was read as a hook
+name. That is also what `loaded 1 named hooks from 1 hooks.json file(s)` was reporting all along: one
+name, one file, regardless of how many events were under it.
+
+**And the structure differs per event, which is what actually broke the tool-event probes.** From the
+document's own table:
+
+| Event | Structure |
+|---|---|
+| `PreToolUse`, `PostToolUse` | **grouped** — a `matcher` regex wrapping a `hooks` array |
+| `PreInvocation`, `PostInvocation`, `Stop` | **flat** — handler objects directly in the array |
+
+Every attempt above gave the tool events a **flat** list, and the one that added `matcher` added it as a
+sibling of `command` rather than as the wrapper. Rewritten to the documented grouped form, one run:
+
+```
+2x  PreToolUse-GROUPED      2x  PostToolUse-GROUPED
+3x  CONTROL-PreInvocation-FLAT      1x  CONTROL-Stop-FLAT
+```
+
+**So agy fires all four, and the "`PreToolUse`/`PostToolUse` never fire" finding above is retired.** agy
+has a pre-action gate like the other three.
+
+**This is the third negative about agy in this document that was mine and not the host's**, and all three
+have the same shape: the mechanism was reachable and the name or structure was not the one that host
+uses. Wrong event names, then a wrong step-variant name, now a wrong per-event structure. **The
+positive-control rule catches a probe that could not have worked; it does not catch a probe that is
+testing the wrong spelling of a real thing.** Only the host's own document does that — and on agy it was
+sitting on disk the whole time.
+
+It also adds a silent-death path to agy's column, which had read *none*: **a flat handler list on a tool
+event is dropped with no diagnostic at all.** The counter still reports the file as loaded.
 
 ### What asking each CLI about itself actually bought
 
