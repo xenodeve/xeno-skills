@@ -58,7 +58,9 @@ exist on this CLI* rather than *what the compliance design can use* — and it g
 **One finding from it changes this document.** codex carries a full multi-agent surface, and **all of it
 is present in the `0.147` binary probed here**, verified by string scan: `spawn_agent` ×58,
 `wait_agent` ×22, `send_input` ×13, `close_agent` ×13, `resume_agent` ×10, plus the V2 set —
-`followup_task` ×4, `interrupt_agent` ×3, `list_agents` ×3 — and `MultiAgentVersion` ×2.
+`send_message` ×9, `followup_task` ×4, `interrupt_agent` ×3, `list_agents` ×3 — and `MultiAgentVersion` ×2.
+The full scan also confirms the execution family it documents: `exec_command` ×42, `shell_command` ×22,
+`write_stdin` ×12.
 
 **So waking an idle agent is not agy's alone.** `followup_task` sends work *and triggers a turn if the
 target is idle*, where `send_message` delivers without triggering one; `interrupt_agent` redirects a
