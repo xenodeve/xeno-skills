@@ -103,6 +103,43 @@ replace the tool result. cursor: pre-action gate. agy: `PreInvocation` injection
 **Phase 3 — the hazards**: agy's `Stop` release condition, agy's turn-killing malformed payload, and the
 three incompatible Windows quoting rules.
 
+## The clink tier — carried forward unchanged, and one constraint removed
+
+**This re-cut covers the four host CLIs and dropped the clink tier. That was an omission, not a
+decision.** `2026-08-13-review-handoff.md` §157–197 specifies it in full and none of it is superseded:
+a reviewer inside the delegation that answers *did the worker follow the skills it was handed, how many
+times was it corrected, and what were the corrections*, returns that as **data** —
+`skills_handed`, per-skill `verdicts` with the observation attached, `corrections`, `final`,
+`reviewer.continuation_id` — objects to the worker in-thread and lets it fix the work, and **decides
+nothing**. The master reads the record as ordinary evidence and judges, including judging the reviewer
+wrong.
+
+**That reporting is the tier's whole point, and the master-side reviewer has no equivalent.** A count of
+corrections and a per-skill outcome is the one thing the host-side reviewer cannot produce about itself.
+
+**Today's finding does not constrain this tier — it exempts it.** The rule "no model call inside a hook"
+binds the four hosts because their hooks are synchronous barriers. The clink reviewer runs **inside PAL**,
+never in a hook, and the 2026-08-13 plan already forbids it standing between the master and its work. So
+it is the one place in the design where judgement may simply take as long as it takes.
+
+**And one of its stated blockers is now removable.** That plan says cursor and antigravity carry
+**final text only** — their parser retains no event stream — so a reviewer there would be reviewing the
+worker's self-report, which `docs/adr/0001` rules out. The fix it proposes is extending PAL's parser.
+There is a second route, and it is measured:
+
+- **PAL spawns the worker, so PAL can install a hooks config into the worker's own workspace.**
+- **cursor loads a project-level `<cwd>/.cursor/hooks.json` and fires eight events from it** — verified,
+  including `afterShellExecution`, whose payload **carries the command's `output` verbatim**, which is
+  exactly what its transcript omits.
+
+So on cursor the worker's real trace is obtainable **without touching the parser**: the worker writes its
+own evidence to a file PAL reads. That converts `final: "unknown"` into a real verdict on the client the
+plan had written off.
+
+**It does not yet transfer to agy.** Its `PostToolUse` input carries `stepIdx` and `error` and no tool
+output, and its `PostToolUse` return is not ingested at all. agy keeps `final: "unknown"` until something
+better is measured — the honest state, not a gap to paper over.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
