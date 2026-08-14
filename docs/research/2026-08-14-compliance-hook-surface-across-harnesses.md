@@ -35,6 +35,49 @@ Its closing recommendation — normalise the *capabilities* rather than branchin
 | **Cursor Agent / CLI** | **yes — four scopes** | **yes — 21 events** | **yes — followup loop** | **yes — context inject** | **yes — fast model** | **no — no agent** | **yes — partial JSONL** | **yes — fast override** | **yes — workspace trust** |
 | **Antigravity CLI (`agy`)** | **yes — command hooks** | **yes — five events** | **yes — continue reason** | **yes — invocation inject** | **no — command only** | **no — command only** | **yes — fixed JSONL** | **no — external model** | **UNKNOWN — global gate** |
 
+
+## Addendum — codex verified live, 2026-08-14
+
+**The reviewer loop works on `codex exec`.** Probed against `codex-cli 0.147.0-alpha.6.5` in an isolated directory, with a project-level `.codex/hooks.json` and a `Stop` command hook returning `{"decision":"block","reason":"…"}`:
+
+```
+hook: Stop
+hook: Stop Blocked
+CXPROBE7            <- the agent acted on the hook's reason
+hook: Stop
+hook: Stop Completed
+```
+
+The hook fired twice, blocked on the first and allowed on the second, and the agent used the reason as its next instruction. That is the same shape verified on Claude Code the day before, and it means **codex needs no built-in evaluator for the loop itself** — only for the judgement, which PAL supplies.
+
+### Two prerequisites, both invisible from outside
+
+**The sandbox blocks hook execution, silently.** Without `--dangerously-bypass-approvals-and-sandbox` the hook never ran and **no `hook:` line appeared at all** — indistinguishable from having no hook configured. Every earlier probe in this session failed for this reason and was misread as a trust problem.
+
+**On Windows the hook needs `commandWindows`, and backslashes are eaten.** The handler schema, read from the shipped binary — `HookHandlerConfig::Command` carries `command`, `commandWindows`, `timeoutSec`, `async`, `statusMessage`, `additionalContextLimit`, and `command` is a **string, not an array** (`invalid type: sequence, expected a string`). A Windows path written with backslashes is mangled before execution. What works:
+
+```json
+"commandWindows": "cmd.exe /c \"C:/Program Files/Git/bin/bash.exe\" .codex/stop.sh"
+```
+
+This is the same defect class as the PAL config gotcha and as `xeno-skills#207` — with the difference below.
+
+### Two corrections to earlier conclusions in this session
+
+**Project-level hooks *are* loaded under `codex exec`.** An earlier probe concluded they were not, on the grounds that a deliberately broken file produced no warning. That was wrong: the file it broke was structurally valid enough to parse. With a genuinely invalid value codex names the exact path — `failed to parse hooks config C:\…\.codex\hooks.json: invalid type: sequence, expected a string at line 20 column 9`.
+
+**Trust was not the blocker.** `--dangerously-bypass-hook-trust` is still required for an unreviewed hook, but the repeated failures were the sandbox and the path form, not the project trust layer.
+
+### Where codex is better than Claude Code
+
+**codex reports an unparseable hook config; Claude Code does not.** A malformed hooks file on codex produces a warning naming the file and the line. The same class of mistake on Claude Code produces nothing anywhere — no session error, no transcript record, nothing from `claude doctor` — which is `xeno-skills#207`.
+
+### Still unverified on codex
+
+Whether `PostToolUse` `additionalContext` reaches the model mid-turn; whether `SubagentStop` fires and carries `agent_transcript_path` in practice; and whether any of this holds when PAL drives codex rather than a bare shell.
+
+---
+
 # Codex CLI
 
 ## 1. Does a hook system exist?
