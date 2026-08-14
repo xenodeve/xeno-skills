@@ -360,14 +360,33 @@ which can deny with a message and can rewrite `updated_input`; for a clink call 
 validator, since PAL is ours. **One contract, three enforcement points** — and it replaces the current
 arrangement where `clink-brainstorm` asks a skill to persuade the master to write a good prompt.
 
-**Evidence grade, stated plainly because this section is mostly proposal.** The agy half rests on
-measured capability: the delegation gate and per-agent hook firing are `[L]`. **The cursor half does
-not.** `subagentStop` has never been seen to fire in `-p`, and cursor's subagent lifecycle is driven by
-its backend rather than by a local tool call — which is why an earlier probe asking for a subagent
-returned an answer with no subagent events at all. The six things that would settle it, in order: does
-`-p` spawn a native subagent; does `subagentStart` fire; does `preToolUse` see the spawn with its full
-input; does `subagentStop` fire; is `agent_transcript_path` the child's; and does `followup_message`
-resume the same worker. **Until at least the fourth passes, the cursor path stays a candidate.**
+**Probed. Half of the cursor proposal holds and the half it was built on does not.**
+
+A `-p` run asked for two independent jobs in parallel, with every subagent event hooked and
+`preToolUse`/`postToolUse` as controls. Payloads from that single run:
+
+| Observation | Result |
+|---|---|
+| Does `-p` spawn native subagents? | **yes** — five distinct `session_id`s in one run |
+| Does the gate see the spawn? | **yes** — `preToolUse` fired with **`tool_name: "Task"`**, three times |
+| Do hooks fire *inside* each subagent? | **yes** — each child's `Read` and `Grep` calls hooked under its **own** `session_id` / `conversation_id` |
+| Does `subagentStart` fire? | **no** |
+| Does `subagentStop` fire? | **no** |
+
+**So the seam the cursor design was built on is not available headless.** `subagentStop` did not fire in
+a run where subagents demonstrably ran and the controls fired beside them — which makes this a genuine
+negative rather than an untested cell. The `followup_message` correction loop, and the loop limit that
+came with it, are unreachable in `-p` today.
+
+**What survives is the better half anyway.** cursor gets the *same* shape agy has, for the same reason:
+the gate sees the delegation before it runs, and hooks fire inside every child with per-agent identity.
+So compliance on cursor is enforced **at the tool level inside each subagent**, keyed on `session_id`,
+rather than at a worker-completion seam. The correction loop loses the *resume-the-same-worker* property
+and has to run through the master — which is the arrangement the rest of this plan already assumes.
+
+**Two of codex's six probes remain**, and both are now moot for the design rather than open: whether
+`agent_transcript_path` is the child's, and whether `followup_message` resumes the same worker, are
+properties of an event that does not fire.
 
 ## Stated uncertainties
 
