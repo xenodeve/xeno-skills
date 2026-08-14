@@ -507,14 +507,15 @@ control in the same configuration; anything not probed is written as such rather
 
 | | Claude Code | codex | cursor 2026.08.11 | agy 1.1.12 |
 |---|---|---|---|---|
-| **Q2 event names** | not enumerated | **10**, pinned to `0.144.4` — `SessionEnd` is in the online docs and **not in that build** | **21**, from the bundle's own map | **5** |
+| **Q2 event names** | **31** in the binary, **9** documented — the undocumented ones are configurable and fire | **10**, pinned to `0.144.4` — `SessionEnd` is in the online docs and **not in that build** | **21**, from the bundle's own map | **5** |
 | **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p`, though `sessionStart` does | **yes**, and `decision:"continue"` means *keep going*, not *release* |
 | **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `additionalContext`, and `PostToolUse` `{decision:"block"}` **replaces the tool result** with the objection | **yes** — via the pre-action gate's reason; `additional_context` / `agent_message` per event | **yes** — `PreInvocation` + `injectSteps` |
 | **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, `model` read | **no** — `prompt hooks are not supported yet` | **yes** — but queued **only if a `promptHookClient` exists** | **no** — *"no HTTP or prompt hooks yet"*, its own docs |
 | **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` | **no** — and the entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
 | **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL + `tool_response`; **`SubagentStop` carries the child's own transcript** | **yes** — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload instead | **yes** — `transcriptPath` + `artifactDirectoryPath` |
 | **Q8 per-hook `model`** | **yes, read** — a wrong value kills the hook silently | n/a | **yes, read** — same silent death | n/a |
-| **Q9 global gate** | not probed | `[features] hooks=false`, admin `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` — **plus a sandbox flag on `0.147`, unexplained** | no kill switch found; a team **headless policy of `disabled` blocks `-p` entirely** | **UNKNOWN** — its own docs cover only per-hook `enabled:false` |
+| **Q9 global gate** | **`disableAllHooks`**, a settings key — no env var, no flag | `[features] hooks=false`, admin `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` — **plus a sandbox flag on `0.147`, unexplained** | no kill switch found; a team **headless policy of `disabled` blocks `-p` entirely** | **none** — per-hook `enabled:false` only, after a documented search |
+| **What makes a directory eligible** | the settings file it is given | `.codex/` walked up the working-directory ancestry | `<project>/.cursor/` | **a `.git` root, or a path in `trustedWorkspaces`** — a plain directory is not a workspace |
 | **Pre-action gate** | `PreToolUse` | `PreToolUse` + `PermissionRequest` | `beforeShellExecution` etc. | **`PreToolUse`** — fired 2× live once the structure was right |
 | **Does a hook block the agent loop?** | no | no — handlers carry `async` | not established | **yes** — *"hooks run synchronously and block the agent loop"* |
 | **Ways the config dies silently** | wrong `model` | — | wrong `model` · unknown type · unknown **event key** · **a UTF-8 BOM** | **a flat handler list on a tool event** — dropped with no diagnostic; and a malformed `injectSteps` kills the turn outright |
@@ -763,6 +764,53 @@ sitting on disk the whole time.
 
 It also adds a silent-death path to agy's column, which had read *none*: **a flat handler list on a tool
 event is dropped with no diagnostic at all.** The counter still reports the file as loaded.
+
+### Claude Code inventoried against its own binary — 31 events, of which 9 are documented
+
+**Done here rather than delegated, on the same principle: the host reads its own artifact, and this
+host is the one running.** Source is `~/.local/bin/claude.exe` (266 MB) — its bundled plugin
+documentation is embedded as UTF-16, and the event names appear as `hook_event_name` values in ASCII.
+
+**Its own documentation lists nine** for plugin `hooks/hooks.json`: `PreToolUse`, `PostToolUse`, `Stop`,
+`SubagentStop`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreCompact`, `Notification`.
+
+**The binary carries thirty-one.** Beyond the nine: `PostToolBatch`, `PostToolUseFailure`, `StopFailure`,
+`PermissionRequest`, `PermissionDenied`, `SubagentStart`, `PostCompact`, `InstructionsLoaded`,
+`UserPromptExpansion`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `Elicitation`,
+`ElicitationResult`, `MessageDisplay`, `ConfigChange`, `CwdChanged`, `DirectoryAdded`, `FileChanged`,
+`Setup`, `WorktreeCreate`, `WorktreeRemove`.
+
+**The undocumented ones are configurable, not internal.** One run, one settings file, with a documented
+`PostToolUse` as the control:
+
+```
+1x  CONTROL-PostToolUse      1x  TEST-PostToolBatch      1x  TEST-InstructionsLoaded
+```
+
+`SubagentStart` and `TaskCompleted` did not fire — **untested rather than negative**, since the run
+spawned no subagent and created no task.
+
+**Two of these matter directly to the compliance design:**
+
+- **`InstructionsLoaded`** fires when instructions are loaded. `#184` exists to read the transcript for
+  which skills were invoked; this is an event that fires at the moment it happens, which is a stronger
+  seam than reconstructing it afterwards. Worth probing before that slice is built.
+- **`PostToolBatch`** is a batch-level counterpart to `PostToolUse`. The mid-turn delivery design costs
+  one hook invocation *per tool call*; if this fires once per batch it is the cheaper anchor for the same
+  job. Semantics not yet established — it fired once against a single tool call, which does not
+  distinguish the two.
+
+**A constraint that changes the reviewer's shape**, from the same embedded documentation:
+
+> **Prompt-based** … Supported events: `Stop`, `SubagentStop`, `UserPromptSubmit`, `PreToolUse`.
+
+**`PostToolUse` is not on that list.** So the native evaluator cannot be attached to the mid-turn
+delivery point — a prompt hook can judge at turn end or before an action, and a *command* hook is the
+only thing available after one. That is a real constraint on `#208`'s split, and it was not visible from
+the outside.
+
+**Q9 for Claude Code: `disableAllHooks`**, a settings key present 25 times in the binary. No
+`CLAUDE_CODE_DISABLE_HOOKS` environment variable and no `--no-hooks` flag were found.
 
 ### What asking each CLI about itself actually bought
 
