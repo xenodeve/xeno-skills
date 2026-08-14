@@ -515,9 +515,9 @@ control in the same configuration; anything not probed is written as such rather
 | **Q7 transcript path to a hook** | **[L]** yes | **[L]** yes; **[B]** `SubagentStop` carries the child's own transcript | **[L]** yes — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload | **[L]** yes — `transcriptPath` + `artifactDirectoryPath` |
 | **Q8 per-hook `model`** | **[L]** read — a wrong value kills the hook silently | n/a | **[L]** read — same silent death | n/a |
 | **Q9 global gate** | **[L]** `disableAllHooks` — control fired 2× without it, 0× with it; no env var and no flag found | **[L]** `[features] hooks=false` — control fired 1× without it, 0× with it · **[B]** `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` · **[L]** plus a sandbox flag on `0.147`, unexplained | **[B]** no kill switch; a team headless policy of `disabled` blocks `-p` entirely | **[L]** per-hook `enabled:false` works — two named hooks in one file, only the enabled one fired · **[D]** nothing global, after a search whose locations are listed |
-| **What makes a directory eligible** | **[L]** the settings file it is given | **[B]** `.codex/` walked up the working-directory ancestry | **[L]** `<project>/.cursor/hooks.json`, loaded and fired — an earlier miss here was testing events that never fire, not a path problem | **[L+D]** a `.git` root, or a path in `trustedWorkspaces` — a plain directory is not a workspace |
+| **What makes a directory eligible** | **[L]** the settings file it is given | **[L]** `.codex/` walked up the ancestry — **but only inside a git repository**: from a nested dir it found nothing until the tree was `git init`-ed, while the same config fired from its own directory | **[L]** `<project>/.cursor/hooks.json`, loaded and fired — an earlier miss here was testing events that never fire, not a path problem | **[L+D]** a `.git` root, or a path in `trustedWorkspaces` — a plain directory is not a workspace |
 | **Pre-action gate** | **[L]** `PreToolUse` | **[L]** `PreToolUse` — `permissionDecision:"deny"` blocked the tool and the reason reached the agent verbatim | **[L]** `beforeShellExecution` | **[L]** `PreToolUse` — fired 2× once the structure was right |
-| **Does a hook block the agent loop?** | **[L]** no | **[B]** no — handlers carry `async` | **[L]** **yes** — a 20 s hook added 24.9 s to the turn | **[L]** **yes, but capped** — an 8 s hook completed, a 30 s one was killed mid-run and the turn still answered; default `timeout` is 30 s |
+| **Does a hook block the agent loop?** | **[L]** **yes** — a 20 s `PreToolUse` hook delayed the tool by 22 s | **[L]** **yes by default** — a 20 s `PreToolUse` hook delayed the tool by 21 s, measured inside one run; **[B]** the handler's `async` field is the opt-out | **[L]** **yes** — a 20 s hook added 24.9 s to the turn | **[L]** **yes, but capped** — an 8 s hook completed, a 30 s one was killed mid-run and the turn still answered; default `timeout` is 30 s |
 | **Ways the config dies silently** | **[L]** wrong `model` · **[L]** a prompt hook on `PostToolUse` burns a Haiku call and kills the turn either way | **[L]** an unknown **event key** is ignored with no diagnostic, even under `--strict-config` · **[L]** `--ignore-user-config` also drops the *project* layer | **[L]** wrong `model` · **[L]** unknown type · **[B]** unknown event key · **[L]** a UTF-8 BOM · **[B]** trailing commas, bad `version`, bad `matcher` regex | **[L]** a flat handler list on a tool event, dropped with no diagnostic · **[L]** a malformed `injectSteps` kills the turn |
 
 **Every cell carries its evidence grade, so nothing here needs re-testing unless the method improves.**
@@ -779,6 +779,30 @@ sitting on disk the whole time.
 
 It also adds a silent-death path to agy's column, which had read *none*: **a flat handler list on a tool
 event is dropped with no diagnostic at all.** The counter still reports the file as loaded.
+
+### All four hosts block the turn while a hook runs
+
+Measured **inside a single run** on each host, so model-latency variance cannot confound it: the hook
+stamps a clock, sleeps, stamps again, and the tool stamps its own.
+
+| Host | Hook sleep | Tool ran, relative to hook start |
+|---|---|---|
+| **Claude Code** | 21 s | **22 s** |
+| **codex** | 20 s | **21 s** |
+| **cursor** | 20 s | turn grew by 24.9 s |
+| **agy** | 8 s completed; 30 s was killed | turn grew; capped by a 30 s default `timeout` |
+
+**So the fail-open principle is under pressure on every host, not only on agy** — which is where this
+document first raised it, from agy's documentation. The differences that remain are the escape hatches:
+codex's handler carries an `async` field, agy caps each handler with `timeout` (default 30 s), and
+nothing equivalent has been established for Claude Code or cursor.
+
+**A measurement trap that cost two runs, worth writing down.** PowerShell's `Get-Date -UFormat %s`
+returns a **local-time** epoch while git-bash's `date +%s` returns UTC, so the first attempt put the two
+stamps seven hours apart and looked like a wildly negative delay. Use
+`[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()` on the PowerShell side. A second attempt then failed
+because `cmd.exe /c "bash.exe" "<path>"` — the form that works on codex — does **not** work as a Claude
+Code hook command; a plain `.cmd` wrapper does.
 
 ### Claude Code inventoried against its own binary — 31 events, of which 9 are documented
 
