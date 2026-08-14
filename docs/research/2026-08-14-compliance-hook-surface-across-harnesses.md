@@ -504,19 +504,26 @@ Added after probing the remaining gaps, including Claude Code itself — which h
 the two capabilities the whole design rests on. Every cell below was produced by a run with a positive
 control in the same configuration; anything not probed is written as such rather than inferred.
 
-| | Claude Code | codex 0.147.0-alpha.6.5 | cursor 2026.08.11 | agy 1.1.12 |
+| | Claude Code | codex | cursor 2026.08.11 | agy 1.1.12 |
 |---|---|---|---|---|
-| **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p` | **yes**, with a runaway hazard |
-| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `hookSpecificOutput.additionalContext`, quoted back verbatim | **yes** — via the pre-action gate's reason | **yes** — `PreInvocation` + `inject_steps` (**corrected below**; the tool events are a dead end) |
-| **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, and the `model` field is read | **no** — `prompt hooks are not supported yet` (binary) | **yes** — `type: "prompt"` denied a command and its reason reached the agent | **no** — `prompt hooks are not currently supported` (its own log) |
-| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` (binary) | **no** — and an `agent` entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
-| **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL, plus `tool_response` in the payload | **yes** — but the file holds `tool_use` and **no `tool_result`**; the command's `output` is in the hook payload instead | **yes** — `transcriptPath`, plus `artifactDirectoryPath` and `terminationReason` |
-| **Q8 per-hook `model`** | **yes, read** — and a wrong value kills the hook silently | n/a — no evaluator | **yes, read** — same silent death | n/a — no evaluator |
-| **Q9 global gate** | not probed | hash trust (documentation grade) | **not probed** | **not probed** |
+| **Q2 event names** | not enumerated | **10**, pinned to `0.144.4` — `SessionEnd` is in the online docs and **not in that build** | **21**, from the bundle's own map | **5** |
+| **Q3 block at turn end** | **yes** | **yes** | **no** — `stop` never fires under `-p`, though `sessionStart` does | **yes**, and `decision:"continue"` means *keep going*, not *release* |
+| **Q4 deliver text mid-turn** | **yes** — `PostToolUse`, once per tool call | **yes** — `additionalContext`, and `PostToolUse` `{decision:"block"}` **replaces the tool result** with the objection | **yes** — via the pre-action gate's reason; `additional_context` / `agent_message` per event | **yes** — `PreInvocation` + `injectSteps` |
+| **Q5 evaluator in the harness** | **yes** — `type: "prompt"`, `model` read | **no** — `prompt hooks are not supported yet` | **yes** — but queued **only if a `promptHookClient` exists** | **no** — *"no HTTP or prompt hooks yet"*, its own docs |
+| **Q6 tool-using hook** | **yes** — `type: "agent"` read a file off disk and blocked with its contents | **no** — `agent hooks are not supported yet` | **no** — and the entry **voids the whole file**, silently | **no** — `unsupported hook type: "agent"`, file named |
+| **Q7 transcript path to a hook** | **yes** | **yes** — rollout JSONL + `tool_response`; **`SubagentStop` carries the child's own transcript** | **yes** — but the file holds `tool_use` and **no `tool_result`**; the `output` is in the payload instead | **yes** — `transcriptPath` + `artifactDirectoryPath` |
+| **Q8 per-hook `model`** | **yes, read** — a wrong value kills the hook silently | n/a | **yes, read** — same silent death | n/a |
+| **Q9 global gate** | not probed | `[features] hooks=false`, admin `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` — **plus a sandbox flag on `0.147`, unexplained** | no kill switch found; a team **headless policy of `disabled` blocks `-p` entirely** | **UNKNOWN** — its own docs cover only per-hook `enabled:false` |
+| **Does a hook block the agent loop?** | no | no — handlers carry `async` | not established | **yes** — *"hooks run synchronously and block the agent loop"* |
+| **Ways the config dies silently** | wrong `model` | — | wrong `model` · unknown type · unknown **event key** · **a UTF-8 BOM** | none silent — a malformed `injectSteps` **kills the turn** |
 
 **Reading the rows.** *yes* / *no* mean a run with a positive control in the same configuration
-settled it. *not probed* means exactly that. Q9 was left open deliberately: it changes installation,
-not design, and surfaces on first install.
+settled it, or the host's own artifact stated it. *not probed* and *UNKNOWN* mean exactly that.
+
+**The last two rows are the ones that change designs.** agy is the only host where a hook is on the
+critical path by construction, so judgement cannot live inside one there. And the silent-death row is
+why `#212` comes before anything else: on cursor there are four separate ways to end up with a
+configuration that reads correctly and does nothing.
 
 ### Correction — agy has a mid-turn channel after all, and a richer one than the others
 
