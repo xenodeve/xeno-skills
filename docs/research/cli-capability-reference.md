@@ -22,8 +22,8 @@ gate the delegation → enforce inside every child session → capture evidence 
                     → judge asynchronously → return a finding to the master
 ```
 
-Only the tool name the gate matches differs: `Agent` (Claude Code), `invoke_subagent` (agy), `Task`
-(cursor). codex's spawn path was not probed.
+Only the tool name the gate matches differs: `Agent` (Claude Code), `spawn_agent` (codex),
+`invoke_subagent` (agy), `Task` (cursor). **All four verified live.**
 
 ---
 
@@ -32,8 +32,8 @@ Only the tool name the gate matches differs: `Agent` (Claude Code), `invoke_suba
 | Feature | Claude Code | codex | cursor | agy |
 |---|---|---|---|---|
 | Delegation gate | **N** [L] `PreToolUse` on `Agent` | **N** [L] `SubagentStart` | **N** [L] `preToolUse` on `Task` | **N** [L] `PreToolUse` on `invoke_subagent` |
-| Spawn arguments visible first | **N** [L] | [U] | **N** [L] | **N** [L] |
-| Hooks inherited by children | **N** [L] | [U] | **N** [L] | **N** [L] |
+| Spawn arguments visible first | **N** [L] | **N** [L] `spawn_agent` | **N** [L] | **N** [L] |
+| Hooks inherited by children | **N** [L] | **N** [L] | **N** [L] | **N** [L] |
 | Per-child identity | **N** [L] `agent_id` | **N** [L] `agent_id` | **N** [L] `session_id` | **N** [L] `conversationId` |
 | Child's own transcript | **N** [L] | **N** [L] | **N** [L] path often `null` | **N** [L] |
 | Turn-boundary signal | **N** [L] `Stop` | **N** [L] `Stop` | **C** — tail `turn_ended` in the transcript | **N** [L] `Stop` |
@@ -62,11 +62,12 @@ is present in the `0.147` binary probed here**, verified by string scan: `spawn_
 The full scan also confirms the execution family it documents: `exec_command` ×42, `shell_command` ×22,
 `write_stdin` ×12.
 
-**So waking an idle agent is not agy's alone.** `followup_task` sends work *and triggers a turn if the
-target is idle*, where `send_message` delivers without triggering one; `interrupt_agent` redirects a
-running agent without destroying it. That is the persistent-peer-reviewer shape, on codex, at **[B]**.
-It has not been seen to fire, and the source's own router can hide a registered tool per turn — but the
-architecture can no longer treat that shape as agy-specific.
+**And the probed build runs V1, not V2 — which the tool document warned would matter.** A live run
+showed the model calling `spawn_agent`, `multi_agent_v1wait_agent` and `multi_agent_v1close_agent`, so
+the V1 family is **[L]** and namespaced. **`followup_task` is therefore not reachable in this build**; V1's
+equivalents are `send_input` on a live agent and `resume_agent` on a closed one. The persistent-peer-
+reviewer shape exists on codex, but through V1's vocabulary — exactly the distinction between *present in
+source* and *visible this turn*.
 
 ## Claude Code
 
