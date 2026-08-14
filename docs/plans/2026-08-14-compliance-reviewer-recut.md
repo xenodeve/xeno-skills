@@ -186,6 +186,57 @@ open one, and the shape of its wiring is the reason: the hook is driven by a **r
 backend**, so making it fire is not a matter of prompting harder. Until a probe sees it, treat cursor's
 native-subagent tier as unavailable and let the clink tier cover delegation there.
 
+## Feature coverage, per host — the question this plan has to answer
+
+Not raw capability: **the features this plan actually needs.**
+
+### Master side
+
+| Feature the plan needs | Claude Code | codex | cursor | agy |
+|---|---|---|---|---|
+| Capture evidence in a hook | **[L]** | **[L]** | **[L]** | **[L]** |
+| Turn boundary to segment and trigger on | **[L]** `Stop` | **[L]** `Stop` | **[L] no hook** — `turn_ended` in the transcript instead | **[L]** `Stop` |
+| Deliver text the agent reads mid-turn | **[L]** | **[L]** | **[L]** | **[L]** |
+| Block so the objection cannot be ignored | **[L]** | **[L]** | **[L]** pre-action only | **[L]** |
+| Pre-action gate, for sticky debt | **[L]** | **[L]** | **[L]** | **[L]** |
+| A transcript to judge from | **[L]** | **[L]** | **[L]** no tool results in it | **[L]** |
+| Evaluator supplied by the harness | **[L]** Haiku 4.5 | **[L]** none — PAL supplies | **[L]** yes | **[L]** none — PAL supplies |
+| Liveness canary | **[L]** | **[L]** | **[L]** | **[L]** |
+| A clean global off switch | **[L]** `disableAllHooks` | **[L]** feature flag | **[B]** none found | **[L]** per-hook only |
+
+**Every master-side feature is available on all four hosts, with one exception**: cursor has no turn-end
+hook, so the boundary comes from tailing `turn_ended` in its transcript rather than from a callback. That
+is a different implementation of the same feature, not a missing one — and it is the same file-watching
+component Phase 1.5 already requires.
+
+The two soft spots are cursor's transcript carrying no tool results — answered by capturing at
+`afterShellExecution`, whose payload does — and cursor having no global off switch, which affects
+uninstall rather than operation.
+
+### Native-subagent side
+
+| Feature the plan needs | Claude Code | codex | cursor | agy |
+|---|---|---|---|---|
+| A hook around the subagent's life | **[L]** `SubagentStart` + `SubagentStop` | **[L]** both fired | **[B]** wiring exists, backend-driven, never seen to fire | **none exist** |
+| The child's **own** transcript | **[L]** `agent_transcript_path`, distinct from the parent's | **[B]** the schema carries it | — | — |
+| Deliver an objection **into the subagent** | **[L]** blocked at `SubagentStop`; **the subagent itself emitted the demanded token** and the parent reported both lines | **[B]** same return shape | — | — |
+| A loop guard for the correction count | **[L]** `stop_hook_active` in the payload | **[B]** | — | — |
+| Identity to attribute a finding to | **[L]** `agent_id`, `agent_type`, `effort.level` | **[B]** `agent_id`, `agent_type` | — | — |
+
+**The subagent tier is complete on Claude Code and only there, today.** The block reaching the *child*
+rather than the parent is the part that matters: it makes the tier an enforcement point rather than a
+reporting one.
+
+**On cursor and agy this tier is not available**, and the clink tier covers delegation there instead —
+which is the strongest design argument yet for having built the clink tier at all, since it is the one
+layer that behaves the same on every host.
+
+**What the clink tier can see, from the earlier PAL source review** (`2026-08-13-review-handoff.md`,
+verified in source rather than measured here): `codex`, `claude` and `opencode` parsers retain the
+worker's event stream; `cursor` and `antigravity` share a parser that retains none. So the clink
+reviewer's evidence is real on three clients and a self-report on two — and today's finding gives cursor
+a way out that needs no parser change.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
