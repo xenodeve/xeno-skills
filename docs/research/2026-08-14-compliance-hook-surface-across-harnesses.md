@@ -516,7 +516,7 @@ control in the same configuration; anything not probed is written as such rather
 | **Q8 per-hook `model`** | **[L]** read — a wrong value kills the hook silently | n/a | **[L]** read — same silent death | n/a |
 | **Q9 global gate** | **[L]** `disableAllHooks` — control fired 2× without it, 0× with it; no env var and no flag found | **[L]** `[features] hooks=false` — control fired 1× without it, 0× with it · **[B]** `requirements.toml`, project trust, per-handler `enabled`, `--ignore-user-config` · **[L]** plus a sandbox flag on `0.147`, unexplained | **[B]** no kill switch; a team headless policy of `disabled` blocks `-p` entirely | **[L]** per-hook `enabled:false` works — two named hooks in one file, only the enabled one fired · **[D]** nothing global, after a search whose locations are listed |
 | **What makes a directory eligible** | **[L]** the settings file it is given | **[B]** `.codex/` walked up the working-directory ancestry | **[L]** `<project>/.cursor/hooks.json`, loaded and fired — an earlier miss here was testing events that never fire, not a path problem | **[L+D]** a `.git` root, or a path in `trustedWorkspaces` — a plain directory is not a workspace |
-| **Pre-action gate** | **[L]** `PreToolUse` | **[B]** `PreToolUse` + `PermissionRequest` | **[L]** `beforeShellExecution` | **[L]** `PreToolUse` — fired 2× once the structure was right |
+| **Pre-action gate** | **[L]** `PreToolUse` | **[L]** `PreToolUse` — `permissionDecision:"deny"` blocked the tool and the reason reached the agent verbatim | **[L]** `beforeShellExecution` | **[L]** `PreToolUse` — fired 2× once the structure was right |
 | **Does a hook block the agent loop?** | **[L]** no | **[B]** no — handlers carry `async` | **[L]** **yes** — a 20 s hook added 24.9 s to the turn | **[L]** **yes, but capped** — an 8 s hook completed, a 30 s one was killed mid-run and the turn still answered; default `timeout` is 30 s |
 | **Ways the config dies silently** | **[L]** wrong `model` · **[L]** a prompt hook on `PostToolUse` burns a Haiku call and kills the turn either way | **[L]** an unknown **event key** is ignored with no diagnostic, even under `--strict-config` · **[L]** `--ignore-user-config` also drops the *project* layer | **[L]** wrong `model` · **[L]** unknown type · **[B]** unknown event key · **[L]** a UTF-8 BOM · **[B]** trailing commas, bad `version`, bad `matcher` regex | **[L]** a flat handler list on a tool event, dropped with no diagnostic · **[L]** a malformed `injectSteps` kills the turn |
 
@@ -810,10 +810,11 @@ spawned no subagent and created no task.
 - **`InstructionsLoaded`** fires when instructions are loaded. `#184` exists to read the transcript for
   which skills were invoked; this is an event that fires at the moment it happens, which is a stronger
   seam than reconstructing it afterwards. Worth probing before that slice is built.
-- **`PostToolBatch`** is a batch-level counterpart to `PostToolUse`. The mid-turn delivery design costs
-  one hook invocation *per tool call*; if this fires once per batch it is the cheaper anchor for the same
-  job. Semantics not yet established — it fired once against a single tool call, which does not
-  distinguish the two.
+- **`PostToolBatch` fires once per batch, not per call — measured.** Three tool calls in one turn produced
+  `PreToolUse` 3×, `PostToolUse` 3× and **`PostToolBatch` 1×**. The mid-turn delivery design is currently
+  specified against `PostToolUse` and therefore pays one hook invocation per tool call; anchoring it here
+  divides that by the batch size, for the same delivery point and the same turn. It is undocumented, which
+  is the cost of using it.
 
 **A constraint that changes the reviewer's shape**, from the same embedded documentation:
 
@@ -849,6 +850,12 @@ main model's turn.** `#205` asks which model the reviewer calls and how a hook r
 the answer is that the harness makes the call itself, on Haiku, and `modelUsage` is a receipt that it
 happened. That receipt is also the cleanest liveness detector available for `#212` — **if a prompt hook
 ran, a second model appears in the usage breakdown.**
+
+**A probe hazard worth writing down: `--settings` does not replace the project file, it adds to it.**
+A run meant to test one settings file also loaded `<cwd>/.claude/settings.json` left over from an earlier
+probe — which still carried a prompt hook that kills the turn — and the result was an empty answer and a
+marker from a config that was not under test. **Isolating a Claude Code hook probe means removing the
+project settings file, not just passing `--settings`.**
 
 **Q9 for Claude Code: `disableAllHooks`**, a settings key present 25 times in the binary. No
 `CLAUDE_CODE_DISABLE_HOOKS` environment variable and no `--no-hooks` flag were found.
