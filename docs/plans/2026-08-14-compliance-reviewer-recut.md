@@ -327,6 +327,48 @@ increment the correction count where it flips.
 - **Nobody owns the worker's lifetime**, and a spool that no one drains has no defined behaviour. That is
   the next decision, and it is Phase 1.5's, not this section's.
 
+## Two native tiers that want different shapes — agy and cursor
+
+Both hosts have a real agent runtime, and the temptation is to give them the same design. **Their
+primitives point in opposite directions, and the difference is about lifecycle rather than capability.**
+
+**agy suits a peer reviewer.** Its collaboration verbs are tools, subagents go idle rather than dying,
+and a message wakes one with its context intact. So the natural shape is a **persistent reviewer agent**
+that the master or the layer messages when there is something to judge:
+
+```text
+Master ──► Worker            Master ──► Reviewer (idle ↔ awake)
+```
+
+**cursor suits a lifecycle reviewer.** Its `subagentStop` is a worker-completion seam that already
+carries the child's transcript path, and `followup_message` sends the **same worker** back to work
+rather than starting a new one. So judgement belongs *between the worker finishing and the master
+seeing the result*:
+
+```text
+Worker ──► subagentStop ──► review ──► followup_message ──► same Worker ──► Master
+```
+
+**That is a better correction loop than routing through the master**, because the worker never leaves
+its own lifecycle and no context is reconstructed. cursor also documents a loop limit on
+`stop`/`subagentStop` — default 5 — so the runaway this document recorded twice has a native guard here.
+
+**What both share is the gate, and it is the same contract in two seams.** A delegation request should be
+required to carry its own shape — objective, evidence, permissions, scope, questions — *before* the
+delegation runs. On agy that is `PreToolUse` matching `invoke_subagent`; on cursor it is `preToolUse`,
+which can deny with a message and can rewrite `updated_input`; for a clink call it is a server-side
+validator, since PAL is ours. **One contract, three enforcement points** — and it replaces the current
+arrangement where `clink-brainstorm` asks a skill to persuade the master to write a good prompt.
+
+**Evidence grade, stated plainly because this section is mostly proposal.** The agy half rests on
+measured capability: the delegation gate and per-agent hook firing are `[L]`. **The cursor half does
+not.** `subagentStop` has never been seen to fire in `-p`, and cursor's subagent lifecycle is driven by
+its backend rather than by a local tool call — which is why an earlier probe asking for a subagent
+returned an answer with no subagent events at all. The six things that would settle it, in order: does
+`-p` spawn a native subagent; does `subagentStart` fire; does `preToolUse` see the spawn with its full
+input; does `subagentStop` fire; is `agent_transcript_path` the child's; and does `followup_message`
+resume the same worker. **Until at least the fourth passes, the cursor path stays a candidate.**
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
