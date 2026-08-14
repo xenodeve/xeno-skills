@@ -167,6 +167,24 @@ boundary without a hook. That is the same component Phase 1.5 needs anyway, poin
 **Workers are the easy half.** codex and Claude Code retain a full event stream in PAL, so the clink
 reviewer reads what the worker *did*. agy remains the weak seat for the reasons stated above.
 
+## The native-subagent tier, per host
+
+The plan leans on hooks firing around a harness's **own** subagents, not only around clink workers. That
+tier was never probed until now, so what follows separates the one host that is settled from the three
+that are not.
+
+| Host | Subagent events | Grade |
+|---|---|---|
+| **Claude Code** | `SubagentStart` **and** `SubagentStop` both fired around a real `Task` subagent, with `PreToolUse` and `Stop` as controls in the same run | **[L]** |
+| **codex** | `SubagentStart`, `SubagentStop` are in its exhaustive enum, and `SubagentStop` carries `agent_transcript_path` | **[B]** — never seen to fire |
+| **cursor** | `subagentStart`, `subagentStop` are in the bundle's map | **[B]** — never seen to fire |
+| **agy** | **none.** Its five events contain no subagent event of any kind | **[L/D]** |
+
+**So the tier is only proven where the master is Claude Code**, and it is *absent by construction* on agy —
+which means a native-subagent reviewer cannot exist there whatever else is built. On codex and cursor the
+names exist and nothing more; treating them as available is the `[D]`-grade mistake this research already
+made three times.
+
 ## Stated uncertainties
 
 - Whether a delivered objection can be proved consumed exactly once across retries and restarts on every
