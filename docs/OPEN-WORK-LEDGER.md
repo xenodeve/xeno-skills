@@ -44,6 +44,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | #89 cost as representative value + spread (#73 slice 6) | 🟡 | blocked | Unblocks when #73 is approved. |
 | #90 consume the per-call cost report (#73 slice 7) | 🟡 | blocked | Unblocks when #73 is approved. |
 | #71 enforcement layer for supervised clink delegation | 🟡 | ready-for-human | Pairs with pal-mcp-server#11. |
+| #215 PRD: a typed delegation contract for clink — request in, decision state out | 🟢 | ready-for-agent | Plan: `docs/plans/2026-08-16-clink-delegation-contract.md`. Not yet cut into slices. Phase A (contracts + skills) and Phase B (master-side validation) depend on no host; Phase C is cross-repo into `xenodeve/pal-mcp-server`. Its decision states merge into the recut plan's Phase 1.5 verdict store — do not build a second state machine. |
 
 ## Track 5 — cross-repo conventions
 

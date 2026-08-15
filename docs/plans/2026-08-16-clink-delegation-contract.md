@@ -2,7 +2,7 @@
 
 Rewritten from a proposal titled *Structured Request/Response Protocol for `clink-brainstorm`*, against the
 measured capability surface in `docs/research/cli-capability-reference.md` and the delegation gate already
-sketched in `docs/plans/2026-08-14-compliance-reviewer-recut.md`.
+sketched in `docs/plans/2026-08-14-compliance-reviewer-recut.md`. **Published as PRD #215.**
 
 **The source proposal's core is right and is kept.** What changed: it is scoped to *every* clink delegation
 rather than `clink-brainstorm` alone, its response half is re-grounded on what can actually be enforced
