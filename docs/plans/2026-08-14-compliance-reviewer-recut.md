@@ -360,6 +360,10 @@ which can deny with a message and can rewrite `updated_input`; for a clink call 
 validator, since PAL is ours. **One contract, three enforcement points** — and it replaces the current
 arrangement where `clink-brainstorm` asks a skill to persuade the master to write a good prompt.
 
+**That contract is specified in `docs/plans/2026-08-16-clink-delegation-contract.md`** — field list, the
+response half, and the enforcement seam per direction. Its decision states are *this* plan's Phase 1.5
+verdict store with one more producer, not a second state machine; keep them merged.
+
 **Probed. Half of the cursor proposal holds and the half it was built on does not.**
 
 A `-p` run asked for two independent jobs in parallel, with every subagent event hooked and
