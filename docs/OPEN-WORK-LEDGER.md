@@ -64,6 +64,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | openclink#117 install a generated hooks config into the worker's own workspace | 🟢 | — | The measured cursor route to real evidence without touching the parser. Narrows openclink#115 if it lands. |
 | openclink#118 the delegation contract server-side — a role preset, and rejection before spawn | 🟡 | needs #216's artifacts | Phase C of #215. The tool has no structured-output parameter, so the response contract rides in a `role` preset. |
 | openclink#119 the compliance reviewer as a deliverable of openclink#11 | 🟡 | openclink#15 / #16 | The 2026-08-13 plan called it a sibling deliverable of that epic, gated until openclink#12 returned. **#12 is now closed**, so the gate has lifted. |
+| #221 consume the clink compliance record, so a delegation resolves past `delegated` | 🟢 | pairs openclink#119 | **The master-side half of the arrow the 2026-08-13 plan drew.** The producer was filed and the consumer was not: #202 stops at the boundary on purpose and #71 is a different layer, so a delegation would resolve to `delegated` forever even once records existed. |
 | openclink#120 drain the master-side spool so one judge serves all three tiers | 🟡 | blocked on #218 | Optional by design — the spool's consumer is interchangeable. Blocked on the spool's ownership and expiry rules, which are Phase 1.5's. |
 
 ## Track 6 — MD-only / untracked
