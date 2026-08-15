@@ -21,6 +21,17 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | #84 absolute/quoted command path escapes gate detection | 🟢 | — | Fix detection; security, Major. |
 | #83 every GitHub-mutating MCP tool bypasses the gate | 🟢 | — | Fix detection; security, Major. |
 | #218 sticky debt — an unpaid finding gates the next action (#176 Phase 1.5) | 🟢 | ready-for-agent | The piece that makes a late verdict enforceable. #199 delivers a finding and its own body says a non-blocking hook cannot compel an answer; nothing gated until this. |
+| #222 every state row cites the record it rests on | 🟢 | ready-for-agent | Write rule 2. `#189` gives the transitions and not this. Without it a `pending` row is a bare assertion the next memoryless reviewer must trust or discard. |
+| #223 deliver at most one finding per turn, ranked by the earliest missing step | 🟢 | ready-for-agent | Write rule 6. `#199` delivers; nothing selects. Four failing traces would fire four objections, which the plan says becomes a wall of text that gets skimmed. |
+| #224 turn the four stopping rules into checked gates | 🟢 | ready-for-agent | The plan wrote them *"now rather than after the work"*. `#180` measures; nothing turns a count into a stop, so slice 2 and 3 can be paid for unexamined. |
+| #225 release on `stop_hook_active` at `SubagentStop`, count corrections where the flag flips | 🟢 | ready-for-agent | A blocking hook without it *"destroys the turn and bills for it"*. The related runaway was measured at 168 extra turns. No issue in either tracker mentioned the flag. |
+| #226 a config generator with per-host allowlists and a byte readback | 🟢 | ready-for-agent | Phase 1. Prevents the class of silent death `#212` detects. `openclink#117` should consume it rather than build a second one. |
+| #227 the canary's third observation - a synthetic verdict delivered and seen consumed | 🟢 | ready-for-agent | Phase 1. `#212` stops at *the hook fired*, which reports green through every failure between the evaluator and the master. |
+| #228 Claude Code delivery adapter | 🟢 | after #218 | Phase 2. Batch event with the documented one as fallback; the batch event is undocumented so it may never be the only path. |
+| #229 codex delivery adapter | 🟢 | after #218 | Phase 2. `{decision:"block"}` replaces the tool result, which is a stronger channel than appending context. The easiest of the four. |
+| #230 cursor delivery adapter | 🟡 | after #218 | Phase 2, and the one needing the most built: no turn-end event headless, so the boundary is a `turn_ended` tail needing the design's only long-running component. |
+| #231 antigravity delivery adapter | 🟢 | after #218 | Phase 2. Richest mid-turn channel of the four, and the only host where a malformed payload is fatal. Carries the three wrong negatives recorded during design. |
+| #232 the delegation gate on all four spawn tool names, and enforcement inside the children | 🟢 | ready-for-agent | The one seam all four hosts share, verified live, and named nowhere in either tracker but #176's body. Share the matcher with `#168`. |
 
 ## Track 2 — CI / branch protection
 
@@ -96,3 +107,9 @@ unblocked by everything and produces what #217 and openclink#118 both build agai
 **Staleness note.** Three rows in this file claimed open work that was already closed, found on
 2026-08-16 by comparing against the live tracker rather than by reading the file. This file is only a
 single source while something checks it against reality; nothing does that automatically today.
+
+**Coverage note, 2026-08-16.** A body-level audit of the plans against both trackers found **eleven**
+requirements with no owner, filed as `#222`-`#232`. The structural cause: of the 32 slices `#177`-`#208`,
+exactly one names a host other than Claude Code. They were cut from the single-harness architecture of the
+2026-08-13 plan; the 2026-08-14 re-cut says four harnesses share one loop with four adapters, and none of
+those adapters had an issue. The audit is recorded as a comment on `#176`.
