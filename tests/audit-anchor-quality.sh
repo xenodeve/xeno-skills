@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-# Report-only audit of assertion quality across the shell suites (#115).
-# Never fails a build; prints findings and exits 0.
+# Audit of assertion quality across the shell suites (#115, #142).
+#
+# FINDING A NOW FAILS. It was report-only, and #142 recorded what that bought: the
+# script detected a real defect class, ran, printed it, and exited 0 -- so the
+# finding was routed to stdout and nothing acted on it. A is the one category that
+# is MECHANICALLY DECIDABLE: whether a file contains a `hasnt` call involves no
+# judgement at all. B and C stay report-only, because deciding whether an anchor
+# matched the WRONG line requires knowing which line was intended, and this script
+# does not claim judgement it cannot exercise.
+#
+# The exemption list below is the whole of the discretion, and it is stated per
+# suite with its reason rather than being a bare list of names.
 #
 # WHAT THIS CAN AND CANNOT DECIDE — recorded because the first version of this
 # script, written by a delegated worker, got it wrong in both directions:
@@ -45,6 +55,18 @@
 #     test-survey-rule  (the pipeline is listed in several places and must agree)
 #     test-gate-ledger-rule (the trailer's vocabulary appears in every consumer)
 #     test-bootstrap-wiring-rule
+#     test-repo-self-bootstrap (this repo's own install against the standard it
+#       ships — the repo root IS the system under test; nothing was withdrawn)
+#
+#   CLASSIFIED 2026-08-16 while giving finding A teeth (#142). Two suites were
+#   corrective-by-omission rather than by judgement, and reading them says
+#   otherwise:
+#     test-bro-rule — PRESERVATION. Its own header says every device is "the kind
+#       of thing a well-meaning rewrite deletes". And t4-bro QUOTES its retired
+#       phrasings in a before/after table in order to reject them, so a `hasnt`
+#       against them would fail on the CORRECTED text — the exact trap recorded
+#       below.
+#     test-repo-self-bootstrap — STRUCTURAL, listed above.
 #
 # THE TRAP THAT MAKES A NAIVE `hasnt` WORSE THAN NONE, found while classifying:
 # a corrected document usually QUOTES the withdrawn claim in order to reject it.
@@ -55,17 +77,26 @@
 # mention of it. Where that form cannot be quoted, add nothing.
 set -uo pipefail
 
+# --only-a skips findings B and C. They cost ~51 s, because each anchor is matched
+# against its target file -- and `.claude/t4.json`'s `verify` runs before every
+# `gh pr merge`. A gate that adds a minute to every merge is a gate people route
+# around. A is a `grep -c` and runs in under a second, and A is what fails a build;
+# B and C stay a report someone runs deliberately.
+ONLY_A=0
+[ "${1:-}" = "--only-a" ] && ONLY_A=1
+
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Suites exempt from finding A — see CLASSIFICATION above.
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
-test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule"
+test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
+test-bro-rule test-repo-self-bootstrap"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
 
-echo "Anchor quality audit  (report only — nothing here fails a build)"
+echo "Anchor quality audit  (finding A fails; B and C report)"
 echo "==============================================================="
 echo
 
@@ -102,6 +133,7 @@ for suite in tests/*/*.sh; do
     positive_only=$((positive_only + 1))
   fi
 
+  if [ "$ONLY_A" -eq 0 ]; then
   for i in "${!has_anchors[@]}"; do
     for j in "${!has_anchors[@]}"; do
       [ "$i" = "$j" ] && continue
@@ -129,6 +161,7 @@ for suite in tests/*/*.sh; do
       fi
     done
   done
+  fi
 
   if [ -n "$findings" ]; then
     echo "$suite"
@@ -149,4 +182,19 @@ echo "A is reported only for CORRECTIVE suites — see CLASSIFICATION in this fi
 echo "A zero there is not self-evidently a clean result: add a suite that asserts"
 echo "positively and is not in NOT_CORRECTIVE, and it must appear. If it does not,"
 echo "this check is broken rather than satisfied."
+echo
+if [ "$positive_only" -gt 0 ]; then
+  echo "FAIL: $positive_only corrective suite(s) can only ever ADD, never retire."
+  echo "      Such a suite pins the new wording and cannot notice the old, now-wrong"
+  echo "      wording sitting beside it: both sentences coexist, the suite is green,"
+  echo "      and the skill contradicts itself in the file an agent actually loads."
+  echo "      Either add a \`hasnt\` pinning the wording the rule REPLACED — in its"
+  echo "      ASSERTED form, not any mention of it — or, if the rule replaced nothing,"
+  echo "      classify the suite in NOT_CORRECTIVE with its reason. An explicit"
+  echo "      exemption, never silence."
+  exit 1
+fi
+echo "A: clean. B and C stay report-only: deciding whether an anchor matched the"
+echo "WRONG line needs to know which line was intended, and this script does not"
+echo "claim judgement it cannot exercise."
 exit 0
