@@ -55,13 +55,6 @@ THAI_TRIGGERS = {
     "design-setup":          ["เริ่มโปรเจกต์ดีไซน์", "ตั้งค่าดีไซน์"],
 }
 
-# Frontmatter words that carry no routing signal. Dropping them is what keeps a
-# trigger list from matching every prompt.
-STOP = set("""a an and are as at be been before but by can do does for from has have how if in
-into is it its may must not of on or should so that the their them then there these this those to
-use used uses using want was what when where which who why will with you your it's don't""".split())
-
-
 def read_frontmatter(path):
     """-> (name, description) or None. Deliberately tolerant: a malformed skill is
     skipped rather than fatal, because this runs in a test and a broken SKILL.md
@@ -83,12 +76,24 @@ def read_frontmatter(path):
 
 
 def english_triggers(name, description):
-    """The skill's own name, plus the distinctive words of its description."""
+    """The skill's own name and its parts, plus the quoted phrases of its
+    `Triggers include ...` sentence where the frontmatter has one.
+
+    NOT every word of the description. That was the first version and it was
+    over-broad: three skills mention "issue", so a prompt containing that word
+    routed to all three and the notice named two skills that were never required.
+    False positives are not the safe direction here -- a notice that cries wolf
+    gets ignored, and its true findings go with it. Description-wide matching is
+    the CLASSIFIER's job (#187), which is allowed to be fuzzy because it returns a
+    score; this table is the cheap deterministic half and has to be narrow."""
     out = {name.lower()}
     out.update(p for p in name.lower().split("-") if len(p) > 2)
-    for w in re.findall(r"[a-z][a-z0-9'-]{3,}", description.lower()):
-        if w not in STOP:
-            out.add(w)
+    m = re.search(r"[Tt]riggers include(.+?)(?:\.\s|$)", description, re.S)
+    if m:
+        for phrase in re.findall(r'"([^"]+)"', m.group(1)):
+            phrase = phrase.strip().lower()
+            if len(phrase) > 3:
+                out.add(phrase)
     return sorted(out)
 
 

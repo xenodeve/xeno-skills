@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Contract tests for hooks/t4-prompt-reminder
-# Seam: stdin (UserPromptSubmit JSON) + cwd -> stdout (rails reminder JSON or empty)
-# Unlike session-start, this fires EVERY turn (no per-session dedup).
+# Contract tests for hooks/t4-prompt-reminder — the GAP NOTICE (#186).
+# Seam: stdin (UserPromptSubmit JSON) + cwd -> one notice, or empty.
+#
+# What changed and why: this hook used to emit the same four sentences every turn,
+# persisted into one session's transcript 142 times. Constant text carries no new
+# information after the first turn. It now speaks only when a routed skill is
+# ABSENT, and what it says comes from what happened rather than what was claimed.
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -10,32 +14,73 @@ HOOK="$REPO_ROOT/hooks/t4-prompt-reminder"
 pass=0 fail=0
 ok()   { echo "  PASS: $1"; pass=$((pass+1)); }
 bad()  { echo "  FAIL: $1"; fail=$((fail+1)); }
-has()  { case "$1" in *"$2"*) ok "$3";; *) bad "$3 (missing: $2)";; esac; }
-empty(){ if [ -z "$1" ]; then ok "$2"; else bad "$2 (got: ${1:0:60}...)"; fi; }
+has()  { case "$1" in *"$2"*) ok "$3";; *) bad "$3 (missing: $2, got: ${1:0:90})";; esac; }
+hasnt(){ case "$1" in *"$2"*) bad "$3 (found: $2)";; *) ok "$3";; esac; }
+empty(){ if [ -z "$1" ]; then ok "$2"; else bad "$2 (got: ${1:0:70})"; fi; }
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-mkdir -p "$TMP/repo/.claude"; printf '{"t4":true}\n' > "$TMP/repo/.claude/t4.json"
-mkdir -p "$TMP/plain"
-export T4_HOOK_LOCK_DIR="$TMP/locks"
+REPO="$TMP/repo"; mkdir -p "$REPO/.claude"; printf '{"t4":true}\n' > "$REPO/.claude/t4.json"
+PLAIN="$TMP/plain"; mkdir -p "$PLAIN"
 
-run() { # cwd
-  ( cd "$1" && printf '{"session_id":"s1","prompt":"add a feature","hook_event_name":"UserPromptSubmit"}' \
+tooluse() { printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"%s"}}]}}\n' "$1"; }
+slash()   { printf '{"type":"user","message":{"content":"<command-name>/%s</command-name>"}}\n' "$1"; }
+
+run() { # cwd, prompt, transcript-path
+  ( cd "$1" && python -c "import json,sys; print(json.dumps({'session_id':'s1','hook_event_name':'UserPromptSubmit','prompt':sys.argv[1],'transcript_path':sys.argv[2]}))" "$2" "$3" \
       | bash "$HOOK" )
 }
 
-echo "Test 1: injects a rails reminder in a T4 repo"
-out="$(run "$TMP/repo")"
+PROMPT='ช่วยเปิด issue ให้หน่อย'   # routes to t4-dev-workflow via a Thai trigger
+
+echo "absent -> exactly one notice naming it:"
+EMPTY_T="$TMP/none.jsonl"; : > "$EMPTY_T"
+out="$(run "$REPO" "$PROMPT" "$EMPTY_T")"
 has "$out" '"additionalContext"' "emits additionalContext"
-has "$out" 'using-t4'            "points at using-t4"
-has "$out" 't4-dev-workflow'     "points at t4-dev-workflow for build/PR work"
+has "$out" 't4-dev-workflow'     "names the routed skill that is absent"
+[ "$(printf '%s' "$out" | grep -c additionalContext)" = "1" ] && ok "exactly one notice" || bad "more than one notice"
 
-echo "Test 2: fires again on the next turn (no dedup)"
-out2="$(run "$TMP/repo")"
-has "$out2" '"additionalContext"' "still injects on a second turn"
+echo ""
+echo "the wording reports an absence and does not assert loading:"
+hasnt "$out" "you must"  "does not say 'you must'"
+hasnt "$out" "will be loaded" "does not claim the skill will be loaded"
+has   "$out" "has not invoked" "states what has not happened"
 
-echo "Test 3: non-T4 repo is silent"
-out3="$(run "$TMP/plain")"
-empty "$out3" "no reminder without .claude/t4.json marker"
+echo ""
+echo "present as a tool-use record -> empty:"
+T="$TMP/tool.jsonl"; tooluse t4-dev-workflow > "$T"
+empty "$(run "$REPO" "$PROMPT" "$T")" "silent when the routed skill was invoked as a tool"
+
+echo ""
+echo "present only as a slash command -> also empty:"
+T2="$TMP/slash.jsonl"; slash t4-dev-workflow > "$T2"
+empty "$(run "$REPO" "$PROMPT" "$T2")" "silent when it was invoked as a slash command"
+
+echo ""
+echo "nothing routed -> nothing to be absent:"
+empty "$(run "$REPO" 'สวัสดี' "$EMPTY_T")" "a prompt matching no route is silent"
+
+echo ""
+echo "it fails to silence, never to a crash:"
+empty "$(run "$PLAIN" "$PROMPT" "$EMPTY_T")" "no marker file: silent"
+# A missing transcript must NOT hide a gap: nothing invoked is the honest reading,
+# and silence there would turn an unreadable file into a clean bill of health.
+out="$(run "$REPO" "$PROMPT" "$TMP/does-not-exist.jsonl")"
+case "$out" in *"t4-dev-workflow"*) ok "a missing transcript reports the absence rather than hiding it";;
+  *) bad "a missing transcript hid a real gap";; esac
+T3="$TMP/garbage.jsonl"; printf 'not json{\n[]\n' > "$T3"
+out="$(run "$REPO" "$PROMPT" "$T3")"; rc=$?
+[ "$rc" -eq 0 ] && ok "unparseable transcript: exit zero" || bad "unparseable transcript: exit $rc"
+
+echo ""
+echo "a large transcript completes inside a stated budget:"
+BIG="$TMP/big.jsonl"; : > "$BIG"
+for i in $(seq 1 4000); do tooluse "filler-$i"; done >> "$BIG"
+start=$(date +%s)
+run "$REPO" "$PROMPT" "$BIG" >/dev/null
+elapsed=$(( $(date +%s) - start ))
+BUDGET=5
+[ "$elapsed" -le "$BUDGET" ] && ok "4000 records in ${elapsed}s (budget ${BUDGET}s)" \
+                             || bad "4000 records took ${elapsed}s, over the ${BUDGET}s budget"
 
 echo ""
 echo "prompt-reminder: $pass passed, $fail failed"
