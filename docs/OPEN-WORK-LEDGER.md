@@ -91,8 +91,12 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 
 ## Track 7 — the compliance reviewer, being built (#176)
 
-**Ten slices implemented 2026-08-16 on PR #235**, one commit each, TDD, tree green after every one.
-Not closed: this repo closes with evidence, and the PR is open.
+**Thirty-four slices implemented 2026-08-16 on PR #235** — 42 commits, one issue each, TDD, tree
+green after every one and idempotent across two consecutive suite runs. Not closed: this repo closes
+with evidence, and the PR is open.
+
+**The ready-for-agent queue on this track is now clear except for what is parked or blocked**, and
+every park below names the thing it needs rather than the fact that it stopped.
 
 | Item | Status | Gate | Next action |
 |---|---|---|---|
@@ -103,12 +107,19 @@ Not closed: this repo closes with evidence, and the PR is open.
 | #207 quoting check · #155 ADR 0001 corrected | ✅ | PR #235 | Close on merge. |
 | #181 rule census · #188 trace file · #195 out-of-scope markers | ✅ | PR #235 | **123 rules: 41 machine / 35 trace / 47 undecidable**, against the inherited 33/68/25. The needs-a-trace bucket is about half what every downstream slice assumed. |
 | #182 stop injecting the family map | ✅ | PR #235 | 8,974 B → 1,368 B per injection; **30,424 B saved across a four-injection session**, measured by the suite. |
-| **#194** write the trace for every in-scope rule | 🟡 | **PARKED — precision, not authoring** | Most of the 21 `untraced` rules name no order at all; they matched an order word used as a preposition. Writing traces for them means inventing sequences. Needs either a human pass or a stricter order test. Evidence on the issue. |
+| **#194** write the trace for every in-scope rule | ✅ | PR #235 | **The park was wrong, and the reason is worth keeping.** 17 of the 21 were never hard: the census stores the bolded LABEL as the rule but classifies on label + sentence, so the trace generator was judging four words that said no order while the sentence that classified them said "before". Carrying the full line through: 21 → 9. Five traces written, four reclassified with individual reasons. `untraced` is **0**, and the zero is pinned — the blanket-reason population may not grow to absorb them. |
+| #198 the reviewer call · #200 skill version · #201 follow a delegation · #202 clink boundary · #203 receipts | ✅ | PR #235 | The whole reviewer half. #201 corrected the issue's stated join **by measurement**: against a real 39-delegation session the agent id appears **0** times in the master transcript and the sidecar's `toolUseId` appears **4** — the glob it asked for would have found nothing forever while looking like a harness that does not delegate. |
+| #187 · #192 · #193 the classifier, its counts, its off switch | ✅ | PR #235 | Re-cut and said so: #187 was written for a classifier inside a hook, and a hook is a synchronous barrier on every host. It is a component the detached judge calls, and the suite asserts it is **not** in `hooks.json`. |
+| #191 the router | ✅ | PR #235 | Five untrustworthiness conditions, weakness **derived** rather than listed, both answers unioned. The gap notice now calls it instead of keeping a second matching loop. |
 | **#83 · #84 · #85 · #141 · #171** | 🔴 | **PARKED — trust boundary** | They edit `t4-gate`. `t4-afk` parks a boundary-module edit regardless of diff size, because an unattended run removes the reviewer who would confirm the change is what it claims. **Needs a session with a human in it.** |
 | **#196** expiry, cap, logged drop | 🟡 | **PARKED — #178** | The cap and expiry values are a decision the plan reserved to the developer: *a guessed number written as though it were derived is the failure this section exists to prevent.* |
-| #198 · #200 · #201 · #202 · #203 | 🟢 | now unblocked by #189/#197 | The reviewer call and what feeds it. |
-| #187 the classifier | 🟡 | needs a decision | It is specified as a model call. The 2026-08-14 measurement says **no model call may sit inside a hook** on any host. Re-cut against that before building. |
-| #216 · #217 · #219 (#215) · #218 · #221 · #223 · #224 · #225 · #226 · #227 · #228–#232 | 🟢 | ready-for-agent | The rest of the queue, unblocked. |
+| #216 · #217 · #219 (#215) · #218 · #221 · #223 · #224 · #225 · #226 · #227 · #228–#232 · #142 · #145 | ✅ | PR #235 | The rest of the queue. |
+| **#199** deliver the finding at the next prompt | 🔴 | **PARKED — #177 and #179** | Both are `ready-for-human`: whether a finding raised on the last turn is carried forward or declared, and whether a small model returns the partial verdict reliably. Neither is the implementer's to answer. |
+| **#174** correct the six Bash-only scope claims | 🔴 | **PARKED — behind #171** | Its own acceptance says "in the same change as the behaviour", and the behaviour is a `t4-gate` edit. |
+| **#168** widen the PreToolUse matcher · **#236** the gate's prose false-deny | 🔴 | **PARKED — trust boundary** | Both change what `t4-gate` sees or denies. Same rule as the five above. |
+| **#156** the thai-token-optimizer write-up | 🔴 | **PARKED — the evidence is not reachable** | Its source is a 2026-08-12 session transcript and two temp files outside the repo. Writing it from here would be a reconstruction, and this repo's own rule is that a reconstructed retrospective is a hypothesis wearing a log's clothing. |
+| **#169 · #170 · #172** | 🔴 | **PARKED — behind #166** | An ADR that is `ready-for-human`. |
+| **#88 · #89 · #90 · #204** | 🔴 | labelled `blocked` | Not this track. |
 
 ## Management Plan — phased execution order
 
