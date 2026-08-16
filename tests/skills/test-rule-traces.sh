@@ -54,12 +54,49 @@ traces = open(os.path.join(root, "docs/research/rule-traces.md"), encoding="utf-
 census = open(os.path.join(root, "docs/research/rule-census.md"), encoding="utf-8").read()
 t  = int(re.search(r"\| `traced` \| (\d+) \|", traces).group(1))
 u  = int(re.search(r"\| `untraced` \| (\d+) \|", traces).group(1))
+# The reclassified rows are in the arithmetic rather than absorbed by it. A rule the
+# census sent here and this file sent to out-of-scope leaves the equation unless it
+# is named, and an equation that balances by losing a term is the gap it exists to close.
+rec = int(re.search(r"reclassified from `trace` \| (\d+) \|", traces).group(1))
 need = int(re.search(r"\| \*\*total\*\* \| \*\*\d+\*\* \| \*\*(\d+)\*\*", census).group(1))
-assert t + u == need, "traced %d + untraced %d != census needs-a-trace %d" % (t, u, need)
-print("    traced %d + untraced %d = census %d" % (t, u, need))
+assert t + u + rec == need, \
+    "traced %d + untraced %d + reclassified %d != census needs-a-trace %d" % (t, u, rec, need)
+print("    traced %d + untraced %d + reclassified %d = census %d" % (t, u, rec, need))
 PY
-[ $? -eq 0 ] && ok "traced + untraced equals the census count, so neither file hides the other's gap" \
+[ $? -eq 0 ] && ok "traced + untraced + reclassified equals the census count, so neither file hides the other's gap" \
              || bad "the two files disagree about how many rules need a trace"
+
+echo ""
+echo "#194: NO RULE IS LEFT UNPAIRED -- every in-scope rule carries a trace:"
+python - "$DOC" <<'PY'
+import re, sys
+doc = open(sys.argv[1], encoding="utf-8").read()
+u = int(re.search(r"\| `untraced` \| (\d+) \|", doc).group(1))
+body = doc.split("## Traces", 1)[1]
+left = [l.split("|")[1].strip() for l in body.splitlines() if "| untraced |" in l]
+assert u == 0, "%d rules still owe a trace: %s" % (u, left[:4])
+PY
+[ $? -eq 0 ] && ok "the untraced count is zero" \
+             || bad "in-scope rules are still owed a trace"
+# The pair that keeps the zero honest. `untraced` can be driven to zero by moving the
+# hard rules to out-of-scope, which turns work-not-done into work-impossible -- the exact
+# failure this file was built to prevent. Reclassifying is allowed, but only ARGUED: the
+# blanket reason is what an unread rule inherits, so the blanket-reason population is
+# what gets pinned. Widening the blind spot by sharing a sentence with it fails here.
+python - "$DOC" <<'PY'
+import re, sys
+doc = open(sys.argv[1], encoding="utf-8").read()
+body = doc.split("## Traces", 1)[1]
+BLANKET = "asks whether the work was done well; no sequence of messages settles that"
+n = sum(1 for l in body.splitlines() if BLANKET in l)
+assert n <= 47, "%d rows carry the blanket reason, up from 47 -- rules were folded in, not read" % n
+rec = [l for l in body.splitlines()
+       if "| out-of-scope |" in l and BLANKET not in l and "foreign CLI" not in l]
+assert rec, "no reclassified row carries a reason of its own"
+print("    %d blanket-reason rows, %d argued individually" % (n, len(rec)))
+PY
+[ $? -eq 0 ] && ok "every reclassification is argued, and the blanket blind spot did not grow" \
+             || bad "the owed rules were folded into the blanket reason instead of read"
 
 echo ""
 echo "NEGATIVE: a trace softened into a quality criterion fails:"

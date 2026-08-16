@@ -128,6 +128,15 @@ def rules():
             out.append({
                 "skill": os.path.basename(os.path.dirname(rel)),
                 "rule": head,
+                # THE FULL LINE, carried because the classification is made on it.
+                # `rule` is the bolded label -- the readable name -- and every
+                # consumer had only that, while `decidability` was decided on label
+                # PLUS sentence. So `Ship gate (/verify)` was classed as needing a
+                # trace on the strength of "before `gh pr merge`" in a tail nothing
+                # downstream could see, and the trace generator, finding no order
+                # word in four words of label, filed it as owed. Twenty-one rules
+                # sat in that gap: not hard to trace, just never shown the sentence.
+                "text": text,
                 "decidability": decidability(text),
                 "producer": producer(text),
             })

@@ -1,3 +1,9 @@
 # Local Claude permissions — not part of the committed operating layer
 .claude/settings.local.json
 Obsidian-xeno-skills/skill-usage/.invocations.log
+
+# Python bytecode. Two .pyc files were committed by this branch -- `rule-traces.py`
+# imports `rule-census.py` through importlib, which writes a cache beside the source,
+# and `git add -A` swept it in. They are build output of a generator, not the generator.
+__pycache__/
+*.pyc

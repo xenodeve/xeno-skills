@@ -78,15 +78,71 @@ REASONS = {
     "judgement": "requires reading the content of the work, not the order of the records",
 }
 
+# TRACES WRITTEN RATHER THAN DERIVED (#194). The shape library covers rules whose
+# order word is one of a handful; these five state an order in words no pattern is
+# going to generalise, and #194 asks for a trace to be WRITTEN, not for the library
+# to be stretched until a one-rule regex counts as a derivation.
+#
+# KEYED BY THE RULE'S SHA, which is the point. Reword the rule and the key stops
+# matching: the row falls back to `untraced` and the suite goes red, so someone
+# re-reads the pair instead of inheriting a trace that no longer describes anything.
+# Each of these is a statement the reviewer can check against a transcript alone.
+WRITTEN = {
+    "139fcdd52969":                  # Another agent said so.
+        "a record checking the claim appears BETWEEN the subagent report that made it "
+        "and the record that asserts it as fact",
+    "8d2011e49489":                  # Index-then-open, never whole-file scan.
+        "the record reading the index appears BEFORE the record opening any slice it "
+        "points to",
+    "7dcf8fc1962a":                  # One section, one answer, then the next.
+        "each question record is followed by its answer record before the next question "
+        "record appears",
+    "782682677c5a":                  # Deferring the memory layer.
+        "the record installing the memory layer appears in the bootstrap segment, not in "
+        "a later one",
+    "0263e78d6ba6":                  # Do not narrate what you are about to do at length
+        "the tool-use record appears BEFORE the record describing what was done",
+}
+
+# RECLASSIFIED OUT OF SCOPE, EACH WITH ITS OWN REASON. Read in full, these four state
+# no order at all -- the census reached them through a word in their sentence that is
+# not doing ordering work there. Writing traces for them would mean inventing
+# sequences, which is the failure the whole file is built against.
+#
+# THEY DO NOT GET THE BLANKET REASON. An argued reclassification and a rule that was
+# undecidable from the start look identical the moment they share a sentence, and the
+# suite counts the blanket-reason rows separately so this can never become the quiet
+# way to drive `untraced` to zero.
+RECLASSIFIED = {
+    "22ad4c76b7d9":                  # Write memory a future agent can act on, not a diary.
+        "judges the content of the memory written, not the order of the records",
+    "432c4004664d":                  # Name the skill file and quote what was written
+        "judges what a record contains, not where it sits in the sequence",
+    "e9adff722b2e":                  # Prose with no file:line / commit SHA.
+        "judges what a record contains, not where it sits in the sequence",
+    "e21292c66630":                  # The plan names the question and names who answers it
+        "settling it needs the plan document, which is not in the transcript",
+}
+
 
 def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
 
 
-def trace_for(rule):
+def trace_for(rule, text=None):
+    """Derive from the FULL rule line, name it by its label.
+
+    The two arguments are the whole fix for #194's twenty-one owed rules. The census
+    decides `decidability` on label + sentence and used to hand this function the
+    label alone, so a rule classed as needing a trace BECAUSE its sentence said
+    "before" was then judged by four words that said no such thing. Matching on the
+    sentence and interpolating the label keeps the derived trace checkable against
+    the rule's own words -- which is the property that separates it from an invented
+    one, and this repo has already shipped eleven assertions grepping for sentences a
+    worker made up."""
     short = rule if len(rule) <= 60 else rule[:57] + "..."
     for pattern, shape in ORDER_SHAPE:
-        if pattern.search(rule):
+        if pattern.search(text or rule):
             return shape % {"a": short}
     return None
 
@@ -102,9 +158,13 @@ def rows():
         elif r["decidability"] == "machine":
             state, detail = "machine", "settled by a script; no transcript needed"
         elif r["decidability"] == "trace":
-            t = trace_for(rule)
+            # A written trace beats a derived one: it was read from the whole rule by
+            # someone, where the shape library matched a keyword.
+            t = WRITTEN.get(sha(rule)) or trace_for(rule, r.get("text"))
             if t:
                 state, detail = "traced", t
+            elif sha(rule) in RECLASSIFIED:
+                state, detail = "out-of-scope", RECLASSIFIED[sha(rule)]
             else:
                 # The census says this rule names an order; the shape library cannot
                 # yet state that order as observable records. It gets its OWN state
@@ -122,6 +182,8 @@ def rows():
 
 def render(rs):
     n = lambda s: sum(1 for r in rs if r["state"] == s)
+    nre = lambda rs: sum(1 for r in rs if r["detail"] in RECLASSIFIED.values()
+                         and r["state"] == "out-of-scope")
     L = []
     A = L.append
     A("# Rule traces — reviewer-only")
@@ -146,6 +208,7 @@ def render(rs):
     A("| `machine` | %d | Settled by a script without a transcript |" % n("machine"))
     A("| `untraced` | %d | **Needs a trace; none written yet — work not done, not work impossible** |" % n("untraced"))
     A("| `out-of-scope` | %d | **Undecidable from a transcript, marked with its reason** |" % n("out-of-scope"))
+    A("| -- of which reclassified from `trace` | %d | **Argued one by one, never with the blanket reason** |" % nre(rs))
     A("| `foreign` | %d | Its trace is produced inside a foreign CLI |" % n("foreign"))
     A("| **total** | **%d** | |" % len(rs))
     A("")
@@ -154,10 +217,17 @@ def render(rs):
     A("rules and nothing for the rest concludes the rest were checked and passed.")
     A("Saying so is the difference between a known limit and a silent one.")
     A("")
-    A("**`untraced` is the honest half of this file.** The census classes %d rules as" % (n("traced") + n("untraced")))
-    A("needing a trace and %d have one, so %d are named as owed rather than quietly" % (n("traced"), n("untraced")))
-    A("filed under undecidable. Folding them in would make work-not-done read as")
-    A("work-impossible, which is the same failure this file exists to prevent.")
+    A("**The arithmetic is published so neither half can hide the other.** The census")
+    A("classes %d rules as needing a trace. %d have one, %d were read in full, state no" % (n("traced") + n("untraced") + nre(rs), n("traced"), nre(rs)))
+    A("order at all, and were reclassified out of scope with an individual reason, and")
+    A("%d are named as owed. `untraced` is the honest half: folding the owed into the" % n("untraced"))
+    A("undecidable would make work-not-done read as work-impossible, which is the same")
+    A("failure this file exists to prevent.")
+    A("")
+    A("**A reclassification never borrows the blanket reason.** An argued move and a")
+    A("rule that was undecidable from the start look identical the moment they share a")
+    A("sentence, so `tests/skills/test-rule-traces.sh` counts the blanket-reason rows")
+    A("separately — driving `untraced` to zero by quietly widening the blind spot fails.")
     A("")
     A("**`foreign` is marked distinctly from `out-of-scope`** because it is not")
     A("undecidable in principle. Those traces become reachable when")
