@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-receipt
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Resolve a finding by a RECEIPT, not by prose (#203).
+#
+# Seam: a segment as JSONL on stdin + cwd -> dismissals and expiries applied through
+# the state machine, and two counts written to .claude/t4-receipt-counts.json.
+# Exit code is always 0.
+#
+# WHAT IT PREVENTS, both of which are worse than no finding at all. Without a receipt
+# the reviewer either RE-RAISES what the master already rejected -- which is how a
+# useful critic gets switched off, taking its true findings with it -- or it READS
+# SILENCE AS CONSENT, which turns an unanswered finding into a false pass.
+#
+# A RECEIPT IS A TOKEN, NOT A SENTIMENT: `T4-DISMISS: F-001 <reason>` in the master's
+# own text. Reading a dismissal out of prose would need a model, and a model deciding
+# whether the master agreed is a second place for this layer to be wrong -- one whose
+# errors are invisible, because a mis-read agreement looks exactly like a resolved
+# finding.
+#
+# THE SPAN IS UNSET AND THAT IS THE POINT. "A finding with no receipt inside a stated
+# span" needs a number, and that number is #178 -- a decision the plan reserved for the
+# developer, to be derived from real sessions. Absent `findingExpirySegments` NOTHING
+# EXPIRES, ever. A guessed number written as though it were derived is the failure that
+# reservation exists to prevent; shipping the mechanism without it is not.
+#
+# AND EXPIRY IS NOT AGREEMENT. It ends delivery the way a dismissal does and it means
+# the opposite -- nobody decided anything -- so it is recorded with its own decision
+# word and its own decider, and counted in its own column. Folding the two together
+# would make an unanswered finding indistinguishable from a resolved one in the only
+# record anybody reads.
+set -uo pipefail
+
+segment="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+export PYTHONIOENCODING=utf-8
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+[ -f "$HERE/t4-review-state" ] || exit 0
+
+seg_file="$(mktemp)"; ops_file="$(mktemp)"
+trap 'rm -f "$seg_file" "$ops_file"' EXIT
+printf '%s\n' "$segment" > "$seg_file"
+
+# Step 1 -- the receipts in this segment, and the ageing tick. Emitted as ops; applied
+# below in bash, so `bash` means this bash.
+python - "$seg_file" "$ops_file" <<'PY'
+import json, re, sys
+
+seg_path, ops_path = sys.argv[1], sys.argv[2]
+
+RECEIPT = re.compile(r"T4-DISMISS:\s*(F-\d+)\s*(.*)")
+
+ops, seen = [], set()
+try:
+    with open(seg_path, encoding="utf-8") as f:
+        lines = f.readlines()
+except OSError:
+    lines = []
+
+for line in lines:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        rec = json.loads(line)
+    except Exception:
+        continue
+    content = (rec.get("message") or {}).get("content")
+    blocks = content if isinstance(content, list) else [{"type": "text", "text": content}]
+    for b in blocks:
+        if not isinstance(b, dict):
+            continue
+        m = RECEIPT.search(str(b.get("text") or ""))
+        if not m or m.group(1) in seen:
+            continue
+        seen.add(m.group(1))
+        ops.append({"op": "dismiss", "finding": m.group(1),
+                    "reason": m.group(2).strip() or None})
+
+# The tick goes LAST, so a finding dismissed in this very segment is not also aged.
+ops.append({"op": "age"})
+
+with open(ops_path, "w", encoding="utf-8", newline="\n") as f:
+    for o in ops:
+        f.write(json.dumps(o, ensure_ascii=False, separators=(",", ":")) + "\n")
+PY
+
+while IFS= read -r op; do
+  [ -n "$op" ] || continue
+  printf '%s' "$op" | bash "$HERE/t4-review-state" >/dev/null 2>&1 || true
+done < "$ops_file"
+
+# Step 2 -- expiries, decided from the state the ticks just produced.
+: > "$ops_file"
+python - "$PWD/.claude/t4.json" "$PWD/.claude/t4-review-state.json" "$ops_file" <<'PY'
+import json, os, sys
+
+cfg_path, state_path, ops_path = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    span = json.load(open(cfg_path, encoding="utf-8")).get("findingExpirySegments")
+    span = int(span)
+except Exception:
+    span = None                            # #178 is reserved -> nothing expires
+
+ops = []
+if span is not None and span >= 0:
+    try:
+        state = json.load(open(state_path, encoding="utf-8"))
+    except Exception:
+        state = {}
+    decided = {d.get("finding") for d in state.get("decided", [])}
+    for f in state.get("findings", []):
+        if f.get("finding") in decided:
+            continue
+        if int(f.get("unanswered", 0)) > span:
+            ops.append({"op": "expire", "finding": f["finding"],
+                        "reason": "no receipt within %d segments" % span})
+
+with open(ops_path, "w", encoding="utf-8", newline="\n") as f:
+    for o in ops:
+        f.write(json.dumps(o, ensure_ascii=False, separators=(",", ":")) + "\n")
+PY
+
+while IFS= read -r op; do
+  [ -n "$op" ] || continue
+  printf '%s' "$op" | bash "$HERE/t4-review-state" >/dev/null 2>&1 || true
+done < "$ops_file"
+
+# Step 3 -- the two counts, SEPARATELY. Derived from the record rather than tallied as
+# we go: a counter incremented beside the write drifts from what was actually written,
+# and this pair is the whole evidence that silence was not treated as consent.
+python - "$PWD/.claude/t4-review-state.json" "$PWD/.claude/t4-receipt-counts.json" <<'PY'
+import json, os, sys
+
+state_path, counts_path = sys.argv[1], sys.argv[2]
+try:
+    state = json.load(open(state_path, encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+
+decided = state.get("decided", [])
+counts = {
+    "dismissed": sum(1 for d in decided if d.get("decision") == "dismiss"),
+    "unresolved": sum(1 for d in decided if d.get("decision") == "unresolved"),
+    "open": sum(1 for f in state.get("findings", [])
+                if f.get("finding") not in {d.get("finding") for d in decided}),
+}
+tmp = counts_path + ".tmp"
+with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+    json.dump(counts, f, indent=2, sort_keys=True)
+    f.write("\n")
+os.replace(tmp, counts_path)
+PY
+exit 0

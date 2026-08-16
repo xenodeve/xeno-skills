@@ -193,6 +193,31 @@ elif name == "correct":
         reject("no such finding %r" % fid)
     hit[0]["corrections"] = int(hit[0].get("corrections", 0)) + 1
 
+elif name == "age":
+    # NOT a transition -- no row changes state. It increments a counter on every
+    # finding the master has not answered, which is what an expiry has to be measured
+    # in. Same shape as `correct`, and for the same reason: the alternative is a
+    # wall-clock, and a finding raised before a two-hour lunch is not staler than one
+    # raised before a two-minute one.
+    decided = {d.get("finding") for d in state["decided"]}
+    for f in state["findings"]:
+        if f.get("finding") not in decided:
+            f["unanswered"] = int(f.get("unanswered", 0)) + 1
+
+elif name == "expire":
+    # A SIXTH TRANSITION, AND IT IS CALLED ONE RATHER THAN DISGUISED AS A DISMISSAL
+    # (#203). It ends delivery like `dismiss` does, and it means the opposite: nobody
+    # decided anything. Recording it as a dismissal would turn an unanswered finding
+    # into agreement, which is the false pass this whole slice exists to prevent, so
+    # the decision word and the decider are both different and both asserted.
+    fid = op.get("finding") or reject("expire needs a finding id")
+    if not any(f.get("finding") == fid for f in state["findings"]):
+        reject("no such finding %r" % fid)
+    if any(d.get("finding") == fid for d in state["decided"]):
+        sys.exit(0)                              # already decided: idempotent
+    state["decided"].append({"finding": fid, "decision": "unresolved",
+                             "reason": op.get("reason"), "by": "expiry"})
+
 elif name == "dismiss":                          # transition 5 -- a finding is dismissed
     fid = op.get("finding") or reject("dismiss needs a finding id")
     if not any(f.get("finding") == fid for f in state["findings"]):
