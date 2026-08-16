@@ -176,7 +176,7 @@ The per-host column above is the plug. This is the socket, and it is most of the
 
 ## Not established
 
-codex's spawn path, child hook inheritance and child identity through a real subagent · whether
+**Closed 2026-08-16:** a `PreToolUse` matcher fires on an MCP tool name — exact and regex, with the fully-qualified `mcp__<server>__<tool>` in the payload, control in the same run (#219). Still open: codex's spawn path, child hook inheritance and child identity through a real subagent · whether
 `injectSteps.toolCall` can inject `invoke_subagent` or `send_message` on agy · whether an idle agy
 subagent wakes with its context · whether a hook can spawn a detached child on codex, cursor or agy · a
 global off switch for cursor.
