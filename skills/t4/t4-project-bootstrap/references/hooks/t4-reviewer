@@ -227,7 +227,17 @@ for v in verdicts:
     op = {"op": "open", "rule": rule, "state": where,
           "record": v["record"], "uuid": v["uuid"]}
     skill = rule_skill.get(rule)
-    if unreadable and verdict == "violated":
+    # A CLINK DELEGATION RESOLVES TO `delegated`, NEVER TO `violated` (#202). What the
+    # worker did in private is not recorded, so a violation attributed across that
+    # boundary is a verdict on evidence that does not exist. This is the same ceiling
+    # the master already has -- it cannot be violated on what it cannot see either --
+    # applied one level down. The row stays pending, sourced, and counted.
+    if str(v.get("source") or "").startswith("clink:") and verdict == "violated":
+        where, close = "pending", None
+        op["state"] = "pending"
+        op["reason"] = ("delegated across the clink boundary: what the worker did in "
+                        "private is not recorded, so this cannot resolve to violated")
+    elif unreadable and verdict == "violated":
         where, close = "unknown", None
         op["state"] = "unknown"
         op["reason"] = ("a delegation's transcript could not be read (%s), so the "

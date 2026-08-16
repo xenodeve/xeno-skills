@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-clink-boundary
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The facts that ARE visible at the clink boundary (#202).
+#
+# Seam: the repo root as $1 + a segment as JSONL on stdin -> one JSON object:
+#   {"calls":[{"tool_use_id","cli","skills":[{"name","match","shipped"}],
+#              "sentinel","asks_to_run","fresh_thread"}],
+#    "count": N}
+# Exit code is always 0.
+#
+# WHY THIS IS NOT "THE DELEGATION IS OPAQUE". Most of one session's delegations went
+# to a foreign CLI, and what the worker did in private is genuinely not recorded. But
+# the rules that matter most are facts about the MASTER'S OWN PROMPT, and that prompt
+# is right there in the call's input. Treating the largest delegation channel as
+# entirely dark throws away the half that is lit.
+#
+# EVERY FIELD HERE IS A STRING MATCH ON A HARNESS-WRITTEN RECORD. No model, no
+# judgement, no verdict. What is left -- whether the worker followed what it was
+# handed -- is `delegated`, counted, and never a violation: the same ceiling the
+# master already has, one level down.
+#
+# THE MCP PREFIX COMES FROM THE CLIENT'S REGISTRATION KEY, not the server's name --
+# `mcp__pal__clink` on this machine, and something else on a machine that registered
+# the same server under another key. So the match is on the tool-name SUFFIX. Keying
+# on the full name would silently see zero delegations wherever the key differs.
+#
+# THE VERSION CHECK IS CONTAINMENT, AND ITS LIMIT IS STATED. A prompt that contains
+# the shipped file verbatim was handed the shipped version; a prompt that names the
+# skill in a frontmatter line but does not contain the file was handed some OTHER
+# version, and `stale` is what that is called here. It does not reconstruct which
+# other version -- there is nothing at the boundary to reconstruct it from.
+set -uo pipefail
+
+root="${1:-}"
+segment="$(cat)"
+command -v python >/dev/null 2>&1 || exit 0
+export PYTHONIOENCODING=utf-8
+
+seg_file="$(mktemp)"; trap 'rm -f "$seg_file"' EXIT
+printf '%s\n' "$segment" > "$seg_file"
+
+python - "$root" "$seg_file" <<'PY'
+import hashlib, json, os, re, sys
+
+root, seg_path = sys.argv[1], sys.argv[2]
+
+# The sentinel is the exact string clink-subagents specifies -- the reply a worker that
+# cannot execute commands is told to send. Not invented here.
+SENTINEL = "TOOLCHAIN_DEAD"
+# A delegation whose result depends on a command having executed. A broken tool chain
+# does not error: it returns exit 0 with a plausible answer, so a run WITHOUT the
+# sentinel is the case worth reporting, and detecting the run is what makes that
+# possible. Deliberately narrow -- an instruction to run something names the thing.
+RUNS = re.compile(r"\brun\b[^\n]{0,40}`|\bexit code\b", re.I)
+
+shipped = {}
+for base in ("skills/multi-agent", "skills/t4", "skills"):
+    d = os.path.join(root, base)
+    if not os.path.isdir(d):
+        continue
+    for name in os.listdir(d):
+        path = os.path.join(d, name, "SKILL.md")
+        if os.path.isfile(path) and name not in shipped:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    body = f.read()
+            except OSError:
+                continue
+            shipped[name] = (body, hashlib.sha256(body.encode("utf-8")).hexdigest()[:12])
+
+calls = []
+try:
+    with open(seg_path, encoding="utf-8") as f:
+        lines = f.readlines()
+except OSError:
+    lines = []
+
+for line in lines:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        rec = json.loads(line)
+    except Exception:
+        continue
+    content = (rec.get("message") or {}).get("content")
+    if not isinstance(content, list):
+        continue
+    for block in content:
+        if not isinstance(block, dict) or block.get("type") != "tool_use":
+            continue
+        name = block.get("name") or ""
+        if not (name == "clink" or name.endswith("__clink")):
+            continue
+        inp = block.get("input") or {}
+        prompt = str(inp.get("prompt") or "")
+
+        found = []
+        for skill, (body, sha) in sorted(shipped.items()):
+            if body and body in prompt:
+                found.append({"name": skill, "match": "shipped", "shipped": sha})
+            elif re.search(r"^name:\s*%s\s*$" % re.escape(skill), prompt, re.M):
+                # Named in a pasted frontmatter, but not the bytes this repo ships:
+                # the worker was handed rules nobody here maintains.
+                found.append({"name": skill, "match": "stale", "shipped": sha})
+
+        calls.append({
+            "tool_use_id": block.get("id"),
+            "cli": inp.get("cli_name"),
+            "skills": found,
+            "sentinel": SENTINEL in prompt,
+            "asks_to_run": bool(RUNS.search(prompt)),
+            # A checking seat needs a FRESH thread: the lineage that proposed a
+            # hypothesis cannot be the one asked to falsify it. Reused here means the
+            # call continued an existing thread.
+            "fresh_thread": not inp.get("continuation_id"),
+        })
+
+print(json.dumps({"calls": calls, "count": len(calls)},
+                 ensure_ascii=False, separators=(",", ":")))
+PY
+exit 0
