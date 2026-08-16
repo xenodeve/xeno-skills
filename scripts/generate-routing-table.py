@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+"""Generate the routing table and the classifier's closed list from the skill graph (#183).
+
+Run:  python scripts/generate-routing-table.py            # write hooks/routing-table.json
+      python scripts/generate-routing-table.py --check    # exit 1 if the artifact is stale
+
+WHY THIS IS GENERATED AND NOT WRITTEN. A second table maintained by hand is a
+second routing universe, and it drifts the day someone edits one and not the
+other -- the duplicate-site defect the survey rule exists to catch, built in on
+purpose. The source of truth is every `skills/**/SKILL.md` frontmatter.
+
+WHY ONE FILE AND NOT TWO. The issue asks for two artifacts: the routing table and
+the classifier's closed list. They are emitted as two keys of one file rather than
+two files, because the closed list is exactly the set of names in the table -- two
+files would reintroduce the drift this issue exists to remove, one layer down.
+
+WHY THERE IS A THAI MAP IN HERE. The developer writes in Thai. A table built from
+English frontmatter matches almost nothing and falls through on nearly every turn,
+which is the same as having no table. The Thai terms cannot be derived from the
+frontmatter because the frontmatter is English, so they live here -- in the
+generator, in ONE place, generated into the artifact. Adding a Thai term is an
+edit to this file followed by a regenerate; it is never an edit to the artifact.
+"""
+import argparse
+import json
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ARTIFACT = os.path.join(ROOT, "hooks", "routing-table.json")
+
+# Thai trigger terms per skill. English triggers come from the frontmatter; these
+# cannot, because the frontmatter is English. Keep them short and specific -- a
+# term that matches everything routes everything, which is worse than no route.
+THAI_TRIGGERS = {
+    "using-t4":              ["ทำยังไง", "ขั้นตอน", "เริ่มงาน", "สกิลไหน"],
+    "t4-dev-workflow":       ["เปิด issue", "เปิด pr", "แตก issue", "ทำ prd", "merge"],
+    "t4-bro":                ["อธิบาย", "สรุปให้ฟัง", "รายงาน", "ตอบมา"],
+    "t4-agent-memory":       ["ค้างอยู่", "ทำถึงไหน", "จำไว้", "บันทึกไว้"],
+    "t4-afk":                ["ทำต่อเลย", "จัดการให้หมด", "ไม่ต้องถาม", "เคลียร์คิว"],
+    "t4-engineering-records": ["บันทึกการตัดสินใจ", "post-mortem", "adr"],
+    "t4-project-bootstrap":  ["ตั้ง repo", "ติดตั้งมาตรฐาน", "repo ใหม่"],
+    "karpathy-guidelines":   ["เขียนโค้ด", "แก้โค้ด", "refactor"],
+    "using-clink":           ["ส่งให้ ai อื่น", "ถามตัวอื่น", "delegate"],
+    "clink-brainstorm":      ["ระดมความคิด", "ขอความเห็น", "หลายโมเดล", "brainstorm"],
+    "clink-subagents":       ["แบ่งงาน", "ให้ตัวอื่นทำ", "subagent"],
+    "clink-debug":           ["หาบั๊ก", "ทำไมพัง", "debug"],
+    "clink-masteragent":     ["เลือกโมเดล", "ใครควรทำ", "โมเดลไหน"],
+    "ask-xeno":              ["มีสกิลไหม", "ใช้สกิลอะไร", "ไม่รู้จะใช้อะไร"],
+    "using-design":          ["ออกแบบ", "หน้าเว็บ", "ui", "ดีไซน์"],
+    "design-audit":          ["ตรวจดีไซน์", "รีวิว ui"],
+    "design-psychology":     ["จิตวิทยาการออกแบบ"],
+    "design-rules":          ["กฎการออกแบบ", "typography", "สี"],
+    "design-setup":          ["เริ่มโปรเจกต์ดีไซน์", "ตั้งค่าดีไซน์"],
+}
+
+# Frontmatter words that carry no routing signal. Dropping them is what keeps a
+# trigger list from matching every prompt.
+STOP = set("""a an and are as at be been before but by can do does for from has have how if in
+into is it its may must not of on or should so that the their them then there these this those to
+use used uses using want was what when where which who why will with you your it's don't""".split())
+
+
+def read_frontmatter(path):
+    """-> (name, description) or None. Deliberately tolerant: a malformed skill is
+    skipped rather than fatal, because this runs in a test and a broken SKILL.md
+    should fail that skill's own suite, not this generator."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return None
+    m = re.match(r"^---\s*\n(.*?)\n---\s*\n", text, re.S)
+    if not m:
+        return None
+    block = m.group(1)
+    name = re.search(r"^name:\s*(.+?)\s*$", block, re.M)
+    desc = re.search(r"^description:\s*(.+?)\s*$", block, re.M | re.S)
+    if not name:
+        return None
+    return name.group(1).strip(), (desc.group(1).strip() if desc else "")
+
+
+def english_triggers(name, description):
+    """The skill's own name, plus the distinctive words of its description."""
+    out = {name.lower()}
+    out.update(p for p in name.lower().split("-") if len(p) > 2)
+    for w in re.findall(r"[a-z][a-z0-9'-]{3,}", description.lower()):
+        if w not in STOP:
+            out.add(w)
+    return sorted(out)
+
+
+def build():
+    routes = []
+    for dirpath, _dirnames, filenames in os.walk(os.path.join(ROOT, "skills")):
+        if "SKILL.md" not in filenames:
+            continue
+        fm = read_frontmatter(os.path.join(dirpath, "SKILL.md"))
+        if not fm:
+            continue
+        name, description = fm
+        routes.append({
+            "skill": name,
+            "path": os.path.relpath(os.path.join(dirpath, "SKILL.md"), ROOT).replace("\\", "/"),
+            "triggers_en": english_triggers(name, description),
+            "triggers_th": THAI_TRIGGERS.get(name, []),
+        })
+    routes.sort(key=lambda r: r["skill"])
+    return {
+        "generated_by": "scripts/generate-routing-table.py",
+        "source": "skills/**/SKILL.md frontmatter",
+        "note": "Generated. Do not hand-edit -- regenerate. Thai terms live in the generator.",
+        "skills": [r["skill"] for r in routes],     # the classifier's closed list
+        "routes": routes,                           # the routing table
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true",
+                    help="exit 1 if the committed artifact disagrees with the skill graph")
+    args = ap.parse_args()
+
+    fresh = json.dumps(build(), indent=2, ensure_ascii=False) + "\n"
+
+    if args.check:
+        try:
+            with open(ARTIFACT, encoding="utf-8") as f:
+                on_disk = f.read()
+        except OSError:
+            print("routing-table.json is missing -- run scripts/generate-routing-table.py",
+                  file=sys.stderr)
+            return 1
+        if on_disk != fresh:
+            print("routing-table.json disagrees with the skill graph -- regenerate it",
+                  file=sys.stderr)
+            return 1
+        return 0
+
+    with open(ARTIFACT, "w", encoding="utf-8", newline="\n") as f:
+        f.write(fresh)
+    print("wrote %s (%d skills)" % (os.path.relpath(ARTIFACT, ROOT), len(build()["skills"])))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
