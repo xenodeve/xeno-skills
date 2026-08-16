@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-segment
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Extract the segment the reviewer reads (#197).
+#
+# Seam: a transcript path as $1 -> the segment as JSONL on stdout, one record per
+# line, or NOTHING when the segment is not worth reviewing. A pure function over a
+# file, testable without any wiring. Exit code is always 0.
+#
+# STOP TO STOP, not prompt to prompt. A large share of turns are opened by a task
+# notification rather than by a person, and those are exactly the turns where
+# delegated results land -- so a segment anchored on the previous developer prompt
+# skips the turns most worth reading.
+#
+# TWO FILTERS, and both exist because of something measured:
+#
+#   1. HOOK-WRITTEN RECORDS ARE REMOVED. The old constant reminder was persisted
+#      into one session's transcript 142 times. Unfiltered, each reviewer reads its
+#      own predecessor's finding inside its own segment and either counts it as
+#      evidence or raises it again. This is the system talking to itself, not the
+#      master doing work.
+#
+#   2. A SEGMENT WITH NO TOOL USE IS SKIPPED, before anything downstream spawns.
+#      An idle turn then costs nothing, which is what keeps the reviewer off the
+#      critical path in the common case.
+set -uo pipefail
+
+[ -n "${1:-}" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+python - "$1" <<'PY'
+import json, sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8", errors="replace") as f:
+        raw = f.readlines()
+except Exception:
+    sys.exit(0)                      # missing or unreadable -> empty, never raise
+
+records = []
+for line in raw:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        rec = json.loads(line)
+    except Exception:
+        continue                     # a truncated final line is normal while appending
+    if isinstance(rec, dict):
+        records.append(rec)
+
+def is_stop(rec):
+    """A turn boundary. The harness writes several shapes; any of them closes a
+    segment. A compaction boundary closes one too -- everything before it is
+    truncated, so it cannot be part of the segment being judged."""
+    if rec.get("type") in ("compact_boundary", "stop"):
+        return True
+    if rec.get("subtype") in ("compact_boundary", "stop"):
+        return True
+    if rec.get("isCompactSummary"):
+        return True
+    return rec.get("hook_event_name") == "Stop"
+
+def is_hook_written(rec):
+    """The system talking to itself. Attachments and injected context are written
+    BY the hooks, so a reviewer that reads them is reading its own predecessor."""
+    if rec.get("type") == "attachment":
+        return True
+    msg = rec.get("message") or {}
+    content = msg.get("content")
+    texts = []
+    if isinstance(content, str):
+        texts.append(content)
+    elif isinstance(content, list):
+        for b in content:
+            if isinstance(b, dict) and isinstance(b.get("text"), str):
+                texts.append(b["text"])
+    for t in texts:
+        # The markers the harness and these hooks use for injected context. A
+        # finding this layer emitted must never come back as evidence.
+        if "<system-reminder>" in t or t.startswith("T4: ") or "hookSpecificOutput" in t:
+            return True
+    return False
+
+def has_tool_use(rec):
+    msg = rec.get("message") or {}
+    content = msg.get("content")
+    if not isinstance(content, list):
+        return False
+    return any(isinstance(b, dict) and b.get("type") == "tool_use" for b in content)
+
+# The segment is everything after the LAST boundary that is not itself the last
+# record. Anchoring on the final record would produce an empty segment on the very
+# turn the reviewer is meant to read.
+start = 0
+for i, rec in enumerate(records[:-1] if records else []):
+    if is_stop(rec):
+        start = i + 1
+
+segment = [r for r in records[start:] if not is_stop(r) and not is_hook_written(r)]
+
+if not any(has_tool_use(r) for r in segment):
+    sys.exit(0)                      # idle turn -> nothing spawns, nothing costs
+
+for rec in segment:
+    print(json.dumps(rec, ensure_ascii=False))
+PY
