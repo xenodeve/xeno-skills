@@ -138,6 +138,18 @@ elif name == "reevaluate":                       # transition 4 -- an unknown is
         print(json.dumps(finding, ensure_ascii=False))
         sys.exit(0)
 
+elif name == "correct":
+    # NOT a sixth transition -- no row changes state. It increments a counter on an
+    # existing finding, at the one point that distinguishes a NEW objection from the
+    # SAME objection re-delivered: where stop_hook_active flips (#225). Counted
+    # anywhere else it either double-counts a re-delivery or misses a genuine second
+    # objection, and both make the reported figure worse than no figure.
+    fid = op.get("finding") or reject("correct needs a finding id")
+    hit = [f for f in state["findings"] if f.get("finding") == fid]
+    if not hit:
+        reject("no such finding %r" % fid)
+    hit[0]["corrections"] = int(hit[0].get("corrections", 0)) + 1
+
 elif name == "dismiss":                          # transition 5 -- a finding is dismissed
     fid = op.get("finding") or reject("dismiss needs a finding id")
     if not any(f.get("finding") == fid for f in state["findings"]):
