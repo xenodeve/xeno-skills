@@ -47,6 +47,7 @@ The four scripts are the canonical hook scripts, kept byte-identical to the plug
 - **Marker-guarded:** every hook exits silently unless `<cwd>/.claude/t4.json` exists, so a copy leaking into a non-T4 checkout does nothing.
 - **Fail-safe:** no bash on the machine → `run-hook.cmd` exits 0 and the hooks become no-ops (a missing reminder, never a broken session).
 - **The gate never auto-approves** — silence means "no opinion, normal permission flow"; it only ever adds a `deny` or an `ask`.
+- **Quote every path in a `command`, always.** An unquoted path containing a space makes the hook **never run, silently** — no session error, no transcript record, nothing from `claude doctor`. On Windows a path with a space is the normal case (`C:\Program Files`, a user directory with a space), so a repo wired by hand this way has **no gate at all and no way to tell** — the same end state as a missing `t4.json`. Write `"<path>" <arg>`, never `<path> <arg>`. `tests/hooks/test-command-quoting.sh` checks the wiring this bootstrap ships and carries a positive control, because a checker nobody has seen fail has not been shown to detect anything.
 
 ## Ship gate: verify + CI — the layer that actually holds
 
