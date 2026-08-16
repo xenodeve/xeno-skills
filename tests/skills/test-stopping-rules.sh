@@ -56,6 +56,8 @@ echo ""
 echo "POSITIVE CONTROL -- rule 4 detects a missing off switch:"
 probe="$REPO_ROOT/tests/hooks/test-sticky-debt.sh"
 cp "$probe" "$probe.gatebak"
+# Restore on EXIT -- see the note in test-rule-census.sh.
+trap 'if [ -f "$probe.gatebak" ]; then mv -f "$probe.gatebak" "$probe"; fi' EXIT
 sed -i 's/with no stickyDebt setting it says nothing/OFF SWITCH ASSERTION REMOVED BY PROBE/' "$probe"
 out3="$(python "$GEN" 2>&1)"
 case "$out3" in *"4 off switches         STOP"*) ok "removing an off-switch assertion trips rule 4";;

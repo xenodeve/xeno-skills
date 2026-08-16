@@ -94,6 +94,9 @@ echo ""
 echo "rewording a rule cannot silently orphan its trace:"
 PROBE="$REPO_ROOT/skills/t4/t4-bro/SKILL.md"
 cp "$PROBE" "$PROBE.tracebak"
+# Restore on EXIT -- see the note in test-rule-census.sh. A probe that mutates a
+# tracked file must not depend on reaching its own last line.
+trap 'if [ -f "$PROBE.tracebak" ]; then mv -f "$PROBE.tracebak" "$PROBE"; fi' EXIT
 python - "$PROBE" <<'PY'
 import sys, io
 p = sys.argv[1]

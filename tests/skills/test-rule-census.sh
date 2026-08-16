@@ -73,6 +73,10 @@ echo ""
 echo "the drift check detects a change rather than only claiming to:"
 PROBE="$REPO_ROOT/skills/t4/t4-bro/SKILL.md"
 cp "$PROBE" "$PROBE.censusbak"
+# Restore on EXIT, not only on the happy path. These probes mutate a TRACKED file,
+# and an early exit used to leave the repository dirty -- which made `verify`
+# non-idempotent: the next run failed on contamination the previous run left.
+trap 'if [ -f "$PROBE.censusbak" ]; then mv -f "$PROBE.censusbak" "$PROBE"; fi' EXIT
 printf '\n- **A probe rule added by the census test, before every commit.**\n' >> "$PROBE"
 if python "$GEN" --check >/dev/null 2>&1; then
   bad "adding a rule did NOT make the check fail -- it detects nothing"
