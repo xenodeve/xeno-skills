@@ -32,7 +32,7 @@ command -v python >/dev/null 2>&1 || { cat >/dev/null; exit 0; }
 op_json="$(cat)"
 
 python - "$PWD/.claude/t4-review-state.json" "$op_json" <<'PY'
-import json, os, sys, tempfile
+import json, os, re, sys, tempfile
 
 path = sys.argv[1]
 EMPTY = {"active": [], "pending": [], "unknown": [], "decided": [], "findings": []}
@@ -81,6 +81,41 @@ name = op.get("op")
 
 if name == "list":
     sys.exit(0)                                  # read-only: never rewrites the file
+
+elif name == "next":
+    # AT MOST ONE FINDING PER TURN, ranked by the position of the missing step in
+    # the workflow (#223). A segment can fail several traces at once, and injecting
+    # all of them turns a correction into a wall of text that gets skimmed -- which
+    # spends the reviewer's only asset, since nothing here blocks anything.
+    #
+    # The rank is the rule's INDEX IN THE GENERATED TRACE FILE, which is emitted in
+    # the skills' own order. That makes it a stated, testable function rather than a
+    # model call. Ranking by workflow position and not by severity is deliberate: if
+    # the earliest is a misread the master says so and the next reviewer moves on to
+    # the second, and if it was real, fixing it usually resolves the rest anyway.
+    order = {}
+    traces = os.path.join(os.path.dirname(path), "..", "docs", "research", "rule-traces.md")
+    try:
+        with open(traces, encoding="utf-8") as f:
+            body = f.read().split("## Traces", 1)[1]
+        i = 0
+        for line in body.splitlines():
+            m = re.match(r"^\| `[^`]+` \| `[^`]+` \| \S+ \| (.+?) \|", line)
+            if m:
+                order.setdefault(m.group(1).strip(), i)
+                i += 1
+    except Exception:
+        order = {}
+
+    decided = {d.get("finding") for d in state["decided"]}
+    openf = [f for f in state["findings"] if f.get("finding") not in decided]
+    if not openf:
+        sys.exit(0)                              # nothing to deliver -- silence
+    # Unranked rules sort last but keep their relative order, so an unknown rule is
+    # never silently promoted ahead of one whose position is known.
+    openf.sort(key=lambda f: order.get(f.get("rule"), 10 ** 6))
+    print(json.dumps(openf[0], ensure_ascii=False))
+    sys.exit(0)
 
 elif name == "open":                             # transition 3 -- a new open row is added
     rule = op.get("rule") or reject("open needs a rule")
