@@ -7,7 +7,13 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/t4-session-start"
-BUDGET=9000   # bytes of injected output; keep the dispatcher high-impact but terse
+# The injection is now the COMPACT DIRECTIVE, not the whole using-t4 map (#182).
+# The map was 8,974 B and one measured session took four injections of it. The
+# budget moved with the injection, and so did the five pinned phrases below -- had
+# only the injection moved, this guard would have gone on passing while guarding
+# nothing, which is the failure mode it exists to prevent.
+BUDGET=2500   # bytes of injected output
+PRIOR=8974    # what the map cost per injection, for the saving reported below
 
 pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }
@@ -28,7 +34,16 @@ has "$out" 'load the current one' "skills-evolve rebuttal"
 
 echo "Token budget:"
 if [ "${#out}" -le "$BUDGET" ]; then ok "injected output ${#out}B <= ${BUDGET}B"
-else bad "injected output ${#out}B exceeds budget ${BUDGET}B (trim the dispatcher)"; fi
+else bad "injected output ${#out}B exceeds budget ${BUDGET}B (trim the directive)"; fi
+
+# Measured, not estimated: the saving is computed from this run's own output.
+saved=$(( PRIOR - ${#out} ))
+per_session=$(( saved * 4 ))   # one measured session took four injections
+if [ "$saved" -gt 0 ]; then
+  ok "saves ${saved}B per injection, ${per_session}B across a four-injection session"
+else
+  bad "the directive is no smaller than the map it replaced"
+fi
 
 echo ""
 echo "dispatcher-content: $pass passed, $fail failed"

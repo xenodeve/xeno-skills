@@ -6,9 +6,11 @@ description: Use at the start of any task in a T4-team repo (T4 Labs / Slow-Inc)
 <!--
 MAINTAINERS — THIS FILE IS UNDER TWO MACHINE-ENFORCED CONSTRAINTS, AND THEY PULL AGAINST EACH OTHER.
 
-  1. SIZE. `hooks/t4-session-start` injects this file verbatim on every session start and every
-     compaction. `tests/hooks/test-dispatcher-content.sh` caps that injected output at 9000 B.
-     Measured 2026-08-12: 8974 B. Twenty-six bytes spare.
+  1. SIZE — NO LONGER A CEILING ON THIS FILE (#182). This file was injected verbatim on every
+     session start and every compaction, at 8974 B against a 9000 B cap: twenty-six bytes spare.
+     It is not injected any more. `hooks/t4-directive.md` is, at ~1.3 KB, and it carries the five
+     phrases below. This file is now LOADED by the agent when it routes, so its size costs a
+     session only when it is actually read. Do not re-add a ceiling here without moving the guard.
 
   2. CONTENT. The same test requires five exact phrases to survive every edit:
      `Route first` · `Red flags` · `phase boundary` · `does not discharge` · `load the current one`.

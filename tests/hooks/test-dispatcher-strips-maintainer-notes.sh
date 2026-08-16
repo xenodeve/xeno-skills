@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# `using-t4/SKILL.md` is injected VERBATIM by t4-session-start (line 41,
-# `content="$(<"$f")"`), and the injected output is capped at 9000 B by
-# tests/hooks/test-dispatcher-content.sh. Measured 2026-08-05 it was 8965 B —
-# THIRTY-FIVE BYTES of headroom.
+# `hooks/t4-directive.md` is injected VERBATIM by t4-session-start, and the injected
+# output is capped by tests/hooks/test-dispatcher-content.sh. It replaced the whole
+# `using-t4` map in #182, which sat at 8,974 B against a 9,000 B ceiling — THIRTY-SIX
+# BYTES of headroom. The stripping this suite guards is what kept a maintainer note
+# from spending that budget, and it matters no less on the smaller file.
 #
 # #105 asks that the file carry a visible note saying it is under that ceiling.
 # Written naively that note is self-defeating twice over: it does not fit, and
@@ -24,8 +25,8 @@ bad() { echo "  FAIL: $1"; fail=$((fail+1)); }
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 # A fake plugin root, so the fixture is what gets injected rather than the real skill.
-mkdir -p "$TMP/plugin/skills/t4/using-t4"
-cat > "$TMP/plugin/skills/t4/using-t4/SKILL.md" <<'FIXTURE'
+mkdir -p "$TMP/plugin/hooks"
+cat > "$TMP/plugin/hooks/t4-directive.md" <<'FIXTURE'
 # Using T4
 <!-- MAINTAINERS: this file is injected verbatim and capped. NOTE_MUST_NOT_LEAK -->
 Route first before you respond.
@@ -35,7 +36,7 @@ NOTE_MUST_NOT_LEAK_MULTILINE
 The map ends here.
 FIXTURE
 
-cat >> "$TMP/plugin/skills/t4/using-t4/SKILL.md" <<'FIXTURE2'
+cat >> "$TMP/plugin/hooks/t4-directive.md" <<'FIXTURE2'
 Prose with <!-- an inline note --> and LIVE_PROSE_AFTER_COMMENT that must survive.
 FIXTURE2
 

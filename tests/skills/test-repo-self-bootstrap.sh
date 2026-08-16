@@ -41,16 +41,17 @@ for f in t4-session-start t4-prompt-reminder t4-gate run-hook.cmd; do
     bad ".claude/hooks/$f DRIFTED from hooks/$f (re-copy)"
   fi
 done
-[ -f "$REPO_ROOT/.claude/hooks/using-t4.snapshot.md" ] \
-  && ok "using-t4.snapshot.md present (plugin-less session-start fallback)" \
-  || bad "using-t4.snapshot.md missing"
-# The snapshot is the plugin-less session-start fallback: stale content would be
-# injected into every session. It must track the repo's own using-t4 SKILL.md.
-if cmp -s "$REPO_ROOT/.claude/hooks/using-t4.snapshot.md" "$REPO_ROOT/skills/t4/using-t4/SKILL.md"; then
-  ok "using-t4.snapshot.md in sync with skills/t4/using-t4/SKILL.md"
+# The plugin-less session-start fallback is the COMPACT DIRECTIVE now, not a
+# snapshot of the whole using-t4 map (#182). The snapshot was deleted with this
+# change rather than left behind: the acceptance criterion is that the path with no
+# plugin must not ship a file nothing reads.
+[ -f "$REPO_ROOT/.claude/hooks/t4-directive.md" ]   && ok "t4-directive.md present (plugin-less session-start fallback)"   || bad "t4-directive.md missing"
+if cmp -s "$REPO_ROOT/.claude/hooks/t4-directive.md" "$REPO_ROOT/hooks/t4-directive.md"; then
+  ok "t4-directive.md in sync with hooks/t4-directive.md"
 else
-  bad "using-t4.snapshot.md DRIFTED from skills/t4/using-t4/SKILL.md (re-copy)"
+  bad "t4-directive.md DRIFTED from hooks/t4-directive.md"
 fi
+[ -f "$REPO_ROOT/.claude/hooks/using-t4.snapshot.md" ]   && bad "the retired using-t4 snapshot is still present -- nothing reads it"   || ok "the retired snapshot is gone, so no path ships a file nothing reads"
 
 echo "the guards layer is installed so every agent/human meets it, not just Claude:"
 for f in pre-push check-issue-ref check-tree-budget check-gate-ledger; do
