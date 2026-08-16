@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-turn-end
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# T4 Stop hook — the turn-end seam, wired with NO behaviour (#185). It exists so
+# the event is registered in all three settings copies before anything depends on
+# it; the compliance reviewer's segment extraction (#197) and its state file (#189)
+# attach here later.
+#
+# It must stay silent and non-blocking. A Stop hook that emits or blocks without a
+# release condition does not degrade -- it destroys the turn and bills for it, which
+# is #225's subject. Nothing here may change until that lands.
+set -uo pipefail
+
+cat >/dev/null  # drain stdin (payload unused)
+
+[ -f ".claude/t4.json" ] || exit 0
+
+exit 0
