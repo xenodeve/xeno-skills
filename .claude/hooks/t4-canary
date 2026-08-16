@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-canary
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Is the compliance layer live right now? (#212, #227)
+#
+# Seam: run it in a repo -> a line per observation on stdout, exit 0 when all three
+# hold and 1 when any does not. It answers from things that ACTUALLY HAPPENED, never
+# from reading a config -- a config that reads as correct is exactly the state #212
+# catalogues five ways of reaching while the layer is completely dead.
+#
+# THREE OBSERVATIONS, NOT TWO. The third is the one that matters:
+#
+#   1. the state machine accepts a transition          (the layer can record)
+#   2. the delivery hook runs and produces output      (the layer can speak)
+#   3. A SYNTHETIC VERDICT WAS DELIVERED AND OBSERVED BEING CONSUMED, then cleared
+#
+# Stopping at (1) and (2) reports green through every failure between the evaluator
+# and the master -- the spool, the state file, the delivery hook, the one-shot
+# token can each fail silently, and a detector that stops at "the hook fired" says
+# nothing about any of them.
+#
+# THE SYNTHETIC CAN NEVER BE DELIVERED AS A REAL FINDING. It carries a reserved rule
+# name, it is cleared on the error path as well as the success path, and a test
+# asserts both.
+#
+# A HOST THAT FAILS IS DISABLED WITHOUT DELAYING THE SESSION: this writes a marker
+# and returns. It never retries and never blocks -- the failure being avoided is a
+# dead compliance layer that also makes every session slower.
+set -uo pipefail
+
+CANARY_RULE="__t4_canary__"
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+STATE_DIR="${PWD}/.claude"
+DISABLED="${STATE_DIR}/t4-canary-disabled"
+
+pass=0
+say() { printf '%s %s\n' "$1" "$2"; }
+green() { say "ok  " "$1"; }
+red()   { say "FAIL" "$1"; pass=1; }
+
+cleanup() {
+  # Clear the synthetic on every path, including the error path.
+  if [ -f "$HERE/t4-review-state" ]; then
+    printf '{"op":"satisfy","rule":"%s"}' "$CANARY_RULE" \
+      | bash "$HERE/t4-review-state" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+if [ ! -f ".claude/t4.json" ]; then
+  say "n-a " "not a T4 repo -- nothing to check"
+  exit 0
+fi
+
+# --- 1. the layer can record -------------------------------------------------
+if [ -f "$HERE/t4-review-state" ] && printf '{"op":"open","rule":"%s","record":0,"uuid":"canary"}' "$CANARY_RULE" \
+     | bash "$HERE/t4-review-state" >/dev/null 2>&1; then
+  green "the state machine accepted a transition"
+else
+  red "the state machine did not accept a transition"
+fi
+
+# --- 2. the layer can speak --------------------------------------------------
+probe_transcript="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-canary.$$")"
+printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{}}]}}\n' \
+  > "$probe_transcript"
+notice=""
+if [ -f "$HERE/t4-prompt-reminder" ]; then
+  notice="$(printf '{"session_id":"canary","hook_event_name":"UserPromptSubmit","prompt":"%s","transcript_path":"%s"}' \
+            "canary probe with no route" "$probe_transcript" \
+            | bash "$HERE/t4-prompt-reminder" 2>/dev/null || true)"
+fi
+rm -f "$probe_transcript"
+case "$notice" in
+  *additionalContext*) green "the delivery hook ran and produced output" ;;
+  *)                   red   "the delivery hook produced nothing -- it may be dead" ;;
+esac
+
+# --- 3. the synthetic verdict was delivered AND observed being consumed -------
+# The state file is where a verdict lands; consumption is the row leaving it. A
+# detector that only checks the row was WRITTEN cannot tell a delivered verdict
+# from one that sat there forever.
+consumed=0
+if [ -f "$HERE/t4-review-state" ]; then
+  if printf '{"op":"satisfy","rule":"%s"}' "$CANARY_RULE" \
+       | bash "$HERE/t4-review-state" >/dev/null 2>&1; then
+    if command -v python >/dev/null 2>&1 \
+       && python -c "
+import json,sys
+try: s=json.load(open('.claude/t4-review-state.json',encoding='utf-8'))
+except Exception: sys.exit(1)
+sys.exit(0 if not any(r.get('rule')=='$CANARY_RULE' for r in s.get('active',[])) else 1)
+" 2>/dev/null; then
+      consumed=1
+    fi
+  fi
+fi
+if [ "$consumed" -eq 1 ]; then
+  green "a synthetic verdict was delivered, observed being consumed, and cleared"
+else
+  red "the synthetic verdict was not observed being consumed"
+fi
+
+# --- the disable path --------------------------------------------------------
+if [ "$pass" -ne 0 ]; then
+  mkdir -p "$STATE_DIR" 2>/dev/null || true
+  printf 'disabled by t4-canary: one or more observations failed\n' > "$DISABLED" 2>/dev/null || true
+  say "----" "compliance layer DISABLED for this repo (marker: .claude/t4-canary-disabled)"
+  say "----" "no retry, no block -- a dead layer must not also make sessions slower"
+else
+  rm -f "$DISABLED" 2>/dev/null || true
+fi
+
+exit "$pass"
