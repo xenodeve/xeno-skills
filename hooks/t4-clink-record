@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-clink-record
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Consume the clink compliance record (#221).
+#
+# Seam: a record as JSON on stdin -> one verdict word on stdout. A pure function.
+#
+# WHY IT EXISTS. The 2026-08-13 plan draws an arrow from the clink-side reviewer up
+# to the master-side one, labelled "compliance record". openclink#119 produces it.
+# Nothing consumed it, and the two issues nearest to it stop short ON PURPOSE: #202
+# uses only what is visible at the boundary and says so outright, and #71 is the
+# supervised-session enforcement layer. So a delegation resolved to `delegated` and
+# stopped there -- correct while no record exists, and wrong the moment one does.
+#
+# THREE RULES MAKE IT SAFE TO CONSUME, and each one degrades to `unknown` rather
+# than to a verdict:
+#
+#   * The master judges. The record is EVIDENCE, never a verdict this side must
+#     accept -- which is why every entry has to carry what was observed. A tier the
+#     master cannot overrule is not advisory, whatever the document says.
+#   * A verdict with no `observed` is not consumable. A finding wearing a reviewer's
+#     name is harder to reopen than a bare claim, which is exactly why it must
+#     arrive with what it saw.
+#   * A seat that was not FRESH reviewed itself. A worker asked to review its own
+#     work defends it.
+set -uo pipefail
+
+command -v python >/dev/null 2>&1 || { cat >/dev/null; printf 'delegated\n'; exit 0; }
+
+# The heredoc below IS python's stdin -- that is what `python -` reads -- so the
+# record cannot arrive that way. Read it here and pass it as an argument. This is the
+# SECOND time this trap has bitten in this layer; hooks/t4-review-state carries the
+# same note. Its failure is quiet: json.load(sys.stdin) parses the PROGRAM text,
+# raises, and the fallback then answers `delegated` for every record forever.
+record_json="$(cat)"
+
+python - "$record_json" <<'PY'
+import json, sys
+
+# No record at all is not a failing record. It is every client with no retained
+# event stream and every delegation the reviewer was off for, and turning that into
+# a violation would punish the absence of a feature.
+try:
+    record = json.loads(sys.argv[1])
+except Exception:
+    print("delegated")
+    sys.exit(0)
+
+if not isinstance(record, dict) or not record:
+    print("delegated")
+    sys.exit(0)
+
+def unknown(why):
+    print("unknown")
+    print("t4-clink-record: %s" % why, file=sys.stderr)
+    sys.exit(0)
+
+reviewer = record.get("reviewer") or {}
+if reviewer.get("continuation_id") != "fresh":
+    unknown("the reviewer seat was not fresh (%r) -- a worker asked to review its own "
+            "work defends it" % reviewer.get("continuation_id"))
+
+verdicts = record.get("verdicts")
+if verdicts is not None:
+    if not isinstance(verdicts, list):
+        unknown("verdicts is not a list")
+    for v in verdicts:
+        if not isinstance(v, dict) or not str(v.get("observed") or "").strip():
+            unknown("a verdict for %r carries no observation -- the master cannot "
+                    "disagree with a judgement it cannot check"
+                    % (v.get("skill") if isinstance(v, dict) else v))
+
+final = record.get("final")
+if final == "complied":
+    print("satisfied")
+elif final == "not-complied":
+    print("violated")
+elif final == "unknown":
+    # An honest unknown from the far side is a DELEGATED result, not a violation.
+    print("delegated")
+else:
+    unknown("final is %r, which is not one of complied / not-complied / unknown" % final)
+PY
