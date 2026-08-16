@@ -129,14 +129,22 @@ elif name == "open":                             # transition 3 -- a new open ro
     # it. Trusting it is how one segment's guess becomes a later segment's premise.
     if op.get("record") is None or not op.get("uuid"):
         reject("a row needs both a record and a uuid -- an uncited row cannot be checked")
-    state[where].append({"rule": rule,
-                         "record": op["record"],
-                         "uuid": op["uuid"],
-                         # Named, never left null: "master" is a claim about which
-                         # transcript the evidence came from, and the distinction
-                         # between the master's and a delegate's is the whole point
-                         # of following the pointer.
-                         "source": op.get("source") or "master"})
+    row = {"rule": rule,
+           "record": op["record"],
+           "uuid": op["uuid"]}
+    # THE SKILL'S VERSION, ALONGSIDE EVERY ROW (#200). This repository edits its own
+    # skills constantly, and without it a later segment checks version B's traces
+    # against behaviour produced under version A -- a violation that never happened.
+    # `reason` travels with it so a row opened BECAUSE of a mismatch says so; an
+    # unknown with no reason is indistinguishable from one nobody looked at.
+    for optional in ("version", "reason"):
+        if op.get(optional):
+            row[optional] = op[optional]
+    # Named, never left null: "master" is a claim about which transcript the evidence
+    # came from, and the distinction between the master's and a delegate's is the
+    # whole point of following the pointer.
+    row["source"] = op.get("source") or "master"
+    state[where].append(row)
 
 elif name == "satisfy":                          # transition 1 -- removed, no finding
     rule = op.get("rule") or reject("satisfy needs a rule")

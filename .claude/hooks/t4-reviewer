@@ -136,10 +136,36 @@ PY
 #                                        finding now)
 #
 # No sixth transition is invented for any of them.
-python - "$out_file" "$ops_file" <<'PY'
-import json, sys
+python - "$out_file" "$ops_file" "$PWD/docs/research/rule-traces.md" "$PWD" <<'PY'
+import hashlib, json, os, re, sys
 
-out_path, ops_path = sys.argv[1], sys.argv[2]
+out_path, ops_path, traces_path, root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+# WHICH SKILL EACH RULE BELONGS TO, AND WHETHER THAT SKILL STILL LOOKS THE WAY THE
+# TRACE WAS WRITTEN FOR (#200). This repository edits its own skills constantly, and
+# a reviewer that ignores the version checks version B's declared traces against
+# behaviour produced under version A -- then reports a violation that never happened.
+# The version is the sha of the SKILL.md, published in the trace file; recomputing it
+# here is a `grep`, not a judgement, so the check is deterministic.
+rule_skill, stale, loaded = {}, {}, {}
+try:
+    doc = open(traces_path, encoding="utf-8").read()
+    for skill, ver, rel in re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{12})` \| `([^`]+)` \|$",
+                                      doc, re.M):
+        try:
+            with open(os.path.join(root, rel), "rb") as f:
+                now = hashlib.sha256(f.read()).hexdigest()[:12]
+        except OSError:
+            continue
+        loaded[skill] = now
+        if now != ver:
+            stale[skill] = (ver, now)
+    for line in doc.split("## Traces", 1)[1].splitlines():
+        m = re.match(r"^\| `[^`]+` \| `([^`]+)` \| traced \| (.+?) \| ", line)
+        if m:
+            rule_skill[m.group(2).strip()] = m.group(1)
+except Exception:
+    pass
 
 try:
     with open(out_path, encoding="utf-8") as f:
@@ -168,6 +194,23 @@ for v in verdicts:
     where, close = MAP[verdict]
     op = {"op": "open", "rule": rule, "state": where,
           "record": v["record"], "uuid": v["uuid"]}
+    skill = rule_skill.get(rule)
+    if skill in stale:
+        # A MISMATCH RESOLVES TO UNKNOWN AND NEVER TO A FINDING. The verdict may well
+        # be right, but it was reached against a trace written for a different version
+        # of the skill, and there is no way to tell from here which. Reporting it
+        # anyway is a false positive, and a critic that cries wolf gets switched off
+        # along with its true findings. The reason is stated on the row, because an
+        # unknown with no reason is indistinguishable from one nobody looked at.
+        was, now = stale[skill]
+        where, close = "unknown", None
+        op["state"] = "unknown"
+        op["reason"] = ("`%s` was edited after the traces were written: version %s, "
+                        "traces written for %s" % (skill, now, was))
+    # The LOADED version, not the published one -- the row records what the skill
+    # actually looked like in this segment, which is the fact a later reader needs.
+    if skill in loaded:
+        op["version"] = loaded[skill]
     if v.get("source"):
         op["source"] = v["source"]
     ops.append(op)

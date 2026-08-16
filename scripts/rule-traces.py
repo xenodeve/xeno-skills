@@ -129,6 +129,32 @@ def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
 
 
+def skill_versions():
+    """The version of each family skill, and it is the sha of the FILE (#200).
+
+    NO SKILL.md CARRIES A `version:` FIELD, and inventing one would be worse than
+    none: a version nobody remembers to bump is a version that lies, and this layer
+    exists precisely to catch a skill that changed without anyone announcing it. The
+    file's own hash cannot drift from the file.
+
+    What it buys: this repository edits its own skills constantly, and without a
+    version a reviewer at a later segment checks version B's declared traces against
+    behaviour produced under version A -- and reports a violation THAT NEVER
+    HAPPENED. With it, the mismatch is visible instead of silent, and the reviewer
+    resolves it to unknown rather than to a finding.
+    """
+    out = []
+    for rel in _rc.FAMILY:
+        path = os.path.join(ROOT, rel)
+        try:
+            with open(path, "rb") as f:
+                ver = hashlib.sha256(f.read()).hexdigest()[:12]
+        except OSError:
+            continue
+        out.append((os.path.basename(os.path.dirname(rel)), ver, rel.replace("\\", "/")))
+    return sorted(out)
+
+
 def trace_for(rule, text=None):
     """Derive from the FULL rule line, name it by its label.
 
@@ -240,6 +266,24 @@ def render(rs):
     A("cannot silently orphan its trace** — the sha stops matching and")
     A("`tests/skills/test-rule-traces.sh` fails, so someone re-reads the pair instead")
     A("of inheriting a trace that no longer describes anything.")
+    A("")
+    A("## Skill versions")
+    A("")
+    A("**The version is the sha of the `SKILL.md` file**, because no skill carries a")
+    A("`version:` field and inventing one would be worse than none — a version nobody")
+    A("remembers to bump is a version that lies, and this layer exists to catch a skill")
+    A("that changed without anyone announcing it.")
+    A("")
+    A("A reviewer that finds a skill's current sha different from the one below is")
+    A("holding traces written for a different skill. It resolves that to **unknown with")
+    A("the reason stated**, never to a finding: reporting a violation produced under a")
+    A("version the trace was not written for is a false positive, and a critic that")
+    A("cries wolf gets switched off along with its true findings.")
+    A("")
+    A("| skill | version | path |")
+    A("|---|---|---|")
+    for skill, ver, path in skill_versions():
+        A("| `%s` | `%s` | `%s` |" % (skill, ver, path))
     A("")
     A("## Traces")
     A("")

@@ -53,6 +53,30 @@ cannot silently orphan its trace** — the sha stops matching and
 `tests/skills/test-rule-traces.sh` fails, so someone re-reads the pair instead
 of inheriting a trace that no longer describes anything.
 
+## Skill versions
+
+**The version is the sha of the `SKILL.md` file**, because no skill carries a
+`version:` field and inventing one would be worse than none — a version nobody
+remembers to bump is a version that lies, and this layer exists to catch a skill
+that changed without anyone announcing it.
+
+A reviewer that finds a skill's current sha different from the one below is
+holding traces written for a different skill. It resolves that to **unknown with
+the reason stated**, never to a finding: reporting a violation produced under a
+version the trace was not written for is a false positive, and a critic that
+cries wolf gets switched off along with its true findings.
+
+| skill | version | path |
+|---|---|---|
+| `karpathy-guidelines` | `fcab3dc1a76b` | `skills/karpathy-guidelines/SKILL.md` |
+| `t4-afk` | `6386c091e189` | `skills/t4/t4-afk/SKILL.md` |
+| `t4-agent-memory` | `296ecdf99bd8` | `skills/t4/t4-agent-memory/SKILL.md` |
+| `t4-bro` | `9be243f040d4` | `skills/t4/t4-bro/SKILL.md` |
+| `t4-dev-workflow` | `2eea677c4434` | `skills/t4/t4-dev-workflow/SKILL.md` |
+| `t4-engineering-records` | `cecfde44d90b` | `skills/t4/t4-engineering-records/SKILL.md` |
+| `t4-project-bootstrap` | `d5fea05d6ea2` | `skills/t4/t4-project-bootstrap/SKILL.md` |
+| `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
+
 ## Traces
 
 | id | skill | state | rule | trace / reason |
