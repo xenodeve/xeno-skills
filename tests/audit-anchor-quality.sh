@@ -113,10 +113,17 @@ for suite in tests/*/*.sh; do
   # as shadowed by `ran / not-run / n-a` (asserted on $AFK), which is not a
   # defect at all. That was the same over-broad flagging this script exists to
   # correct, reproduced by its own author.
+  # Extraction is PURE BASH -- no subprocess per assertion. It used to spawn two
+  # `sed` processes for every `has`/`hasnt` call in the tree, which cost ~29 s and
+  # meant `--only-a` was no faster than the full audit: the "cheap path" that exists
+  # to keep `verify` quick was not cheap. Measured before and after, not assumed.
   has_anchors=(); has_targets=(); hasnt_count=0
   for c in "${calls[@]}"; do
-    anchor="$(printf '%s' "$c" | sed -E 's/^[[:space:]]*(has|hasnt) +"[^"]*" +"([^"]*)".*/\2/')"
-    target_var="$(printf '%s' "$c" | sed -E 's/^[[:space:]]*(has|hasnt) +"\$\{?([A-Za-z_]+)\}?" +.*/\2/')"
+    rest="${c#*\"}"                      # drop up to the first quote
+    target_raw="${rest%%\"*}"            # first quoted field -> the target
+    rest="${rest#*\"}"; rest="${rest#*\"}"
+    anchor="${rest%%\"*}"                # second quoted field -> the anchor
+    target_var="${target_raw#\$}"; target_var="${target_var#\{}"; target_var="${target_var%\}}"
     case "$c" in
       *hasnt*) hasnt_count=$((hasnt_count + 1)) ;;
       *)       has_anchors+=("$anchor"); has_targets+=("$target_var") ;;
