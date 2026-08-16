@@ -89,6 +89,24 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 
 ---
 
+## Track 7 — the compliance reviewer, being built (#176)
+
+**Ten slices implemented 2026-08-16 on PR #235**, one commit each, TDD, tree green after every one.
+Not closed: this repo closes with evidence, and the PR is open.
+
+| Item | Status | Gate | Next action |
+|---|---|---|---|
+| #185 turn-end wiring · #189 state file · #222 row citations | ✅ | PR #235 | Close on merge. |
+| #184 transcript reader · #183 generated routing table | ✅ | PR #235 | Close on merge. |
+| #186 the gap notice · #190 the route list on a miss | ✅ | PR #235 | **The chain works end to end**: prompt → generated table → what the session actually invoked → speak only about the difference. |
+| #197 segment extraction, hook-written records filtered | ✅ | PR #235 | Close on merge. Unblocks #198, #201, #202. |
+| #207 quoting check · #155 ADR 0001 corrected | ✅ | PR #235 | Close on merge. |
+| **#83 · #84 · #85 · #141 · #171** | 🔴 | **PARKED — trust boundary** | They edit `t4-gate`. `t4-afk` parks a boundary-module edit regardless of diff size, because an unattended run removes the reviewer who would confirm the change is what it claims. **Needs a session with a human in it.** |
+| **#196** expiry, cap, logged drop | 🟡 | **PARKED — #178** | The cap and expiry values are a decision the plan reserved to the developer: *a guessed number written as though it were derived is the failure this section exists to prevent.* |
+| #198 · #200 · #201 · #202 · #203 | 🟢 | now unblocked by #189/#197 | The reviewer call and what feeds it. |
+| #187 the classifier | 🟡 | needs a decision | It is specified as a model call. The 2026-08-14 measurement says **no model call may sit inside a hook** on any host. Re-cut against that before building. |
+| #216 · #217 · #219 (#215) · #218 · #221 · #223 · #224 · #225 · #226 · #227 · #228–#232 | 🟢 | ready-for-agent | The rest of the queue, unblocked. |
+
 ## Management Plan — phased execution order
 
 **Phase 0 — this bootstrap (#93).** The repo runs the standard it ships; installing the operating
