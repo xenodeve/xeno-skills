@@ -59,9 +59,12 @@ FAMILY = [
     "skills/karpathy-guidelines/SKILL.md",
 ]
 
-# A rule is a bolded imperative line. Bold alone is emphasis; the imperative is
-# what makes it a rule someone could fail to follow.
-RULE_LINE = re.compile(r"^\s*(?:[-*]|\|)\s*\*\*(.+?)\*\*(.*)$")
+# A rule is a bolded imperative in a LIST ITEM. Bold alone is emphasis, and a
+# bolded TABLE CELL is a label, not a rule -- in these skills the left column of a
+# reference table holds names like "Ship log" and "superpowers" while the rule
+# content sits in the other cells. Including them put ten such labels into the
+# needs-a-trace bucket, where each looked like owed work that did not exist.
+RULE_LINE = re.compile(r"^\s*[-*]\s*\*\*(.+?)\*\*(.*)$")
 
 ARTIFACT = re.compile(r"""\b(
     gh\s|git\s|commit|branch|\bPR\b|issue|label|test|suite|exit|file|path|
@@ -186,8 +189,12 @@ def render(rs):
     A("")
     A("## The method")
     A("")
-    A("A rule is a **bolded imperative line** in a family `SKILL.md`. Bold alone is")
-    A("emphasis; the imperative is what makes it something an agent could fail to do.")
+    A("A rule is a **bolded imperative in a list item** in a family `SKILL.md`. Bold")
+    A("alone is emphasis, and a bolded **table cell is a label** rather than a rule —")
+    A("the left column of a reference table holds names like *Ship log* while the rule")
+    A("content sits in the other cells. An earlier version counted those, which put")
+    A("ten labels into the needs-a-trace bucket where each read as owed work that did")
+    A("not exist.")
     A("")
     A("Decidability, in this precedence:")
     A("")

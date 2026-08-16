@@ -17,10 +17,10 @@ clink skill's rules govern a delegation that has its own reviewer
 
 | | machine-decidable | needs a trace | undecidable | **total** |
 |---|---|---|---|---|
-| **master** | 47 | 38 | 53 | **138** |
-| **native subagent** | 1 | 3 | 1 | **5** |
+| **master** | 39 | 33 | 46 | **118** |
+| **native subagent** | 1 | 2 | 1 | **4** |
 | **foreign CLI worker** | 1 | 0 | 0 | **1** |
-| **total** | **49** | **41** | **54** | **144** |
+| **total** | **41** | **35** | **47** | **123** |
 
 **What the foreign row means.** Those rules are listed separately rather than
 folded into undecidable because the distinction is actionable: a foreign trace
@@ -33,8 +33,12 @@ or it will invent verdicts about them — which is #195.
 
 ## The method
 
-A rule is a **bolded imperative line** in a family `SKILL.md`. Bold alone is
-emphasis; the imperative is what makes it something an agent could fail to do.
+A rule is a **bolded imperative in a list item** in a family `SKILL.md`. Bold
+alone is emphasis, and a bolded **table cell is a label** rather than a rule —
+the left column of a reference table holds names like *Ship log* while the rule
+content sits in the other cells. An earlier version counted those, which put
+ten labels into the needs-a-trace bucket where each read as owed work that did
+not exist.
 
 Decidability, in this precedence:
 
@@ -83,13 +87,6 @@ count is therefore a floor, not a total.
 | `t4-agent-memory` | One note = one memory. | machine | master |
 | `t4-agent-memory` | One source of truth per fact. | machine | master |
 | `t4-agent-memory` | Only what happened in this session. | undecidable | master |
-| `t4-agent-memory` | Open-work ledger | machine | master |
-| `t4-agent-memory` | Personal memory | machine | master |
-| `t4-agent-memory` | Serena code memories | undecidable | master |
-| `t4-agent-memory` | Ship log | trace | master |
-| `t4-agent-memory` | Skill-usage feedback | trace | master |
-| `t4-agent-memory` | Survey-provenance cache | trace | master |
-| `t4-agent-memory` | Team memory vault | trace | subagent |
 | `t4-agent-memory` | Trusting a `file:line` citation without checking it. | trace | master |
 | `t4-agent-memory` | Update, don't duplicate. | trace | master |
 | `t4-agent-memory` | Write memory a future agent can act on, not a diary. | trace | master |
@@ -108,7 +105,6 @@ count is therefore a floor, not a total.
 | `t4-bro` | The shipped skills and docs in this repository | undecidable | master |
 | `t4-bro` | Tracker bodies | machine | master |
 | `t4-dev-workflow` | A Thai body that summarizes instead of mirrors. | undecidable | master |
-| `t4-dev-workflow` | About to write down what you will change | trace | master |
 | `t4-dev-workflow` | Agent-agnostic guards | machine | foreign |
 | `t4-dev-workflow` | Another agent said so. | trace | subagent |
 | `t4-dev-workflow` | Anything the user has just told you to do. | undecidable | master |
@@ -124,7 +120,6 @@ count is therefore a floor, not a total.
 | `t4-dev-workflow` | Every occurrence of the thing you're changing | trace | master |
 | `t4-dev-workflow` | Fixing the symptom you saw first. | trace | master |
 | `t4-dev-workflow` | Hook-enforced rules | machine | master |
-| `t4-dev-workflow` | Hypothesis | undecidable | master |
 | `t4-dev-workflow` | Opening a PR with no issue. | machine | master |
 | `t4-dev-workflow` | PRD → issues → PR | machine | master |
 | `t4-dev-workflow` | Planning from the first file you opened. | trace | master |
@@ -135,7 +130,6 @@ count is therefore a floor, not a total.
 | `t4-dev-workflow` | Tests and fixtures | machine | master |
 | `t4-dev-workflow` | The Thai must mirror the English exactly | undecidable | master |
 | `t4-dev-workflow` | Translating code identifiers into Thai. | undecidable | master |
-| `t4-dev-workflow` | Verified | machine | master |
 | `t4-engineering-records` | A feature/refactor is not a post-mortem | undecidable | master |
 | `t4-engineering-records` | A trivial one-liner needs neither | machine | master |
 | `t4-engineering-records` | Blameless, active voice, no hedging. | undecidable | master |
@@ -154,11 +148,9 @@ count is therefore a floor, not a total.
 | `t4-project-bootstrap` | Bilingual (TH + EN) is GitHub-tracker-only, Thai mirrors English exactly | machine | master |
 | `t4-project-bootstrap` | Carrying sibling-project domain content across. | trace | master |
 | `t4-project-bootstrap` | Close issues with a stated reason | machine | master |
-| `t4-project-bootstrap` | Consolidating | machine | master |
 | `t4-project-bootstrap` | Deferring the memory layer. | trace | master |
 | `t4-project-bootstrap` | Duplicating a sibling skill's skeleton here. | undecidable | master |
 | `t4-project-bootstrap` | File selection is a rule, not a judgement: | machine | master |
-| `t4-project-bootstrap` | Formal delivery | machine | master |
 | `t4-project-bootstrap` | Installing the hooks layer and skipping the CI layer. | undecidable | master |
 | `t4-project-bootstrap` | Lead each section with the recommended answer | undecidable | master |
 | `t4-project-bootstrap` | Leaving `<PLACEHOLDER>` tokens or a stale `<ORG>/<REPO>`. | undecidable | master |
@@ -187,20 +179,11 @@ count is therefore a floor, not a total.
 | `using-t4` | Coding behavior follows `karpathy-guidelines` | undecidable | master |
 | `using-t4` | Don't state as settled what you haven't verified. | machine | master |
 | `using-t4` | Glossary is load-bearing | machine | master |
-| `using-t4` | Going AFK | undecidable | master |
 | `using-t4` | Memory is first-class | trace | master |
 | `using-t4` | Non-standard framework version → read the vendored docs first | trace | master |
 | `using-t4` | PRD → issues → PR | machine | master |
-| `using-t4` | Planning or building a feature | machine | master |
-| `using-t4` | Recording or recalling durable memory | undecidable | master |
 | `using-t4` | Records stay a reliable index | machine | master |
 | `using-t4` | Root cause before fix | trace | master |
-| `using-t4` | Setting up a new repo | undecidable | master |
 | `using-t4` | Skipping a rule requires proof, not judgment. | machine | master |
 | `using-t4` | Some rules are machine-enforced | machine | master |
-| `using-t4` | Something notable just happened | undecidable | master |
-| `using-t4` | Starting a session | machine | master |
 | `using-t4` | TDD is mandatory | undecidable | master |
-| `using-t4` | Writing anything the developer reads | undecidable | master |
-| `using-t4` | matt pocock | machine | master |
-| `using-t4` | superpowers | trace | master |

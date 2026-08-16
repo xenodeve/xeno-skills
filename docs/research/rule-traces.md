@@ -17,19 +17,19 @@ not, and a reviewer handed it will invent a verdict.
 | State | Count | Meaning |
 |---|---|---|
 | `traced` | 14 | The rule names an order, and the trace states it as observable records |
-| `machine` | 48 | Settled by a script without a transcript |
-| `untraced` | 27 | **Needs a trace; none written yet — work not done, not work impossible** |
-| `out-of-scope` | 54 | **Undecidable from a transcript, marked with its reason** |
+| `machine` | 40 | Settled by a script without a transcript |
+| `untraced` | 21 | **Needs a trace; none written yet — work not done, not work impossible** |
+| `out-of-scope` | 47 | **Undecidable from a transcript, marked with its reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **144** | |
+| **total** | **123** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
 rules and nothing for the rest concludes the rest were checked and passed.
 Saying so is the difference between a known limit and a silent one.
 
-**`untraced` is the honest half of this file.** The census classes 41 rules as
-needing a trace and 14 have one, so 27 are named as owed rather than quietly
+**`untraced` is the honest half of this file.** The census classes 35 rules as
+needing a trace and 14 have one, so 21 are named as owed rather than quietly
 filed under undecidable. Folding them in would make work-not-done read as
 work-impossible, which is the same failure this file exists to prevent.
 
@@ -72,13 +72,6 @@ of inheriting a trace that no longer describes anything.
 | `t4-agent-memory/464545e4174e` | `t4-agent-memory` | machine | One note = one memory. | settled by a script; no transcript needed |
 | `t4-agent-memory/b7da0c907ad4` | `t4-agent-memory` | machine | One source of truth per fact. | settled by a script; no transcript needed |
 | `t4-agent-memory/01d38414b8cd` | `t4-agent-memory` | out-of-scope | Only what happened in this session. | asks whether the work was done well; no sequence of messages settles that |
-| `t4-agent-memory/e9124253e09a` | `t4-agent-memory` | machine | Open-work ledger | settled by a script; no transcript needed |
-| `t4-agent-memory/aed4d17e24d6` | `t4-agent-memory` | machine | Personal memory | settled by a script; no transcript needed |
-| `t4-agent-memory/c18a05a9ed22` | `t4-agent-memory` | out-of-scope | Serena code memories | asks whether the work was done well; no sequence of messages settles that |
-| `t4-agent-memory/bddad075ee71` | `t4-agent-memory` | untraced | Ship log | the census classes this as needing a trace; no trace shape covers it yet |
-| `t4-agent-memory/0054df17e7f8` | `t4-agent-memory` | untraced | Skill-usage feedback | the census classes this as needing a trace; no trace shape covers it yet |
-| `t4-agent-memory/d066a102a4e8` | `t4-agent-memory` | untraced | Survey-provenance cache | the census classes this as needing a trace; no trace shape covers it yet |
-| `t4-agent-memory/447ebcf2386c` | `t4-agent-memory` | untraced | Team memory vault | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-agent-memory/b1af06bb396e` | `t4-agent-memory` | untraced | Trusting a `file:line` citation without checking it. | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-agent-memory/1a81e2edbcfe` | `t4-agent-memory` | untraced | Update, don't duplicate. | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-agent-memory/22ad4c76b7d9` | `t4-agent-memory` | untraced | Write memory a future agent can act on, not a diary. | the census classes this as needing a trace; no trace shape covers it yet |
@@ -97,7 +90,6 @@ of inheriting a trace that no longer describes anything.
 | `t4-bro/37bef6758799` | `t4-bro` | out-of-scope | The shipped skills and docs in this repository | asks whether the work was done well; no sequence of messages settles that |
 | `t4-bro/dc6c9e7c84b1` | `t4-bro` | machine | Tracker bodies | settled by a script; no transcript needed |
 | `t4-dev-workflow/f1be46028078` | `t4-dev-workflow` | out-of-scope | A Thai body that summarizes instead of mirrors. | asks whether the work was done well; no sequence of messages settles that |
-| `t4-dev-workflow/28837027d6c4` | `t4-dev-workflow` | untraced | About to write down what you will change | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-dev-workflow/8789a2627ae8` | `t4-dev-workflow` | foreign | Agent-agnostic guards | produced inside a foreign CLI; reachable when xenodeve/openclink#116 lands |
 | `t4-dev-workflow/139fcdd52969` | `t4-dev-workflow` | untraced | Another agent said so. | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-dev-workflow/445f3af6113c` | `t4-dev-workflow` | out-of-scope | Anything the user has just told you to do. | asks whether the work was done well; no sequence of messages settles that |
@@ -113,7 +105,6 @@ of inheriting a trace that no longer describes anything.
 | `t4-dev-workflow/898e0aa608f5` | `t4-dev-workflow` | untraced | Every occurrence of the thing you're changing | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-dev-workflow/609652c4956a` | `t4-dev-workflow` | traced | Fixing the symptom you saw first. | the record for 'Fixing the symptom you saw first.' is the first of its kind in the segment |
 | `t4-dev-workflow/fcc34760297b` | `t4-dev-workflow` | machine | Hook-enforced rules | settled by a script; no transcript needed |
-| `t4-dev-workflow/3f3781cd402b` | `t4-dev-workflow` | out-of-scope | Hypothesis | asks whether the work was done well; no sequence of messages settles that |
 | `t4-dev-workflow/d0850e501508` | `t4-dev-workflow` | machine | Opening a PR with no issue. | settled by a script; no transcript needed |
 | `t4-dev-workflow/2f4a4cbb62f2` | `t4-dev-workflow` | machine | PRD → issues → PR | settled by a script; no transcript needed |
 | `t4-dev-workflow/c37d840507a9` | `t4-dev-workflow` | traced | Planning from the first file you opened. | the record for 'Planning from the first file you opened.' is the first of its kind in the seg… |
@@ -124,7 +115,6 @@ of inheriting a trace that no longer describes anything.
 | `t4-dev-workflow/164e952fac69` | `t4-dev-workflow` | machine | Tests and fixtures | settled by a script; no transcript needed |
 | `t4-dev-workflow/c5c290d2989b` | `t4-dev-workflow` | out-of-scope | The Thai must mirror the English exactly | asks whether the work was done well; no sequence of messages settles that |
 | `t4-dev-workflow/0535833b98df` | `t4-dev-workflow` | out-of-scope | Translating code identifiers into Thai. | asks whether the work was done well; no sequence of messages settles that |
-| `t4-dev-workflow/4f7838402f37` | `t4-dev-workflow` | machine | Verified | settled by a script; no transcript needed |
 | `t4-engineering-records/7f87fceaefe2` | `t4-engineering-records` | out-of-scope | A feature/refactor is not a post-mortem | asks whether the work was done well; no sequence of messages settles that |
 | `t4-engineering-records/1926aba6c550` | `t4-engineering-records` | machine | A trivial one-liner needs neither | settled by a script; no transcript needed |
 | `t4-engineering-records/2b4f93e2ec90` | `t4-engineering-records` | out-of-scope | Blameless, active voice, no hedging. | asks whether the work was done well; no sequence of messages settles that |
@@ -143,11 +133,9 @@ of inheriting a trace that no longer describes anything.
 | `t4-project-bootstrap/c4b19d088053` | `t4-project-bootstrap` | machine | Bilingual (TH + EN) is GitHub-tracker-only, Thai mirrors English exactly | settled by a script; no transcript needed |
 | `t4-project-bootstrap/741c79a55ad2` | `t4-project-bootstrap` | untraced | Carrying sibling-project domain content across. | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-project-bootstrap/acf95aebea5f` | `t4-project-bootstrap` | machine | Close issues with a stated reason | settled by a script; no transcript needed |
-| `t4-project-bootstrap/90c55fd31e04` | `t4-project-bootstrap` | machine | Consolidating | settled by a script; no transcript needed |
 | `t4-project-bootstrap/782682677c5a` | `t4-project-bootstrap` | untraced | Deferring the memory layer. | the census classes this as needing a trace; no trace shape covers it yet |
 | `t4-project-bootstrap/cf6dde588cd3` | `t4-project-bootstrap` | out-of-scope | Duplicating a sibling skill's skeleton here. | asks whether the work was done well; no sequence of messages settles that |
 | `t4-project-bootstrap/d902624dd5e3` | `t4-project-bootstrap` | machine | File selection is a rule, not a judgement: | settled by a script; no transcript needed |
-| `t4-project-bootstrap/18bb88f7b95a` | `t4-project-bootstrap` | machine | Formal delivery | settled by a script; no transcript needed |
 | `t4-project-bootstrap/4fb81181552f` | `t4-project-bootstrap` | out-of-scope | Installing the hooks layer and skipping the CI layer. | asks whether the work was done well; no sequence of messages settles that |
 | `t4-project-bootstrap/46d73187e8c4` | `t4-project-bootstrap` | out-of-scope | Lead each section with the recommended answer | asks whether the work was done well; no sequence of messages settles that |
 | `t4-project-bootstrap/362215dbd3f4` | `t4-project-bootstrap` | out-of-scope | Leaving `<PLACEHOLDER>` tokens or a stale `<ORG>/<REPO>`. | asks whether the work was done well; no sequence of messages settles that |
@@ -176,20 +164,11 @@ of inheriting a trace that no longer describes anything.
 | `using-t4/e9e075221384` | `using-t4` | out-of-scope | Coding behavior follows `karpathy-guidelines` | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/4e91f99c3f9e` | `using-t4` | machine | Don't state as settled what you haven't verified. | settled by a script; no transcript needed |
 | `using-t4/1954d38f784d` | `using-t4` | machine | Glossary is load-bearing | settled by a script; no transcript needed |
-| `using-t4/a1d38620f34f` | `using-t4` | out-of-scope | Going AFK | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/33c638b46440` | `using-t4` | traced | Memory is first-class | the record for 'Memory is first-class' is the first of its kind in the segment |
 | `using-t4/e57210608d52` | `using-t4` | traced | Non-standard framework version → read the vendored docs first | the record for 'Non-standard framework version → read the vendored docs f...' is the first of… |
 | `using-t4/2f4a4cbb62f2` | `using-t4` | machine | PRD → issues → PR | settled by a script; no transcript needed |
-| `using-t4/d027fe2b66f3` | `using-t4` | machine | Planning or building a feature | settled by a script; no transcript needed |
-| `using-t4/18e0209d76e7` | `using-t4` | out-of-scope | Recording or recalling durable memory | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/3af3b203f5dc` | `using-t4` | machine | Records stay a reliable index | settled by a script; no transcript needed |
 | `using-t4/a7125fb044e4` | `using-t4` | traced | Root cause before fix | the record for 'Root cause before fix' appears BEFORE the record for the action it gates |
-| `using-t4/40bdd174e0a1` | `using-t4` | out-of-scope | Setting up a new repo | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/a8ad8d333ab5` | `using-t4` | machine | Skipping a rule requires proof, not judgment. | settled by a script; no transcript needed |
 | `using-t4/982f7f53dac1` | `using-t4` | machine | Some rules are machine-enforced | settled by a script; no transcript needed |
-| `using-t4/2f3220701d49` | `using-t4` | out-of-scope | Something notable just happened | asks whether the work was done well; no sequence of messages settles that |
-| `using-t4/78a55b5f02c2` | `using-t4` | machine | Starting a session | settled by a script; no transcript needed |
 | `using-t4/4713b1a4edac` | `using-t4` | out-of-scope | TDD is mandatory | asks whether the work was done well; no sequence of messages settles that |
-| `using-t4/9e292ddcca4f` | `using-t4` | out-of-scope | Writing anything the developer reads | asks whether the work was done well; no sequence of messages settles that |
-| `using-t4/54dcd15a2200` | `using-t4` | machine | matt pocock | settled by a script; no transcript needed |
-| `using-t4/b225390a8984` | `using-t4` | untraced | superpowers | the census classes this as needing a trace; no trace shape covers it yet |
