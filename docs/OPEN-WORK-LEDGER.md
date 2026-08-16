@@ -101,6 +101,9 @@ Not closed: this repo closes with evidence, and the PR is open.
 | #186 the gap notice · #190 the route list on a miss | ✅ | PR #235 | **The chain works end to end**: prompt → generated table → what the session actually invoked → speak only about the difference. |
 | #197 segment extraction, hook-written records filtered | ✅ | PR #235 | Close on merge. Unblocks #198, #201, #202. |
 | #207 quoting check · #155 ADR 0001 corrected | ✅ | PR #235 | Close on merge. |
+| #181 rule census · #188 trace file · #195 out-of-scope markers | ✅ | PR #235 | **123 rules: 41 machine / 35 trace / 47 undecidable**, against the inherited 33/68/25. The needs-a-trace bucket is about half what every downstream slice assumed. |
+| #182 stop injecting the family map | ✅ | PR #235 | 8,974 B → 1,368 B per injection; **30,424 B saved across a four-injection session**, measured by the suite. |
+| **#194** write the trace for every in-scope rule | 🟡 | **PARKED — precision, not authoring** | Most of the 21 `untraced` rules name no order at all; they matched an order word used as a preposition. Writing traces for them means inventing sequences. Needs either a human pass or a stricter order test. Evidence on the issue. |
 | **#83 · #84 · #85 · #141 · #171** | 🔴 | **PARKED — trust boundary** | They edit `t4-gate`. `t4-afk` parks a boundary-module edit regardless of diff size, because an unattended run removes the reviewer who would confirm the change is what it claims. **Needs a session with a human in it.** |
 | **#196** expiry, cap, logged drop | 🟡 | **PARKED — #178** | The cap and expiry values are a decision the plan reserved to the developer: *a guessed number written as though it were derived is the failure this section exists to prevent.* |
 | #198 · #200 · #201 · #202 · #203 | 🟢 | now unblocked by #189/#197 | The reviewer call and what feeds it. |
