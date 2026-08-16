@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-classifier
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The classifier: closed list, structured return, threshold and time cap (#187),
+# with its invocations counted (#192) and an off switch defaulting off (#193).
+#
+# Seam: a prompt on stdin -> zero or more skill names on stdout, one per line.
+#
+# ONE THING IN THIS ISSUE WAS RE-CUT, AND IT IS SAID HERE RATHER THAN QUIETLY DONE.
+# #187 was written when the classifier was to run inside a hook. The 2026-08-14
+# measurement is that A HOOK IS A SYNCHRONOUS BARRIER ON EVERY HOST -- 22 s, 21 s,
+# 24.9 s, and a 30 s per-handler cap -- so no model call may sit inside one. The
+# plan's answer, which this follows, is that judgement runs DETACHED. So this is a
+# component the detached judge calls; nothing here is wired into a hook, and the
+# time cap below is a second belt rather than the only one.
+#
+# THE CLOSED LIST IS THE GENERATED ONE. The classifier may only return names that
+# exist in hooks/routing-table.json (#183). A model asked for "the right skill" will
+# invent a plausible one, and an invented name routes to nothing while reading
+# exactly like a real answer. Anything off the list is dropped and COUNTED.
+#
+# OFF BY DEFAULT (#193): absent `"classifier"` in .claude/t4.json, this exits silent.
+# The keyword table already answers most prompts; the classifier exists for the ones
+# it cannot, and a layer that arrives switched on is one nobody chose.
+set -uo pipefail
+
+prompt="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+python - "$HERE" "$PWD" "$prompt" <<'PY'
+import json, os, shutil, signal, subprocess, sys
+
+here, cwd, prompt = sys.argv[1], sys.argv[2], sys.argv[3]
+
+def count(kind):
+    """#192: every skipped, timed-out or failed invocation is counted. A classifier
+    that quietly declines is indistinguishable from one that had nothing to say, and
+    the difference is the whole of its reliability record."""
+    path = os.path.join(cwd, ".claude", "t4-classifier-counts.json")
+    try:
+        try:
+            with open(path, encoding="utf-8") as f:
+                c = json.load(f)
+        except Exception:
+            c = {}
+        c[kind] = int(c.get(kind, 0)) + 1
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(c, f, indent=2, sort_keys=True)
+            f.write("\n")
+        os.replace(tmp, path)
+    except Exception:
+        pass                            # counting must never be why a turn fails
+
+try:
+    cfg = json.load(open(os.path.join(cwd, ".claude", "t4.json"), encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+
+command = cfg.get("classifier")
+if not command:
+    count("skipped_off")                # #193: off by default, and the skip is counted
+    sys.exit(0)
+
+try:
+    with open(os.path.join(here, "routing-table.json"), encoding="utf-8") as f:
+        allowed = set(json.load(f).get("skills", []))
+except Exception:
+    count("skipped_no_table")
+    sys.exit(0)
+if not allowed:
+    count("skipped_no_table")
+    sys.exit(0)
+
+# The time cap. A classifier is an optimisation; one that takes longer than the work
+# it saves is a regression, and an unbounded one is a hang with extra steps.
+cap = cfg.get("classifierTimeoutSeconds", 5)
+try:
+    cap = max(1, int(cap))
+except Exception:
+    cap = 5
+
+payload = json.dumps({"prompt": prompt, "skills": sorted(allowed)}, ensure_ascii=False)
+
+# THE SHELL IS RESOLVED, NOT NAMED, AND THE TEST THAT FOUND THIS IS WHY.
+# `subprocess.run(["bash", ...])` on Windows goes through CreateProcess, which
+# searches System32 BEFORE PATH -- and System32 holds WSL's `bash.exe`. So a bare
+# "bash" launched WSL, which answered
+#   `execvpe(/bin/bash) failed: No such file or directory`
+# and RETURNED 1 rather than raising. The classifier then counted `failed` on every
+# call: a command that was never run, recorded as a command that ran and failed.
+# `shutil.which` searches PATH only, so it finds the real bash on both platforms.
+# The same mistake is recorded in t4-prompt-reminder. Do not shorten this to "bash".
+shell = shutil.which("bash") or "bash"
+
+# THE CAP IS ENFORCED ON THE TREE, NOT ON THE DIRECT CHILD, AND THAT IS THE WHOLE
+# DIFFERENCE BETWEEN A CAP AND A NOTE. `subprocess.run(timeout=...)` kills what it
+# spawned -- here the shell -- and then re-drains the pipes. A classifier command is
+# a shell line, so the thing doing the work is a GRANDchild, it survives, it keeps
+# the stdout handle open, and the drain blocks until it finishes on its own.
+# `classifierTimeoutSeconds: 1` against `sleep 10` returned after ELEVEN SECONDS
+# while dutifully counting `timed_out` -- a cap that reports being enforced and is not.
+def kill_tree(proc):
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                       capture_output=True)
+    else:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except Exception:
+            proc.kill()
+
+spawn = {} if os.name == "nt" else {"start_new_session": True}   # POSIX-only kwarg
+try:
+    proc = subprocess.Popen([shell, "-c", command], stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, **spawn)
+except Exception:
+    count("failed")
+    sys.exit(0)
+
+try:
+    stdout, _ = proc.communicate(payload, timeout=cap)
+except subprocess.TimeoutExpired:
+    kill_tree(proc)
+    count("timed_out")
+    sys.exit(0)                        # do NOT communicate() again -- that is the block
+except Exception:
+    kill_tree(proc)
+    count("failed")
+    sys.exit(0)
+
+if proc.returncode != 0:
+    count("failed")
+    sys.exit(0)
+
+# STRUCTURED RETURN. Prose is not accepted: a classifier that may answer in
+# sentences is one whose failures look like answers.
+try:
+    result = json.loads(stdout)
+    picks = result["skills"]
+    assert isinstance(picks, list)
+except Exception:
+    count("failed_unstructured")
+    sys.exit(0)
+
+threshold = cfg.get("classifierThreshold", 0.6)
+try:
+    threshold = float(threshold)
+except Exception:
+    threshold = 0.6
+
+out = []
+dropped_unknown = 0
+for p in picks:
+    if isinstance(p, dict):
+        name, score = p.get("skill"), p.get("confidence", 1.0)
+    else:
+        name, score = p, 1.0
+    try:
+        score = float(score)
+    except Exception:
+        score = 0.0
+    if name not in allowed:
+        dropped_unknown += 1            # an invented name reads exactly like a real one
+        continue
+    if score < threshold:
+        continue
+    out.append(name)
+
+if dropped_unknown:
+    count("dropped_off_list")
+count("answered" if out else "answered_empty")
+
+for name in sorted(set(out)):
+    print(name)
+PY
+exit 0
