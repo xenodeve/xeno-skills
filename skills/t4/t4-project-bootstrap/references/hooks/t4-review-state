@@ -89,7 +89,19 @@ elif name == "open":                             # transition 3 -- a new open ro
         reject("open state must be active, pending or unknown")
     if any(r.get("rule") == rule for r in state[where]):
         sys.exit(0)                              # already open: not an error, not a duplicate
-    state[where].append({"rule": rule, "record": op.get("record"), "uuid": op.get("uuid")})
+    # Every row cites the record it rests on (#222). Without it a pending row is a
+    # bare assertion, and the next reviewer -- memoryless -- must trust or discard
+    # it. Trusting it is how one segment's guess becomes a later segment's premise.
+    if op.get("record") is None or not op.get("uuid"):
+        reject("a row needs both a record and a uuid -- an uncited row cannot be checked")
+    state[where].append({"rule": rule,
+                         "record": op["record"],
+                         "uuid": op["uuid"],
+                         # Named, never left null: "master" is a claim about which
+                         # transcript the evidence came from, and the distinction
+                         # between the master's and a delegate's is the whole point
+                         # of following the pointer.
+                         "source": op.get("source") or "master"})
 
 elif name == "satisfy":                          # transition 1 -- removed, no finding
     rule = op.get("rule") or reject("satisfy needs a rule")
@@ -102,8 +114,8 @@ elif name == "violate":                          # transition 2 -- removed, find
     if row is None:
         reject("no open row for rule %r" % rule)
     fid = "F-%03d" % (len(state["findings"]) + 1)
-    finding = {"finding": fid, "rule": rule,
-               "record": row.get("record"), "uuid": row.get("uuid")}
+    finding = {"finding": fid, "rule": rule, "record": row.get("record"),
+               "uuid": row.get("uuid"), "source": row.get("source", "master")}
     state["findings"].append(finding)
     write(state)
     print(json.dumps(finding, ensure_ascii=False))
@@ -119,8 +131,8 @@ elif name == "reevaluate":                       # transition 4 -- an unknown is
         reject("no unknown row for rule %r" % rule)
     if verdict == "violated":
         fid = "F-%03d" % (len(state["findings"]) + 1)
-        finding = {"finding": fid, "rule": rule,
-                   "record": row.get("record"), "uuid": row.get("uuid")}
+        finding = {"finding": fid, "rule": rule, "record": row.get("record"),
+                   "uuid": row.get("uuid"), "source": row.get("source", "master")}
         state["findings"].append(finding)
         write(state)
         print(json.dumps(finding, ensure_ascii=False))
