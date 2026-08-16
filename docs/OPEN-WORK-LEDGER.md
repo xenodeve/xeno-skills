@@ -66,6 +66,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | Item | Status | Gate | Next action |
 |---|---|---|---|
 | #79 ready-for-agent means two different things in two repos | 🟡 | ready-for-human | Decide a canonical meaning, then document. |
+| #204 / PR #206 — the clink MCP prefix | 🔴 | **blocked** | **Do not merge PR #206** until `claude mcp list` shows an `openclink` entry. The prefix comes from the client's registration key, not the server's name; this machine has only `pal`, so the rename would make all four clink skills call a tool that does not resolve. Server-side half is `openclink#122`. |
 
 **The `openclink` half of the plans, filed 2026-08-16.** These live in `xenodeve/openclink` and no plan here ships without them. Repo renamed from `pal-mcp-server`; older rows and issue bodies still use the old name and GitHub redirects it.
 
@@ -77,6 +78,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | openclink#119 the compliance reviewer as a deliverable of openclink#11 | 🟡 | openclink#15 / #16 | The 2026-08-13 plan called it a sibling deliverable of that epic, gated until openclink#12 returned. **#12 is now closed**, so the gate has lifted. |
 | #221 consume the clink compliance record, so a delegation resolves past `delegated` | 🟢 | pairs openclink#119 | **The master-side half of the arrow the 2026-08-13 plan drew.** The producer was filed and the consumer was not: #202 stops at the boundary on purpose and #71 is a different layer, so a delegation would resolve to `delegated` forever even once records existed. |
 | openclink#120 drain the master-side spool so one judge serves all three tiers | 🟡 | blocked on #218 | Optional by design — the spool's consumer is interchangeable. Blocked on the spool's ownership and expiry rules, which are Phase 1.5's. |
+| openclink#124 **epic** — the server-side half of the compliance reviewer | 🟢 | — | Roots openclink#116–#120, which had none when they were filed. #116 and #117 can start now; #116 is what the rest read from. |
 
 ## Track 6 — MD-only / untracked
 
