@@ -74,18 +74,26 @@ segment="$(bash "$HERE/t4-segment" "$transcript" 2>/dev/null || true)"
 [ -n "$segment" ] || exit 0
 
 seg_file="$(mktemp)"; payload_file="$(mktemp)"; out_file="$(mktemp)"; ops_file="$(mktemp)"
-sandbox="$(mktemp -d)"
-trap 'rm -rf "$seg_file" "$payload_file" "$out_file" "$ops_file" "$sandbox"' EXIT
+followed_file="$(mktemp)"; sandbox="$(mktemp -d)"
+trap 'rm -rf "$seg_file" "$payload_file" "$out_file" "$ops_file" "$followed_file" "$sandbox"' EXIT
 printf '%s\n' "$segment" > "$seg_file"
+
+# A native delegation is FOLLOWED INTO ITS OWN TRANSCRIPT rather than written off
+# (#201). Invoked from bash so that `bash` means this bash.
+: > "$followed_file"
+if [ -f "$HERE/t4-follow-delegation" ]; then
+  printf '%s\n' "$segment" | bash "$HERE/t4-follow-delegation" "$transcript" \
+    > "$followed_file" 2>/dev/null || true
+fi
 
 # The payload: the segment, and the rules that HAVE a declared trace. An untraced or
 # out-of-scope rule is not sent, because a reviewer handed a rule with no trace has
 # nothing to match and will invent a verdict -- which is the failure the trace file
 # was built to prevent, reintroduced at the point of use.
-python - "$seg_file" "$PWD/docs/research/rule-traces.md" "$payload_file" <<'PY'
+python - "$seg_file" "$PWD/docs/research/rule-traces.md" "$payload_file" "$followed_file" <<'PY'
 import json, re, sys
 
-seg_path, traces_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
+seg_path, traces_path, out_path, followed_path = sys.argv[1:5]
 
 records = []
 with open(seg_path, encoding="utf-8") as f:
@@ -109,6 +117,20 @@ try:
                            "trace": m.group(3).strip()})
 except Exception:
     pass
+
+# The delegated half of the evidence, TAGGED WITH WHICH SIDE OF THE BOUNDARY IT CAME
+# FROM (#201). Untagged, a worker's message reads as the master's own, and a rule the
+# master never touched gets judged against it.
+try:
+    with open(followed_path, encoding="utf-8") as f:
+        followed = json.load(f)
+except Exception:
+    followed = {}
+for d in followed.get("followed", []):
+    for r in d.get("records", []):
+        if isinstance(r, dict):
+            r["t4_source"] = "subagent:%s" % d.get("agent")
+            records.append(r)
 
 if not records or not traces:
     sys.exit(1)                       # nothing to judge -> the caller spawns nothing
@@ -136,10 +158,20 @@ PY
 #                                        finding now)
 #
 # No sixth transition is invented for any of them.
-python - "$out_file" "$ops_file" "$PWD/docs/research/rule-traces.md" "$PWD" <<'PY'
+python - "$out_file" "$ops_file" "$PWD/docs/research/rule-traces.md" "$PWD" "$followed_file" <<'PY'
 import hashlib, json, os, re, sys
 
-out_path, ops_path, traces_path, root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+out_path, ops_path, traces_path, root, followed_path = sys.argv[1:6]
+
+# AN AGENT ID THAT RESOLVES TO NO FILE YIELDS UNKNOWN, NEVER A FINDING (#201). Part of
+# the segment's evidence is unreadable, and nothing here can tell whether the missing
+# half satisfies the rule. A violation reported on the readable half alone is a verdict
+# reached on evidence known to be incomplete.
+try:
+    with open(followed_path, encoding="utf-8") as f:
+        unreadable = json.load(f).get("missing") or []
+except Exception:
+    unreadable = []
 
 # WHICH SKILL EACH RULE BELONGS TO, AND WHETHER THAT SKILL STILL LOOKS THE WAY THE
 # TRACE WAS WRITTEN FOR (#200). This repository edits its own skills constantly, and
@@ -195,7 +227,13 @@ for v in verdicts:
     op = {"op": "open", "rule": rule, "state": where,
           "record": v["record"], "uuid": v["uuid"]}
     skill = rule_skill.get(rule)
-    if skill in stale:
+    if unreadable and verdict == "violated":
+        where, close = "unknown", None
+        op["state"] = "unknown"
+        op["reason"] = ("a delegation's transcript could not be read (%s), so the "
+                        "evidence for this segment is incomplete"
+                        % ", ".join(unreadable[:3]))
+    elif skill in stale:
         # A MISMATCH RESOLVES TO UNKNOWN AND NEVER TO A FINDING. The verdict may well
         # be right, but it was reached against a trace written for a different version
         # of the skill, and there is no way to tell from here which. Reporting it
