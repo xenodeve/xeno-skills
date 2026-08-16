@@ -26,6 +26,7 @@
   "routes": [
     {
       "skill": "ask-xeno",
+      "family": true,
       "path": "skills/ask-xeno/SKILL.md",
       "triggers_en": [
         "ask",
@@ -43,6 +44,7 @@
     },
     {
       "skill": "clink-brainstorm",
+      "family": false,
       "path": "skills/multi-agent/clink-brainstorm/SKILL.md",
       "triggers_en": [
         "brainstorm",
@@ -58,6 +60,7 @@
     },
     {
       "skill": "clink-debug",
+      "family": false,
       "path": "skills/multi-agent/clink-debug/SKILL.md",
       "triggers_en": [
         "clink",
@@ -72,6 +75,7 @@
     },
     {
       "skill": "clink-masteragent",
+      "family": false,
       "path": "skills/multi-agent/clink-masteragent/SKILL.md",
       "triggers_en": [
         "clink",
@@ -86,6 +90,7 @@
     },
     {
       "skill": "clink-subagents",
+      "family": false,
       "path": "skills/multi-agent/clink-subagents/SKILL.md",
       "triggers_en": [
         "clink",
@@ -100,6 +105,7 @@
     },
     {
       "skill": "design-audit",
+      "family": false,
       "path": "skills/design/design-audit/SKILL.md",
       "triggers_en": [
         "audit",
@@ -113,6 +119,7 @@
     },
     {
       "skill": "design-psychology",
+      "family": false,
       "path": "skills/design/design-psychology/SKILL.md",
       "triggers_en": [
         "design",
@@ -125,6 +132,7 @@
     },
     {
       "skill": "design-rules",
+      "family": false,
       "path": "skills/design/design-rules/SKILL.md",
       "triggers_en": [
         "design",
@@ -139,6 +147,7 @@
     },
     {
       "skill": "design-setup",
+      "family": false,
       "path": "skills/design/design-setup/SKILL.md",
       "triggers_en": [
         "design",
@@ -152,6 +161,7 @@
     },
     {
       "skill": "karpathy-guidelines",
+      "family": false,
       "path": "skills/karpathy-guidelines/SKILL.md",
       "triggers_en": [
         "guidelines",
@@ -166,6 +176,7 @@
     },
     {
       "skill": "t4-afk",
+      "family": false,
       "path": "skills/t4/t4-afk/SKILL.md",
       "triggers_en": [
         "afk",
@@ -180,6 +191,7 @@
     },
     {
       "skill": "t4-agent-memory",
+      "family": false,
       "path": "skills/t4/t4-agent-memory/SKILL.md",
       "triggers_en": [
         "agent",
@@ -199,6 +211,7 @@
     },
     {
       "skill": "t4-bro",
+      "family": false,
       "path": "skills/t4/t4-bro/SKILL.md",
       "triggers_en": [
         "bro",
@@ -213,6 +226,7 @@
     },
     {
       "skill": "t4-dev-workflow",
+      "family": false,
       "path": "skills/t4/t4-dev-workflow/SKILL.md",
       "triggers_en": [
         "dev",
@@ -235,6 +249,7 @@
     },
     {
       "skill": "t4-engineering-records",
+      "family": false,
       "path": "skills/t4/t4-engineering-records/SKILL.md",
       "triggers_en": [
         "engineering",
@@ -253,6 +268,7 @@
     },
     {
       "skill": "t4-project-bootstrap",
+      "family": false,
       "path": "skills/t4/t4-project-bootstrap/SKILL.md",
       "triggers_en": [
         "add claude.md + docs/agents",
@@ -272,6 +288,7 @@
     },
     {
       "skill": "using-clink",
+      "family": true,
       "path": "skills/multi-agent/using-clink/SKILL.md",
       "triggers_en": [
         "ask the other ais",
@@ -291,6 +308,7 @@
     },
     {
       "skill": "using-design",
+      "family": true,
       "path": "skills/design/using-design/SKILL.md",
       "triggers_en": [
         "design",
@@ -306,6 +324,7 @@
     },
     {
       "skill": "using-t4",
+      "family": true,
       "path": "skills/t4/using-t4/SKILL.md",
       "triggers_en": [
         "how do we work in this repo",

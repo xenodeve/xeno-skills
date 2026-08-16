@@ -108,6 +108,10 @@ def build():
         name, description = fm
         routes.append({
             "skill": name,
+            # A FAMILY ENTRY is a top-of-family router. Marked here, derived from the
+            # naming convention, so the hook never carries its own second list of
+            # which skills are entries -- that would be the drift this file removes.
+            "family": name == "ask-xeno" or name.startswith("using-"),
             "path": os.path.relpath(os.path.join(dirpath, "SKILL.md"), ROOT).replace("\\", "/"),
             "triggers_en": english_triggers(name, description),
             "triggers_th": THAI_TRIGGERS.get(name, []),

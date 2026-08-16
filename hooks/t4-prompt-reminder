@@ -87,9 +87,26 @@ def matches(route):
             return True
     return False
 
+def emit(text):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "UserPromptSubmit",
+        "additionalContext": text,
+    }}, ensure_ascii=False))
+
 routed = [r["skill"] for r in table.get("routes", []) if matches(r)]
+
 if not routed:
-    sys.exit(0)                       # nothing routed -> nothing to be absent
+    # NOTHING MATCHED -- the one turn where the agent has to route itself, so the
+    # one turn worth paying for (#190). Emitting this every turn instead costs
+    # 18-71 KB across a 55-turn session depending on how honest the list is;
+    # paying it on misses only is what makes this cheaper rather than differently
+    # expensive. The entries come from the table's own `family` flag, never from a
+    # second list kept here.
+    family = [r["skill"] for r in table.get("routes", []) if r.get("family")]
+    if family:
+        emit("T4: nothing in the routing table matched this prompt. "
+             "The family entries are " + " · ".join("`%s`" % f for f in family) + ".")
+    sys.exit(0)
 
 try:
     with open(invoked_path, encoding="utf-8") as f:
@@ -108,9 +125,6 @@ notice = ("T4: this prompt routes to %s%s, and this session has not invoked %s. 
           "Stated as an absence, not a requirement — you may have a reason not to."
           % (named, more, "it" if len(missing) == 1 else "them"))
 
-print(json.dumps({"hookSpecificOutput": {
-    "hookEventName": "UserPromptSubmit",
-    "additionalContext": notice,
-}}, ensure_ascii=False))
+emit(notice)
 PY
 exit 0

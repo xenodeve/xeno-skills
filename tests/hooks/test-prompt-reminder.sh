@@ -56,8 +56,23 @@ T2="$TMP/slash.jsonl"; slash t4-dev-workflow > "$T2"
 empty "$(run "$REPO" "$PROMPT" "$T2")" "silent when it was invoked as a slash command"
 
 echo ""
-echo "nothing routed -> nothing to be absent:"
-empty "$(run "$REPO" 'สวัสดี' "$EMPTY_T")" "a prompt matching no route is silent"
+echo "nothing routed -> the compact route list, and only then (#190):"
+miss="$(run "$REPO" 'สวัสดี' "$EMPTY_T")"
+has "$miss" 'nothing in the routing table matched' "an unmatched turn emits the route list"
+has "$miss" 'ask-xeno'    "it names the family entries"
+has "$miss" 'using-t4'    "including using-t4"
+[ "$(printf '%s' "$miss" | grep -c additionalContext)" = "1" ] && ok "exactly once" || bad "emitted more than once"
+hasnt "$out" 'nothing in the routing table matched' "a MATCHED turn does not emit the route list"
+
+# The byte budget, asserted as a number rather than described. The cost argument is
+# the whole reason this is paid on misses only: across a 55-turn session the old
+# constant reminder cost about 57 KB; this pays only on the turns that miss.
+bytes=$(printf '%s' "$miss" | wc -c)
+BUDGET_BYTES=700
+[ "$bytes" -le "$BUDGET_BYTES" ] && ok "the route list is ${bytes}B (budget ${BUDGET_BYTES}B)"                                  || bad "the route list is ${bytes}B, over the ${BUDGET_BYTES}B budget"
+# Measured, not estimated: 55 turns all missing is the worst case for this design.
+worst=$(( bytes * 55 ))
+[ "$worst" -lt 58000 ] && ok "worst case 55 misses = ${worst}B, under the 57KB baseline it replaces"                        || bad "worst case ${worst}B exceeds the baseline it was meant to beat"
 
 echo ""
 echo "it fails to silence, never to a crash:"
