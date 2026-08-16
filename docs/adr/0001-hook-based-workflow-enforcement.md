@@ -8,7 +8,22 @@
 
 T4 agent-primary repos fail two ways: **(1)** the agent doesn't invoke the relevant skill at all, and **(2)** it invokes but drifts off the workflow mid-task. The `t4-dev-workflow` auto-trigger map (bug → `/debug-mantra`, after-code → `/simplify`, before-merge → `/code-review`+`/scrutinize`, …) relied on the model *noticing* the condition — which leaks.
 
-The hard constraint: **the agent both does the work and would author any "receipt" that a skill ran**, so agent-produced evidence is forgeable. The only deterministic interception points are Claude Code lifecycle hooks — `SessionStart` / `UserPromptSubmit` (inject context, can't block), `PreToolUse` (can deny), `Stop` (can block turn-end). A hook can only enforce what it can verify independently. A multi-model design review converged on one line: **hooks enforce *actions*, not *process discipline*.**
+The hard constraint: **the agent both does the work and would author any "receipt" that a skill ran**, so agent-produced evidence is forgeable. Deterministic interception happens at Claude Code lifecycle hooks. A hook can only enforce what it can verify independently. A multi-model design review converged on one line: **hooks enforce *actions*, not *process discipline*.**
+
+**The four events this ADR's design uses** — and this is a **subset it chose**, not the surface that exists:
+
+| Event | What it can do |
+|---|---|
+| `SessionStart` | inject context |
+| `UserPromptSubmit` | inject context, **and block** — exit code 2 *"blocks prompt processing and erases the prompt"* |
+| `PreToolUse` | deny a tool call before it happens |
+| `Stop` | block turn-end |
+
+**Two corrections, and they change what was available rather than only what was written (#155).** An earlier version of this paragraph said the four above were *the only* deterministic interception points and that `UserPromptSubmit` **cannot** block. Both are false. The reference documents **31 documented events**, and `UserPromptSubmit` blocks. The second one matters beyond accuracy: if a per-turn hook can refuse the turn, then *inject a reminder and hope* was never the only option at that event — which is the assumption every reading of #134's failure has rested on since. **Whether to use a blocking `UserPromptSubmit` is a design decision and belongs with #149; this correction does not make it.**
+
+**A third constraint the ADR did not carry, and it bounds every injection design below:** hook output — `additionalContext`, `systemMessage` and plain stdout alike — is capped at **10,000 characters**. Output past the cap is written to a file and replaced with a preview and that file's path. So injecting a skill larger than the cap does not put the skill in context; it puts a path there.
+
+*Capability claims in this section verified against the reference on 2026-08-12. They are the vendor's, not ours — re-check rather than inherit.*
 
 ## Decision
 
