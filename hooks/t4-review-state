@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-review-state
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The compliance reviewer's state file and its five legal transitions (#189).
+#
+# Seam: one transition as JSON on stdin + cwd -> the merged file at
+# .claude/t4-review-state.json, and a finding on stdout when one is emitted.
+#
+# THE PROPERTY EVERYTHING ELSE RESTS ON: the reviewer cannot edit a prior row. A
+# later segment never rewrites an earlier segment's verdict -- the reviewer is
+# memoryless, so a rewritten row would let one segment's guess become the next
+# one's premise. `satisfy` and `violate` REMOVE a row; nothing mutates one.
+#
+# The four row states the design names: active (who is being checked), pending (a
+# half-seen trace carried across a segment boundary), unknown (an answer the
+# transcript had not yet been written for), decided (what the master decided).
+# `findings` is the register `decided` refers to, not a fifth row state.
+#
+# Fail-safe: a missing, empty or corrupt file is treated as empty and exits zero,
+# because a reviewer that cannot read its own state must degrade to "no finding",
+# never to a false one. An ILLEGAL transition is different -- it exits non-zero and
+# leaves the file byte-identical, because it is a caller bug, not a missing fact.
+set -uo pipefail
+
+[ -f ".claude/t4.json" ] || { cat >/dev/null; exit 0; }
+
+command -v python >/dev/null 2>&1 || { cat >/dev/null; exit 0; }
+
+# The heredoc below IS python's stdin -- that is what `python -` reads -- so the
+# transition cannot arrive that way. Read it here and pass it as an argument.
+op_json="$(cat)"
+
+python - "$PWD/.claude/t4-review-state.json" "$op_json" <<'PY'
+import json, os, sys, tempfile
+
+path = sys.argv[1]
+EMPTY = {"active": [], "pending": [], "unknown": [], "decided": [], "findings": []}
+
+try:
+    op = json.loads(sys.argv[2])
+except Exception:
+    print("t4-review-state: the transition is not JSON", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    with open(path, encoding="utf-8") as f:
+        state = json.load(f)
+    for k in EMPTY:
+        state.setdefault(k, [])
+except Exception:
+    state = json.loads(json.dumps(EMPTY))       # missing / empty / corrupt -> empty
+
+def write(state):
+    """Temp file in the same directory, then an atomic os.replace. A killed write
+    leaves the previous file intact rather than a truncated one."""
+    d = os.path.dirname(path) or "."
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".t4-review-state.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        os.replace(tmp, path)
+    except BaseException:
+        try: os.unlink(tmp)
+        except OSError: pass
+        raise
+
+def reject(msg):
+    print("t4-review-state: %s" % msg, file=sys.stderr)
+    sys.exit(1)
+
+def take(lst, rule):
+    for i, r in enumerate(lst):
+        if r.get("rule") == rule:
+            return lst.pop(i)
+    return None
+
+name = op.get("op")
+
+if name == "list":
+    sys.exit(0)                                  # read-only: never rewrites the file
+
+elif name == "open":                             # transition 3 -- a new open row is added
+    rule = op.get("rule") or reject("open needs a rule")
+    where = op.get("state", "active")
+    if where not in ("active", "pending", "unknown"):
+        reject("open state must be active, pending or unknown")
+    if any(r.get("rule") == rule for r in state[where]):
+        sys.exit(0)                              # already open: not an error, not a duplicate
+    state[where].append({"rule": rule, "record": op.get("record"), "uuid": op.get("uuid")})
+
+elif name == "satisfy":                          # transition 1 -- removed, no finding
+    rule = op.get("rule") or reject("satisfy needs a rule")
+    if take(state["active"], rule) is None and take(state["pending"], rule) is None:
+        reject("no open row for rule %r" % rule)
+
+elif name == "violate":                          # transition 2 -- removed, finding emitted
+    rule = op.get("rule") or reject("violate needs a rule")
+    row = take(state["active"], rule) or take(state["pending"], rule)
+    if row is None:
+        reject("no open row for rule %r" % rule)
+    fid = "F-%03d" % (len(state["findings"]) + 1)
+    finding = {"finding": fid, "rule": rule,
+               "record": row.get("record"), "uuid": row.get("uuid")}
+    state["findings"].append(finding)
+    write(state)
+    print(json.dumps(finding, ensure_ascii=False))
+    sys.exit(0)
+
+elif name == "reevaluate":                       # transition 4 -- an unknown is re-evaluated
+    rule = op.get("rule") or reject("reevaluate needs a rule")
+    verdict = op.get("verdict")
+    if verdict not in ("satisfied", "violated"):
+        reject("reevaluate verdict must be satisfied or violated")
+    row = take(state["unknown"], rule)
+    if row is None:
+        reject("no unknown row for rule %r" % rule)
+    if verdict == "violated":
+        fid = "F-%03d" % (len(state["findings"]) + 1)
+        finding = {"finding": fid, "rule": rule,
+                   "record": row.get("record"), "uuid": row.get("uuid")}
+        state["findings"].append(finding)
+        write(state)
+        print(json.dumps(finding, ensure_ascii=False))
+        sys.exit(0)
+
+elif name == "dismiss":                          # transition 5 -- a finding is dismissed
+    fid = op.get("finding") or reject("dismiss needs a finding id")
+    if not any(f.get("finding") == fid for f in state["findings"]):
+        reject("no such finding %r" % fid)
+    if any(d.get("finding") == fid for d in state["decided"]):
+        sys.exit(0)                              # already decided: idempotent, not an error
+    state["decided"].append({"finding": fid, "decision": "dismiss",
+                             "reason": op.get("reason"), "by": "master"})
+
+else:
+    reject("unknown op %r" % name)
+
+write(state)
+sys.exit(0)
+PY
