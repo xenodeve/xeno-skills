@@ -26,6 +26,14 @@
 # the result. Do not "simplify" this back into one python step.
 set -uo pipefail
 
+# THE DEVELOPER WRITES THAI, AND WINDOWS PYTHON PRINTS cp1252 BY DEFAULT. Passing a
+# Thai prompt back out through `print()` raises UnicodeEncodeError, the step dies,
+# and what reaches the next stage is an EMPTY prompt -- so every routed skill looks
+# unmatched and the notice goes silent on exactly the prompts this repo is written
+# for. Found by the suite going nine-red the moment the prompt crossed a stdout
+# boundary; it never crossed one before.
+export PYTHONIOENCODING=utf-8
+
 payload="$(cat)"
 
 [ -f ".claude/t4.json" ] || exit 0
@@ -54,20 +62,36 @@ if [ -n "$transcript" ] && [ -f "$HERE/t4-transcript-skills" ]; then
   bash "$HERE/t4-transcript-skills" "$transcript" > "$invoked_file" 2>/dev/null || true
 fi
 
-# Step 3 -- route, subtract, and speak only if something is missing.
-python - "$HERE" "$payload" "$invoked_file" <<'PY'
-import json, os, re, sys
+# Step 3 -- ask the ROUTER which skills this prompt routes to (#191). The matching
+# used to live here, and a second copy of it is a second routing universe that drifts
+# the day someone edits one and not the other -- the duplicate-site defect the
+# generated table exists to remove, rebuilt one layer up.
+#
+# NOTE WHAT IS NOT PASSED: `--with-classifier`. The router will consult the
+# classifier when the table's answer is untrustworthy, and the classifier is a model
+# call; this is a hook, and a hook is a synchronous barrier on every host (#187). The
+# second opinion belongs to the detached judge. tests/hooks/test-route.sh asserts
+# this file does not pass the flag.
+prompt_text="$(printf '%s' "$payload" | python -c '
+import json, sys
+try:
+    print(json.load(sys.stdin).get("prompt") or "")
+except Exception:
+    pass
+' 2>/dev/null || true)"
+route_json="$(printf '%s' "$prompt_text" | bash "$HERE/t4-route" 2>/dev/null || true)"
 
-here, payload_raw, invoked_path = sys.argv[1], sys.argv[2], sys.argv[3]
+# Step 4 -- subtract what the session actually invoked, and speak only if something
+# is missing.
+python - "$HERE" "$route_json" "$invoked_file" <<'PY'
+import json, os, sys
+
+here, route_raw, invoked_path = sys.argv[1], sys.argv[2], sys.argv[3]
 
 try:
-    payload = json.loads(payload_raw)
+    route = json.loads(route_raw)
 except Exception:
-    sys.exit(0)                       # unreadable payload -> say nothing, never crash the turn
-
-prompt = str(payload.get("prompt") or "")
-if not prompt.strip():
-    sys.exit(0)
+    sys.exit(0)                       # no route answer -> say nothing, never crash the turn
 
 try:
     with open(os.path.join(here, "routing-table.json"), encoding="utf-8") as f:
@@ -75,25 +99,13 @@ try:
 except Exception:
     sys.exit(0)                       # no table -> no opinion; never guess a route
 
-low = prompt.lower()
-
-def matches(route):
-    if any(t and t.lower() in low for t in route.get("triggers_th", [])):
-        return True
-    # English triggers need a word boundary, or "pr" matches "approach" and every
-    # prompt routes to the workflow skill.
-    for t in route.get("triggers_en", []):
-        if t and re.search(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(t.lower()), low):
-            return True
-    return False
-
 def emit(text):
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
         "additionalContext": text,
     }}, ensure_ascii=False))
 
-routed = [r["skill"] for r in table.get("routes", []) if matches(r)]
+routed = route.get("routed", [])
 
 if not routed:
     # NOTHING MATCHED -- the one turn where the agent has to route itself, so the

@@ -19,7 +19,11 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 mk() { # -> a repo dir with the hooks it needs
   local d="$1"; mkdir -p "$d/.claude/hooks"
   printf '{"t4":true}\n' > "$d/.claude/t4.json"
-  for f in t4-review-state t4-prompt-reminder t4-transcript-skills routing-table.json; do
+  # t4-route is a component, not a handler -- the gap notice calls it for the match
+  # (#191), the way it already calls t4-transcript-skills for the invoked list. Its
+  # absence here made the canary red, which is the canary working: a delivery hook
+  # missing a dependency cannot speak.
+  for f in t4-review-state t4-prompt-reminder t4-transcript-skills t4-route routing-table.json; do
     cp "$REPO_ROOT/hooks/$f" "$d/.claude/hooks/$f"
   done
   cp "$REPO_ROOT/hooks/t4-canary" "$d/.claude/hooks/t4-canary"

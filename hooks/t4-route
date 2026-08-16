@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-route
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The router: the table's answer, whether that answer can be TRUSTED, and the union
+# of both answers when it cannot (#191).
+#
+# Seam: a prompt on stdin -> one JSON object on stdout:
+#   {"table":[...], "classifier":[...], "routed":[...], "trusted":bool,
+#    "reasons":[...], "consulted":bool}
+#
+# WHY THE CLASSIFIER RUNS ON MORE THAN A MISS. Consulting it only when the table
+# found NOTHING makes the table authoritative every time it fires -- including every
+# time it fires WRONGLY. That is a fallback, not redundancy, and calling it
+# redundancy is the more expensive mistake, because it stops anyone looking for the
+# gap. So the table's answer is judged, and an answer judged untrustworthy gets a
+# second opinion.
+#
+# BOTH ANSWERS ARE REPORTED, NEVER ONE. Where the two disagree, `table` and
+# `classifier` both survive into the output and `routed` is their union. The master
+# picks -- it is the stronger model and the only one holding the session.
+# Suppressing one answer to look decisive is how a routing bug goes invisible.
+#
+# --with-classifier IS REQUIRED TO SPEND A MODEL CALL, and #187 is why. A hook is a
+# synchronous barrier on every host (22 s / 21 s / 24.9 s / a 30 s per-handler cap),
+# so the gap notice calls this WITHOUT the flag and gets the table half only; the
+# detached judge passes it. The flag is the seam between the two, and the suite
+# asserts the hook does not pass it.
+set -uo pipefail
+
+# This emits JSON with `ensure_ascii=False`, and Windows python prints cp1252 by
+# default -- so one non-ASCII value would raise UnicodeEncodeError and the router
+# would answer nothing at all. The gap notice hit exactly this with a Thai prompt.
+export PYTHONIOENCODING=utf-8
+
+with_classifier=0
+[ "${1:-}" = "--with-classifier" ] && with_classifier=1
+
+prompt="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+# Step 1 -- match the table and judge the answer. Two lines out: the decision, then
+# the base object. A marker line rather than re-parsing the JSON in bash, so nothing
+# here greps for a boolean inside a string.
+base="$(python - "$HERE" "$prompt" <<'PY'
+import json, os, re, sys
+
+here, prompt = sys.argv[1], sys.argv[2]
+if not prompt.strip():
+    sys.exit(0)
+try:
+    with open(os.path.join(here, "routing-table.json"), encoding="utf-8") as f:
+        table = json.load(f)
+except Exception:
+    sys.exit(0)                        # no table -> no opinion; never guess a route
+
+routes = table.get("routes", [])
+low = prompt.lower()
+
+def hits(route):
+    """Every trigger that fired, so weakness is judged on what actually matched
+    rather than on what the route could have matched."""
+    out = []
+    for t in route.get("triggers_th", []):
+        if t and t.lower() in low:
+            out.append(t.lower())
+    # English triggers need a word boundary, or `pr` matches "approach" and every
+    # prompt routes to the workflow skill.
+    for t in route.get("triggers_en", []):
+        if t and re.search(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(t.lower()), low):
+            out.append(t.lower())
+    return out
+
+freq = {}
+for r in routes:
+    for t in {x.lower() for x in r.get("triggers_th", []) + r.get("triggers_en", [])}:
+        freq[t] = freq.get(t, 0) + 1
+
+def weak(trigger, skill):
+    """WEAK means the trigger cannot discriminate. Two mechanical halves and no hand
+    list, because a hand list of "generic words" is a judgement that rots:
+      - it fires for two or more routes, so by construction it does not pick one; or
+      - it is a bare single word that is not the skill's own name. `dev` is a real
+        trigger of t4-dev-workflow, and it routes a prompt about a dev SERVER there.
+    A route matched by even one strong trigger is not weak -- `t4-afk` names the
+    skill outright, and that a generic `afk` also fired does not weaken it."""
+    if freq.get(trigger, 0) >= 2:
+        return True
+    return " " not in trigger and trigger != skill.lower()
+
+def family_of(skill):
+    """Derived from the naming convention the generator already routes on (`using-*`
+    are the family entries), never from a second list kept here."""
+    name = skill[len("using-"):] if skill.startswith("using-") else skill
+    return name.split("-")[0]
+
+matched = [(r["skill"], h) for r in routes for h in [hits(r)] if h]
+table_skills = sorted(s for s, _ in matched)
+
+# The five conditions, in the issue's order. They overlap on purpose -- two families
+# is also more than one match -- and every reason that applies is reported, because
+# a single collapsed "untrustworthy" says nothing about what to fix.
+reasons = []
+if not matched:
+    reasons.append("no_match")
+if len(matched) > 1:
+    reasons.append("multiple_matches")
+if len({family_of(s) for s, _ in matched}) > 1:
+    reasons.append("two_families")
+if any(all(weak(t, s) for t in h) for s, h in matched):
+    reasons.append("weak_trigger")
+# A prompt can match one skill cleanly and still say the work is at another phase.
+# The table reports what it matched and cannot notice that on its own.
+implied = {sk for w, sk in table.get("phases", {}).items() if w.lower() in low}
+if implied - set(table_skills):
+    reasons.append("phase_mismatch")
+
+print("CONSULT" if reasons else "SKIP")
+print(json.dumps({"table": table_skills, "trusted": not reasons, "reasons": reasons},
+                 ensure_ascii=False))
+PY
+)"
+[ -n "$base" ] || exit 0
+
+decision="$(printf '%s\n' "$base" | head -1)"
+base_json="$(printf '%s\n' "$base" | tail -1)"
+
+# Step 2 -- the second opinion, invoked from BASH so that `bash` means this bash.
+# Windows python resolves a bare `bash` to WSL's, which answers
+# `execvpe(/bin/bash) failed` and RETURNS 1 rather than raising -- a classifier that
+# never ran, recorded as one that ran and declined. Twice recorded in this tree.
+picks="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-route.$$")"
+trap 'rm -f "$picks"' EXIT
+: > "$picks"
+consulted=0
+if [ "$decision" = "CONSULT" ] && [ "$with_classifier" = "1" ] && [ -f "$HERE/t4-classifier" ]; then
+  consulted=1
+  printf '%s' "$prompt" | bash "$HERE/t4-classifier" > "$picks" 2>/dev/null || true
+fi
+
+# Step 3 -- union. Neither side is dropped, and `routed` is what a consumer acts on.
+python - "$base_json" "$picks" "$consulted" <<'PY'
+import json, sys
+
+try:
+    out = json.loads(sys.argv[1])
+except Exception:
+    sys.exit(0)
+try:
+    with open(sys.argv[2], encoding="utf-8") as f:
+        picks = sorted({ln.strip() for ln in f if ln.strip()})
+except Exception:
+    picks = []
+
+out["classifier"] = picks
+out["consulted"] = sys.argv[3] == "1"
+out["routed"] = sorted(set(out["table"]) | set(picks))
+print(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+PY
+exit 0

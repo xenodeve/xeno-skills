@@ -55,6 +55,27 @@ THAI_TRIGGERS = {
     "design-setup":          ["เริ่มโปรเจกต์ดีไซน์", "ตั้งค่าดีไซน์"],
 }
 
+# Phase words and the route each IMPLIES (#191). A prompt can match one skill
+# cleanly and still carry a word saying the work is at a different phase -- and a
+# table that only reports what it matched cannot notice that. These live here for
+# the same reason the Thai terms do: they are not derivable from the frontmatter,
+# so they belong in the generator, in ONE place, generated into the artifact.
+#
+# THEY ARE DELIBERATELY NOT TRIGGERS. A trigger says "this prompt is about X"; a
+# phase word says "whatever this prompt is about, the work is at phase Y". Promoting
+# these to triggers would make every "ship it" route to t4-dev-workflow outright,
+# which is the over-broad matching the weak-trigger rule exists to catch.
+# `merge` is absent on purpose -- it is already a Thai trigger of t4-dev-workflow,
+# so the table catches it and there is nothing for a phase word to add.
+PHASE_WORDS = {
+    "ship":        "t4-dev-workflow",      # the issue/PR/gate lifecycle
+    "ปิด issue":    "t4-dev-workflow",
+    "handoff":     "t4-agent-memory",      # session end
+    "จบ session":  "t4-agent-memory",
+    "unattended":  "t4-afk",
+    "ปล่อยไว้":     "t4-afk",
+}
+
 def read_frontmatter(path):
     """-> (name, description) or None. Deliberately tolerant: a malformed skill is
     skipped rather than fatal, because this runs in a test and a broken SKILL.md
@@ -123,6 +144,11 @@ def build():
         "note": "Generated. Do not hand-edit -- regenerate. Thai terms live in the generator.",
         "skills": [r["skill"] for r in routes],     # the classifier's closed list
         "routes": routes,                           # the routing table
+        # Only the phase words whose implied skill actually exists. A phase word
+        # pointing at a skill that was renamed away would make every prompt carrying
+        # it look like a mismatch, forever.
+        "phases": {w: s for w, s in sorted(PHASE_WORDS.items())
+                   if s in {r["skill"] for r in routes}},
     }
 
 

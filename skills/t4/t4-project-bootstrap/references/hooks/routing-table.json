@@ -339,5 +339,13 @@
         "สกิลไหน"
       ]
     }
-  ]
+  ],
+  "phases": {
+    "handoff": "t4-agent-memory",
+    "ship": "t4-dev-workflow",
+    "unattended": "t4-afk",
+    "จบ session": "t4-agent-memory",
+    "ปล่อยไว้": "t4-afk",
+    "ปิด issue": "t4-dev-workflow"
+  }
 }
