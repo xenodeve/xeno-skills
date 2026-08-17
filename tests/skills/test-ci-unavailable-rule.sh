@@ -44,13 +44,41 @@ has "off" "and says to turn it OFF"
 has "deadlock" "because leaving it on denies every merge — stated as the deadlock it is"
 
 echo ""
-echo "the compensations are specific, not 'be careful':"
-has "e2e"             "1. the local verify has to widen — e2e otherwise has no home at all"
-has "core.hooksPath"  "2. the pre-push guards are made to actually bind, not merely installed"
-has "direct pushes"   "3. the half of the ruleset that needs no check is still installed"
-has "ledger"          "4. the state is written where the next agent reads it"
-has "issue"           "5. the restoration is a tracked item rather than a memory"
-has "T4-Gates"        "6. the gate trailer becomes the only record that judgment gates ran"
+echo "it names the PROPERTIES CI provided, so a compensation can be checked against one:"
+has "a clean machine"          "clean machine"
+has "unconditional execution"  "unconditional execution"
+has "cannot forge"             "a result the author cannot forge"
+
+echo ""
+echo "the compensations are MECHANISMS, and the mechanisms come first:"
+# The version this replaced had three of six compensations be "write it down". A
+# paragraph in CLAUDE.md has never caught a defect, and the developer said so.
+has "runs nowhere at all"  "1. a CI-only suite is named as running NOWHERE, not as running slower"
+has "skill-discovery"      "   and this repo's own CI-only suite is named"
+has "fast prefix"          "2. verify widens, because the slow half it deferred to is gone"
+has "no tests"             "3. pre-push is called out for running the guards and no tests"
+has "false"                "   and its own message about CI is called false, since it is"
+has "git worktree add"     "4. a clean-checkout run, which is the property nothing else recovers"
+has "talked round"         "5. review becomes the only independent check left"
+has "fail on purpose"      "6. the local gate is probed, since nothing else disagrees with it now"
+python - "$SECTION" <<'PYX'
+import sys
+sec = open(sys.argv[1], encoding="utf-8").read()
+# Order is the claim: mechanisms before paperwork. If the write-it-down paragraph
+# migrates back above the numbered list, the section has quietly become the old one.
+mech = sec.find("runs nowhere at all")
+paper = sec.find("Then, and only then, write it down")
+assert mech != -1 and paper != -1, "an anchor is missing"
+assert mech < paper, "the recording advice moved ahead of the mechanisms again"
+PYX
+[ $? -eq 0 ] && ok "   and the write-it-down advice sits AFTER them, not among them"              || bad "recording advice is back among the mechanisms"
+
+echo ""
+echo "the recording half is kept, but demoted rather than deleted:"
+has "direct pushes"   "the half of the ruleset that needs no check is still installed"
+has "ledger"          "the state is written where the next agent reads it"
+has "not a memory"    "the restoration is a tracked item rather than a memory"
+has "T4-Gates"        "the gate trailer is where the review is recorded"
 
 echo ""
 echo "and the ceiling is stated rather than implied:"
