@@ -29,6 +29,67 @@ cmd="$(printf '%s' "$input" | perl -0777 -ne '
     my $c=$1; $c=~s/\\n/\n/g; $c=~s/\\t/\t/g; $c=~s/\\"/"/g; $c=~s/\\\\/\\/g; print $c;
   }')"
 
+# A MARKED REPO WITH NO EXTRACTABLE COMMAND IS DENIED, NOT WAVED THROUGH. Both the
+# extraction above and the scan below are `perl`, so a machine without perl -- or a
+# perl that dies on a future edit to either pattern -- yields an empty `cmd`, every
+# pattern below fails to match, and the gate goes silent on `git reset --hard` while
+# looking exactly like a gate with no opinion. A guard that is off is indistinguishable
+# from a guard that allowed, which is the whole complaint in #85 about the marker file.
+#
+# Found by the security review this file's own workflow requires, while fixing #236.
+# It is NOT caused by that fix -- it predates it -- and it is the same shape as #126's
+# missing-`bash` case, so it takes #129's stated decision for that case: a static deny
+# for the gate specifically, in a MARKED repository only. An unmarked repo already
+# exited at the top and is untouched.
+if [ -z "$cmd" ]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
+    "T4 gate: could not read the command to check it (is perl available?). Denying rather than passing, because a gate that cannot inspect a command must not pretend it approved one."
+  exit 0
+fi
+
+# --- what detection actually reads (#236) ------------------------------------
+# `scan` is `cmd` with the SHELL SEPARATORS INSIDE QUOTED SPANS blanked out. Every
+# pattern below matches against `scan`; only the issue-reference lookup reads `cmd`.
+#
+# WHY, MEASURED WITH A CONTROL. The gate never stripped quotes, so detection relied
+# entirely on POS anchoring -- and one `(`, `|`, `;` or `&` inside a quoted argument
+# manufactures a command position out of nothing. `gh issue comment 1 --body 'see
+# (gh pr merge) in the docs'` was asked; the identical sentence without the paren was
+# silent. Six such cases, each flipping on one character. Hit live four times on
+# 2026-08-16, and each one also ran the full verify suite.
+#
+# THE CONTENTS ARE KEPT, ONLY THE SEPARATORS GO. Stripping quoted spans wholesale
+# would take `git reset "--hard"` with them, and that quoted-FLAG case is a pinned
+# regression from #15 -- the bypass this anchoring was written to close.
+#
+# WHAT THIS NARROWS, said out loud rather than discovered later: a genuinely
+# dangerous command nested inside a quoted string -- `sh -c 'x; git reset --hard'` --
+# used to be caught by accident, through the very separator this blanks, and is not
+# caught now. It was never caught deliberately: `bash -c "git reset --hard"` with no
+# separator was always silent. A regex is not a shell parser, and the guarantee is
+# narrowed here rather than overstated. tests/hooks/test-gate.sh pins it as a known
+# limit so it is a decision on the record, not a hole someone finds later.
+#
+# HEREDOC BODIES ARE DATA AND ARE DROPPED WHOLE. Blanking separators inside quotes is
+# not enough, and the proof is that this very fix could not be committed: a commit
+# message written with `git commit -F- <<'MSG'` is not a quoted span, so a markdown
+# BACKTICK around a command name in the prose stayed a command position and denied the
+# commit. Backticks are in POS because backtick command substitution is real; inside a
+# heredoc body nothing is. Dropping the body is exact rather than heuristic -- it is
+# the one region of a shell command that can never contain a command position.
+scan="$(printf '%s' "$cmd" | perl -0777 -pe '
+  s{<<-?\x27?"?([A-Za-z_][A-Za-z0-9_]*)\x27?"?(.*?)^\s*\1\s*$}{<<HEREDOC\nHEREDOC}gms;
+  s{(\x27[^\x27]*\x27|"(?:\\.|[^"\\])*")}{ my $q = $1; $q =~ tr/;&|`()/      /; $q }ge;
+')"
+# FAIL TOWARD DETECTION, NEVER AWAY FROM IT. If that perl ever dies -- a future edit
+# to the pattern, a perl the machine does not have -- `scan` comes back empty, every
+# match below fails, and the gate goes silent on `git reset --hard` while looking
+# exactly like a gate with no opinion. That is the worst failure this file has: a
+# guard that is off and indistinguishable from a guard that allowed. Falling back to
+# the raw command restores the pre-#236 behaviour, which over-denies rather than
+# under-denies, and over-denying is the direction you can see.
+[ -n "$scan" ] || scan="$cmd"
+
 _decide() {  # $1 = deny|ask ; $2 = reason
   local r="$2"
   r="${r//\\/\\\\}"; r="${r//\"/\\\"}"; r="${r//$'\n'/\\n}"; r="${r//$'\r'/\\r}"; r="${r//$'\t'/\\t}"
@@ -96,17 +157,17 @@ is_afk=""
 grep -Eq '"afk"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && is_afk="yes"
 
 # --- dangerous git -----------------------------------------------------------
-if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
+if [ -z "$is_afk" ] && [[ "$scan" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
   deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
-if [[ "$cmd" =~ ${POS}${GITH}push[[:space:]] ]] && [[ ! "$cmd" =~ --force-with-lease ]] \
-   && { [[ "$cmd" =~ --force([^-]|$) ]] || [[ "$cmd" =~ $FLAG_F ]]; }; then
+if [[ "$scan" =~ ${POS}${GITH}push[[:space:]] ]] && [[ ! "$scan" =~ --force-with-lease ]] \
+   && { [[ "$scan" =~ --force([^-]|$) ]] || [[ "$scan" =~ $FLAG_F ]]; }; then
   deny "T4 gate: force-push is blocked. Use --force-with-lease, or run it yourself if intended."
 fi
-if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$cmd" =~ [-][a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
+if [ -z "$is_afk" ] && [[ "$scan" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$scan" =~ [-][a-zA-Z]*f ]] || [[ "$scan" =~ --force ]]; }; then
   deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
-if [[ "$cmd" =~ ${POS}${GITH}branch[[:space:]].*-D ]]; then
+if [[ "$scan" =~ ${POS}${GITH}branch[[:space:]].*-D ]]; then
   deny "T4 gate: 'git branch -D' force-deletes a branch (unmerged work lost). Use -d, or run it yourself."
 fi
 
@@ -114,7 +175,7 @@ fi
 # Detect the command via the anchored `gh ... pr create` (so a commit message
 # that merely says "gh pr create" doesn't trip it); detect the issue ref on the
 # raw `cmd` (so a ref inside a quoted --body still counts).
-if [[ "$cmd" =~ ${POS}${GHH}create ]]; then
+if [[ "$scan" =~ ${POS}${GHH}create ]]; then
   ref=""
   [[ "$cmd" =~ \#[0-9]+ ]] && ref="yes"
   if [ -z "$ref" ] && [[ "$cmd" =~ --body-file[[:space:]=]+([^[:space:]]+) ]]; then
@@ -128,7 +189,7 @@ fi
 # verify runs on `merge` only, not the iterative `create` (CI builds on push).
 # Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
 # e2e to the CI required-check.
-if [[ "$cmd" =~ ${POS}${GHH}merge ]]; then
+if [[ "$scan" =~ ${POS}${GHH}merge ]]; then
   # CI first: it's one cheap network call, and "a check is red/pending" is a
   # faster, more useful answer than a local suite that passes anyway.
   if grep -Eq '"requireGreenCI"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then

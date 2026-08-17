@@ -61,6 +61,72 @@ allowed "$(run "$REPO" "$(bashj 'git commit -m \"document git push --force\"')")
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"add gh pr create helper\"')")"     "allow: 'gh pr create' only inside a commit message"
 allowed "$(run "$REPO" "$(bashj 'git commit -m \"note: gh pr merge flow\"')")"       "allow: 'gh pr merge' only inside a commit message"
 
+echo "#236 — a SEPARATOR inside quoted prose must not manufacture a command position:"
+# THE MECHANISM, MEASURED 2026-08-17 WITH A CONTROL. The gate never strips quotes; it
+# relies entirely on POS anchoring — `(^|[;&|`(])`. So one `(`, `|`, `;` or `&` inside
+# a quoted argument creates a command position out of nothing, and the gated pattern
+# after it matches. Remove the separator from the same sentence and every one of these
+# returns silence, which is what makes it the separator and not the words.
+#
+# The four cases above pass today only by accident: no separator happens to precede
+# the words in them. These are the same sentences with one character added.
+#
+# Not academic — hit live four times on 2026-08-16, and each one also ran the full
+# `verify` suite at ~90 s. A gate that denies what it should not is one people learn
+# to route around, and the route around it also gets past the true positives.
+allowed "$(run "$REPO" "$(bashj 'gh issue comment 1 --body \"see (gh pr merge) in the docs\"')")" \
+        "allow: a paren before 'gh pr merge' inside a comment body"
+allowed "$(run "$REPO" "$(bashj 'gh issue comment 1 --body \"then | gh pr merge\"')")" \
+        "allow: a pipe before it"
+allowed "$(run "$REPO" "$(bashj 'gh issue comment 1 --body \"first x; gh pr merge\"')")" \
+        "allow: a semicolon before it"
+allowed "$(run "$REPO" "$(bashj 'gh issue comment 1 --body \"x & gh pr merge\"')")" \
+        "allow: an ampersand before it"
+allowed "$(run "$REPO" "$(bashj 'gh issue comment 1 --body \"run (git reset --hard) to recover\"')")" \
+        "allow: a paren before 'git reset --hard' inside a comment body"
+allowed "$(run "$REPO" "$(bashj 'git commit -m \"document (git reset --hard) being denied\"')")" \
+        "allow: the same inside a commit message"
+
+# A HEREDOC BODY IS DATA. Found the hard way: the commit that fixed the cases above
+# could not itself be committed, because `git commit -F- <<'MSG'` puts the message in
+# the command string where it is NOT a quoted span, and a markdown BACKTICK around a
+# command name in the prose stayed a command position. Backticks are in POS because
+# backtick command substitution is real; inside a heredoc body nothing is.
+BT="$(printf '\140')"; SQ="$(printf '\047')"   # backtick and single quote, built not typed
+HD_PROSE="git commit -F- <<${SQ}MSG${SQ}\\nthe gate goes silent on ${BT}git reset --hard${BT} while it looks fine\\nMSG\\n"
+allowed "$(run "$REPO" "$(printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"cwd":"x"}' "$HD_PROSE")")" \
+        "allow: a backticked command name inside a heredoc commit message"
+# And the control: the same command OUTSIDE a heredoc is still a real command position.
+denied "$(run "$REPO" "$(bashj 'echo x; git reset --hard')")" \
+       "deny: the same words after a real separator are still caught"
+
+# FAIL TOWARD DETECTION. The scan step is a subprocess, and a subprocess can die. If
+# it does, the naive version leaves `scan` empty, every pattern fails to match, and
+# the gate goes silent on `git reset --hard` while looking exactly like a gate with no
+# opinion -- a guard that is off and indistinguishable from one that allowed. Probed
+# by making the scan step return nothing on purpose, which is the only way to know the
+# fallback is wired rather than merely written.
+SCANBROKE="$TMP/scanbroke"; mkdir -p "$SCANBROKE/bin" "$SCANBROKE/.claude"
+printf '{"t4":true}\n' > "$SCANBROKE/.claude/t4.json"
+printf '#!/usr/bin/env bash\nexit 1\n' > "$SCANBROKE/bin/perl"; chmod +x "$SCANBROKE/bin/perl"
+denied "$( cd "$SCANBROKE" && export PATH="$SCANBROKE/bin:$PATH"; printf '%s' "$(bashj 'git reset --hard')" | bash "$HOOK" )" \
+       "no perl: the gate DENIES rather than going silent — it cannot read the command"
+# The control that makes the line above mean something. Denying wherever perl is
+# missing would break every non-T4 repository on a machine with the plugin installed
+# globally, which is the property that makes the plugin safe to install at all.
+allowed "$( cd "$PLAIN" && export PATH="$SCANBROKE/bin:$PATH"; printf '%s' "$(bashj 'git reset --hard')" | bash "$HOOK" )" \
+        "and a repo with no .claude/t4.json is still silent, perl or no perl"
+
+# THE LIMIT THIS FIX NARROWS, pinned so it is a decision on the record rather than a
+# hole someone finds later. A dangerous command nested inside a quoted string used to
+# be caught THROUGH THE VERY SEPARATOR blanked above -- by accident, never by design:
+# the same command without a separator was always silent. A regex is not a shell
+# parser. If this ever needs to be caught, it needs a parser, not a looser anchor.
+allowed "$(run "$REPO" "$(bashj 'sh -c \"x; git reset --hard\"')")" \
+        "KNOWN LIMIT: a dangerous command nested in a quoted string is not caught"
+allowed "$(run "$REPO" "$(bashj 'bash -c \"git reset --hard\"')")" \
+        "and was not caught before this change either -- the control for that claim"
+
 echo "dangerous git — a quoted FLAG must still be denied (no bypass):"
 denied "$(run "$REPO" "$(bashj 'git reset \"--hard\" HEAD~1')")"     "deny: git reset with a quoted --hard"
 denied "$(run "$REPO" "$(bashj 'git push \"--force\" origin main')")" "deny: git push with a quoted --force"
