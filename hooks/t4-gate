@@ -157,6 +157,40 @@ check_ci() {
   return "$rc"
 }
 
+# --- the standing-authorization skip, and what suspends it (#141) ------------
+# THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from #129's four. Those are ways PAST
+# the gate; here the gate runs, sees the command, and CHOOSES to stand down -- so it
+# survives all four of their fixes. Under "autoMerge"/"afk" the review ask was skipped
+# unconditionally, so an unattended run could merge a PR modifying hooks/, .claude/,
+# .github/workflows/ or skills/t4/ with no human ever seeing it -- INCLUDING a PR that
+# weakens the gate performing the skip.
+#
+# The old defence was "the checkable guard (verify) still holds". True and
+# insufficient: verify is the test suite, not a review. A change to this file that
+# keeps every test green and removes a deny is exactly what verify cannot see, and
+# exactly what the review ask exists for.
+#
+# Ordinary work still skips, which is the property that made the skip worth having.
+ENFORCEMENT_PATHS='^(hooks/|\.claude/|\.githooks/|\.github/workflows/|skills/t4/|docs/adr/)'
+
+# Returns 0 when the review ask must be kept despite standing authorization.
+review_ask_required() {
+  grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null || return 0
+  local files rc
+  if command -v timeout >/dev/null 2>&1; then
+    files="$(timeout 60 gh pr diff $1 --name-only 2>/dev/null)"; rc=$?
+  else
+    files="$(gh pr diff $1 --name-only 2>/dev/null)"; rc=$?
+  fi
+  # FAIL TOWARD THE ASK. If the diff cannot be read, the gate does not know whether an
+  # enforcement path was touched, and answering "probably not" is how this bypass got
+  # here. No deadlock risk: if gh cannot answer, `gh pr merge` cannot run either.
+  [ "$rc" -ne 0 ] && return 0
+  [ -z "$files" ] && return 0
+  printf '%s\n' "$files" | grep -Eq "$ENFORCEMENT_PATHS" && return 0
+  return 1
+}
+
 # --- command-position anchoring ----------------------------------------------
 # A real command starts at the beginning or right after a shell separator
 # (`;` `&` `|` `` ` `` `(`). Anchoring detection to a command position — and to the
@@ -217,7 +251,9 @@ case "$tool" in
         run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
 --- last verify output ---
 $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
-        grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && exit 0
+        pr_num=""
+        [[ "$input" =~ \"(pullNumber|pull_number)\"[[:space:]]*:[[:space:]]*([0-9]+) ]] && pr_num="${BASH_REMATCH[2]}"
+        review_ask_required "$pr_num" || exit 0
         ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?" ;;
 
       *)
@@ -273,12 +309,13 @@ $(printf '%s' "${CI_OUTPUT:-}" | tail -n 15)"
   run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
 --- last verify output ---
 $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
-  # Standing authorization (AFK / auto-merge) skips the review-confirm ask — the
-  # developer already authorized the batch, and re-asking a decided call is the
-  # 'sticking' anti-pattern. The checkable guard (verify, above) still holds.
-  if grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
-    exit 0
-  fi
+  # Standing authorization (AFK / auto-merge) skips the review-confirm ask for
+  # ORDINARY work -- the developer authorized the batch, and re-asking a decided call
+  # is the 'sticking' anti-pattern. It does NOT skip when the diff touches an
+  # enforcement path (#141): see review_ask_required above.
+  rest2="${cmd#*pr }"; rest2="${rest2#merge}"; pr_num=""
+  [[ "$rest2" =~ ^[[:space:]]+([0-9]+) ]] && pr_num="${BASH_REMATCH[1]}"
+  review_ask_required "$pr_num" || exit 0
   ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?"
 fi
 

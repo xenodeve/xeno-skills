@@ -33,12 +33,20 @@ printf 'PR body\njust some text\n'   > "$TMP/noref.md"
 STUB="$TMP/bin"; mkdir -p "$STUB"
 cat > "$STUB/gh" <<'STUBEOF'
 #!/usr/bin/env bash
+# `pr diff --name-only` answers with $GH_STUB_FILES so #141's diff-aware review ask is
+# testable offline; everything else keeps the original checks behaviour.
+if [ "${1:-}" = "pr" ] && [ "${2:-}" = "diff" ]; then
+  [ "${GH_STUB_DIFF_FAIL:-0}" = "1" ] && exit 1
+  printf '%s\n' ${GH_STUB_FILES:-README.md}
+  exit 0
+fi
 echo "GH_STUB_CALLED $*"
 exit "${GH_STUB_EXIT:-0}"
 STUBEOF
 chmod +x "$STUB/gh"
 
 bashj() { printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"cwd":"x"}' "$1"; }
+mcpj() { printf '{"tool_name":"%s","tool_input":%s,"cwd":"x"}' "$1" "$2"; }
 run()  { ( cd "$1" && printf '%s' "$2" | bash "$HOOK" ); }
 # Same as run(), but with the stub `gh` first on PATH and a forced stub exit code.
 runci() { ( cd "$1" && export PATH="$STUB:$PATH" GH_STUB_EXIT="$2"; printf '%s' "$3" | bash "$HOOK" ); }
@@ -127,6 +135,41 @@ allowed "$(run "$REPO" "$(bashj 'sh -c \"x; git reset --hard\"')")" \
 allowed "$(run "$REPO" "$(bashj 'bash -c \"git reset --hard\"')")" \
         "and was not caught before this change either -- the control for that claim"
 
+echo "#141 — under autoMerge/afk the review ask now depends on what the diff TOUCHES:"
+# THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from the four in #129. Those are ways
+# PAST the gate. Here the gate runs, sees the command, and CHOOSES to stand down — so
+# it survives all four of their fixes. The inline defence was "the checkable guard
+# (verify) still holds", which is true and insufficient: verify is the test suite, not
+# a review. A change to t4-gate that keeps every test green and removes a deny is
+# exactly what verify cannot see, and exactly what the review ask exists for.
+#
+# Including a PR that weakens the gate performing the skip.
+rundiff() { ( cd "$1" && export PATH="$STUB:$PATH" GH_STUB_FILES="$2"; printf '%s' "$3" | bash "$HOOK" ); }
+
+allowed "$(rundiff "$REPOA"   'README.md docs/notes.md' "$(bashj 'gh pr merge 34 --squash')")" \
+        "allow: ordinary work under autoMerge still skips the ask — the property worth keeping"
+asked   "$(rundiff "$REPOA"   'hooks/t4-gate'           "$(bashj 'gh pr merge 34 --squash')")" \
+        "ask:   a PR touching hooks/ keeps the ask, even under autoMerge"
+asked   "$(rundiff "$REPOAFK" '.github/workflows/ci.yml' "$(bashj 'gh pr merge 34 --squash')")" \
+        "ask:   and under afk, for a workflow change"
+asked   "$(rundiff "$REPOA"   'skills/t4/t4-afk/SKILL.md' "$(bashj 'gh pr merge 34 --squash')")" \
+        "ask:   and for a t4 skill — the rules themselves"
+asked   "$(rundiff "$REPOA"   'docs/adr/0001-hook-based-workflow-enforcement.md' "$(bashj 'gh pr merge 34 --squash')")" \
+        "ask:   and for an ADR"
+asked   "$(rundiff "$REPOA"   'README.md hooks/t4-gate'  "$(bashj 'gh pr merge 34 --squash')")" \
+        "ask:   one enforcement path among many ordinary ones is enough"
+# FAIL TOWARD THE ASK. If the diff cannot be read, the gate does not know whether an
+# enforcement path was touched — and answering "probably not" is how the bypass got
+# here. There is no deadlock risk: if gh cannot answer, `gh pr merge` cannot run either.
+asked "$( cd "$REPOA" && export PATH="$STUB:$PATH" GH_STUB_DIFF_FAIL=1; printf '%s' "$(bashj 'gh pr merge 34 --squash')" | bash "$HOOK" )" \
+      "ask:   an unreadable diff keeps the ask rather than assuming it was ordinary"
+# The MCP path must not drift from the shell path — it is the surface that was already
+# invisible once (#83), and two copies of the same skip is how it goes invisible again.
+asked   "$(rundiff "$REPOA" 'hooks/t4-gate' "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "ask:   and the MCP merge path applies the identical rule"
+allowed "$(rundiff "$REPOA" 'README.md'     "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "allow: ordinary work through MCP still skips it too"
+
 echo "#83 — a GitHub-mutating MCP tool meets the same gate as the shell command:"
 # THE SAME AGENT, IN THE SAME SESSION, REACHING THE SAME API WITHOUT A SHELL. The
 # session that filed #83 merged SIX pull requests through mcp__github__merge_pull_request
@@ -134,7 +177,6 @@ echo "#83 — a GitHub-mutating MCP tool meets the same gate as the shell comman
 # no review confirmation — and none of them looked like a bypass at the time.
 #
 # Decisions come from tool_name + tool_input, because these calls have no shell string.
-mcpj() { printf '{"tool_name":"%s","tool_input":%s,"cwd":"x"}' "$1" "$2"; }
 
 allowed "$(run "$REPO"  "$(mcpj mcp__github__create_pull_request '{"title":"x","body":"Closes #12"}')")" \
         "allow: MCP pr create WITH an issue ref"
@@ -144,8 +186,8 @@ asked   "$(run "$REPOV" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":3
         "ask:   MCP merge asks for the review confirmation"
 denied  "$(run "$REPOF" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
         "deny:  MCP merge runs verify and blocks on failure"
-allowed "$(run "$REPOA" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
-        "allow: MCP merge under autoMerge skips the ask, exactly as the shell path does"
+allowed "$(rundiff "$REPOA" 'README.md' "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "allow: MCP merge under autoMerge skips the ask for ORDINARY work, as the shell path does"
 
 echo "#83 — direct-write tools, and what an UNKNOWN tool defaults to:"
 asked "$(run "$REPO" "$(mcpj mcp__github__push_files '{"branch":"main"}')")" \
@@ -211,7 +253,10 @@ allowed "$(run "$REPOF" "$(bashj 'git commit -m wip')")"                        
 
 echo "before-merge ask — skipped under standing authorization (#12: AFK):"
 asked   "$(run "$REPO"   "$(bashj 'gh pr merge 3 --squash')")" "ask:   interactive merge (no marker) still prompts"
-allowed "$(run "$REPOA"  "$(bashj 'gh pr merge 3 --squash')")" "allow: autoMerge/afk marker skips the ask"
+# Since #141 the skip is conditional on the diff, so this needs the stub to answer
+# `pr diff`. Without it the gate cannot read what the PR touches and keeps the ask --
+# the intended fail-toward-the-ask direction, asserted in the #141 block above.
+allowed "$(rundiff "$REPOA" 'README.md' "$(bashj 'gh pr merge 3 --squash')")" "allow: autoMerge/afk marker skips the ask for ordinary work"
 denied  "$(run "$REPOAF" "$(bashj 'gh pr merge 3 --squash')")" "deny:  autoMerge still can't bypass a failed verify"
 
 echo "AFK revert allowance (gate must not deadlock t4-afk's revert-to-green):"
