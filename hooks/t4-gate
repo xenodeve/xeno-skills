@@ -18,11 +18,14 @@ set -uo pipefail
 input="$(cat)"
 [ -f ".claude/t4.json" ] || exit 0
 
-# hooks.json already scopes this to the Bash tool; this in-process check is a
+# hooks.json scopes this to Bash and the GitHub MCP tools; this in-process check is a
 # cheap defensive guard for the bootstrap path, no subprocess.
 tool=""
 [[ "$input" =~ \"tool_name\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]] && tool="${BASH_REMATCH[1]}"
-[ "$tool" = "Bash" ] || exit 0
+case "$tool" in
+  Bash|mcp__github__*) ;;
+  *) exit 0 ;;
+esac
 
 cmd="$(printf '%s' "$input" | perl -0777 -ne '
   if (/"command"\s*:\s*"((?:\\.|[^"\\])*)"/s) {
@@ -41,7 +44,7 @@ cmd="$(printf '%s' "$input" | perl -0777 -ne '
 # missing-`bash` case, so it takes #129's stated decision for that case: a static deny
 # for the gate specifically, in a MARKED repository only. An unmarked repo already
 # exited at the top and is untouched.
-if [ -z "$cmd" ]; then
+if [ "$tool" = "Bash" ] && [ -z "$cmd" ]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
     "T4 gate: could not read the command to check it (is perl available?). Denying rather than passing, because a gate that cannot inspect a command must not pretend it approved one."
   exit 0
@@ -172,6 +175,59 @@ FLAG_F="[[:space:]\"']-f([[:space:]\"']|$)"
 # radius; t4-afk parks them regardless), so they stay blocked even under afk.
 is_afk=""
 grep -Eq '"afk"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && is_afk="yes"
+
+# --- the GitHub MCP surface (#83) --------------------------------------------
+# THE SAME AGENT, IN THE SAME SESSION, REACHING THE SAME API WITHOUT A SHELL. An agent
+# that cannot run `gh pr merge` past this gate could perform the identical action
+# through `mcp__github__merge_pull_request`, and the gate never saw it: hooks.json
+# registered only `Bash`, and the in-process check exited for everything else. The
+# session that filed #83 merged SIX pull requests that way across two repositories --
+# no verify, no review confirmation, and none of them looked like a bypass at the time.
+#
+# DECISIONS COME FROM tool_name PLUS tool_input, because these calls have no shell
+# string to anchor in. The rules themselves are the shell path's rules, reusing
+# run_verify and is_afk rather than restating them -- two copies of the ship gate
+# would drift, and the drift would be silent on exactly the surface that was already
+# invisible once.
+#
+# AN UNRECOGNISED mcp__github__ TOOL ASKS. Failing open would reintroduce this bypass
+# the moment the MCP server gains a capability, which is how the hole got here. Asking
+# rather than denying is deliberate: a deny on an unknown name deadlocks a run with no
+# way out, and #129 traced exactly that deadlock for the fail-closed design it
+# rejected. A read-only name is allowed outright, because a gate that stops `get_me`
+# is a gate that gets switched off -- #236's lesson, one surface over.
+case "$tool" in
+  mcp__github__*)
+    case "$tool" in
+      # Read-only. Named explicitly: the default below is ask, so anything not listed
+      # here pays a prompt, and that is only tolerable if the common calls are listed.
+      mcp__github__get_*|mcp__github__list_*|mcp__github__search_*|\
+      mcp__github__issue_read|mcp__github__pull_request_read|mcp__github__download_*)
+        exit 0 ;;
+
+      mcp__github__create_pull_request)
+        # Same rule as `gh pr create`: the body or title must reference an issue. The
+        # whole tool_input is searched, which is the MCP equivalent of reading the raw
+        # command rather than the anchored one.
+        [[ "$input" =~ \#[0-9]+ ]] && exit 0
+        deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first." ;;
+
+      mcp__github__merge_pull_request)
+        # The ship gate, identical to the `gh pr merge` path below.
+        run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
+--- last verify output ---
+$(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
+        grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && exit 0
+        ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?" ;;
+
+      *)
+        # Every other GitHub MCP tool, known-mutating or not yet invented. push_files,
+        # create_or_update_file and delete_file write into the repository without
+        # touching git at all, so no git-side guard can see them; they land here rather
+        # than in a list that would go stale the same way `Bash` did.
+        ask "T4 gate: '$tool' mutates the repository through the GitHub API, where no git-side guard can see it. Confirm this is intended — or use the shell path, which is fully gated." ;;
+    esac ;;
+esac
 
 # --- dangerous git -----------------------------------------------------------
 if [ -z "$is_afk" ] && [[ "$scan" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then

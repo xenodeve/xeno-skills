@@ -127,6 +127,44 @@ allowed "$(run "$REPO" "$(bashj 'sh -c \"x; git reset --hard\"')")" \
 allowed "$(run "$REPO" "$(bashj 'bash -c \"git reset --hard\"')")" \
         "and was not caught before this change either -- the control for that claim"
 
+echo "#83 — a GitHub-mutating MCP tool meets the same gate as the shell command:"
+# THE SAME AGENT, IN THE SAME SESSION, REACHING THE SAME API WITHOUT A SHELL. The
+# session that filed #83 merged SIX pull requests through mcp__github__merge_pull_request
+# across two repositories. Every one skipped the ship gate by construction — no verify,
+# no review confirmation — and none of them looked like a bypass at the time.
+#
+# Decisions come from tool_name + tool_input, because these calls have no shell string.
+mcpj() { printf '{"tool_name":"%s","tool_input":%s,"cwd":"x"}' "$1" "$2"; }
+
+allowed "$(run "$REPO"  "$(mcpj mcp__github__create_pull_request '{"title":"x","body":"Closes #12"}')")" \
+        "allow: MCP pr create WITH an issue ref"
+denied  "$(run "$REPO"  "$(mcpj mcp__github__create_pull_request '{"title":"x","body":"just some text"}')")" \
+        "deny:  MCP pr create with no issue ref — same rule as gh pr create"
+asked   "$(run "$REPOV" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "ask:   MCP merge asks for the review confirmation"
+denied  "$(run "$REPOF" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "deny:  MCP merge runs verify and blocks on failure"
+allowed "$(run "$REPOA" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "allow: MCP merge under autoMerge skips the ask, exactly as the shell path does"
+
+echo "#83 — direct-write tools, and what an UNKNOWN tool defaults to:"
+asked "$(run "$REPO" "$(mcpj mcp__github__push_files '{"branch":"main"}')")" \
+      "ask:   push_files writes into the repo without touching git"
+asked "$(run "$REPO" "$(mcpj mcp__github__create_or_update_file '{"path":"a.txt"}')")" \
+      "ask:   create_or_update_file likewise"
+asked "$(run "$REPO" "$(mcpj mcp__github__some_future_mutation '{"x":1}')")" \
+      "ask:   an UNKNOWN mcp__github__ tool has a stated default, not 'whatever happens'"
+# The half that keeps the default from being useless. Failing closed on every GitHub
+# MCP call would make the gate unusable and get it switched off, which is #236's lesson.
+allowed "$(run "$REPO" "$(mcpj mcp__github__get_me '{}')")" \
+        "allow: a READ-only GitHub tool is not a mutation"
+allowed "$(run "$REPO" "$(mcpj mcp__github__list_issues '{}')")" \
+        "allow: and neither is listing issues"
+allowed "$(run "$REPO" "$(mcpj mcp__pal__clink '{"prompt":"x"}')")" \
+        "allow: a non-GitHub MCP server is out of scope entirely"
+allowed "$(run "$PLAIN" "$(mcpj mcp__github__merge_pull_request '{"pullNumber":34}')")" \
+        "allow: and an unmarked repo is untouched by all of it"
+
 echo "#84 — an executable invoked by absolute or quoted path is still the same command:"
 # NOT EXOTIC — IT IS WHAT ACTUALLY GETS TYPED HERE. `gh` is not on the PATH that agent
 # tool shells inherit on this machine, so every `gh` call in the session that filed #84

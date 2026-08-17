@@ -61,7 +61,7 @@ graph TD
 |---|---|---|
 | **0 hard** | `PreToolUse` gate — PR-needs-issue, dangerous git, **verify the hook runs itself** | Real (un-forgeable — the hook runs the tests) |
 | **1 soft** | dispatcher injected at SessionStart (route-first + red-flags), `gh pr merge` → `ask` (skipped by an `autoMerge`/`afk` marker for AFK runs) | Raises the odds of compliance; the model can still skip |
-| **0.5 hard (agent-agnostic)** | git `pre-push` — issue ref from branch/commit/PR body, blocks an over-budget dirty tree and build artifacts | Binds **every** agent + human on the clone (`PreToolUse` only sees commands Claude runs); opt-in per clone and `--no-verify`-able |
+| **0.5 hard (agent-agnostic)** | git `pre-push` — issue ref from branch/commit/PR body, blocks an over-budget dirty tree and build artifacts | Binds **every** agent + human on the clone (`PreToolUse` only sees tool calls Claude makes — Bash and the GitHub MCP tools); opt-in per clone and `--no-verify`-able |
 | **3 real** | CI required-check + branch protection | Top guarantee — outside the agent, covers human web-merges |
 
 **What Tier 3 consists of** (installed by `t4-project-bootstrap` → `references/ci-cd-layer.md`):
