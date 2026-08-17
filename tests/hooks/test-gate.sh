@@ -142,6 +142,16 @@ echo "#245 — the ship gate must verify the PR BEING MERGED, not whatever is ch
 # commit B, and `verify` records which commit it actually ran against. That is a
 # behavioural observation: whatever tree the gate chose is what gets written down.
 GITREPO="$TMP/gitrepo"; mkdir -p "$GITREPO/.claude"
+VERIFIED="$TMP/verified.txt"; rm -f "$VERIFIED"
+# The config is COMMITTED, and in the FIRST commit, so both the working tree and the PR
+# head carry it. Since the verify command is now taken from the head (below), a config
+# that exists only in the working tree means the head configures no verify at all --
+# which is a different assertion than the one this block is making.
+python - "$GITREPO/.claude/t4.json" "$VERIFIED" <<'PYJSON'
+import json, sys
+json.dump({"t4": True, "verify": "git rev-parse HEAD > '%s'" % sys.argv[2]},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PYJSON
 ( cd "$GITREPO" && git init -q . && git config user.email t@t && git config user.name t
   echo a > f.txt && git add -A && git commit -qm A
   echo b > f.txt && git add -A && git commit -qm B ) >/dev/null 2>&1
@@ -149,12 +159,6 @@ HEAD_B="$(cd "$GITREPO" && git rev-parse HEAD)"
 ( cd "$GITREPO" && git checkout -q HEAD~1 ) >/dev/null 2>&1
 HEAD_A="$(cd "$GITREPO" && git rev-parse HEAD)"
 printf '%s\n' "$HEAD_B" > "$TMP/prhead.txt"
-VERIFIED="$TMP/verified.txt"; rm -f "$VERIFIED"
-python - "$GITREPO/.claude/t4.json" "$VERIFIED" <<'PYJSON'
-import json, sys
-json.dump({"t4": True, "verify": "git rev-parse HEAD > '%s'" % sys.argv[2]},
-          open(sys.argv[1], "w", encoding="utf-8"))
-PYJSON
 # A stub gh that can answer for the PR head. It READS the sha from a file rather than
 # having it interpolated in, so no quoting in this fixture can corrupt it.
 GHSTUB="$TMP/bin245"; mkdir -p "$GHSTUB"
@@ -170,6 +174,27 @@ chmod +x "$GHSTUB/gh"
 GOT="$(cat "$VERIFIED" 2>/dev/null || echo NONE)"
 [ "$GOT" = "$HEAD_B" ] && ok "verify ran against the PR head, not the checked-out tree" \
                        || bad "verify ran against ${GOT:0:12} instead of the PR head ${HEAD_B:0:12} (tree is ${HEAD_A:0:12})"
+
+echo "#245 — and the verify COMMAND comes from the PR head too, not from local disk:"
+# #245 bound the verify RUN to the PR head. The command it runs still came off the
+# working tree's .claude/t4.json -- and that file is tracked, so an UNCOMMITTED edit to
+# it changes what the ship gate executes while the pull request's diff shows nothing at
+# all. `"verify": "true"` on disk and the gate is off, invisibly.
+#
+# Here the committed config says the suite FAILS and the local file says it passes.
+# A gate reading the local file lets the merge through; a gate reading the head denies.
+GITREPO2="$TMP/gitrepo2"; mkdir -p "$GITREPO2/.claude"
+( cd "$GITREPO2" && git init -q . && git config user.email t@t && git config user.name t
+  printf '%s' '{"t4":true,"verify":"exit 1"}' > .claude/t4.json
+  git add -A && git commit -qm "config: verify fails" ) >/dev/null 2>&1
+HEAD2="$(cd "$GITREPO2" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD2" > "$TMP/prhead2.txt"
+# The tamper: uncommitted, and therefore absent from every diff a reviewer would read.
+printf '%s' '{"t4":true,"verify":"exit 0"}' > "$GITREPO2/.claude/t4.json"
+
+out245b="$( cd "$GITREPO2" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead2.txt"
+  printf '%s' "$(bashj 'gh pr merge 9 --squash')" | bash "$HOOK" )"
+denied "$out245b" "an uncommitted verify override does not disarm the ship gate"
 
 echo "#141 — under autoMerge/afk the review ask now depends on what the diff TOUCHES:"
 # THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from the four in #129. Those are ways

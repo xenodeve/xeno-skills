@@ -122,12 +122,17 @@ ask()  { _decide ask  "$1"; }
 # Runs the repo's configured verify command (.claude/t4.json "verify") itself, so
 # the ship gate is real, un-forgeable enforcement — not a claim to trust.
 # Returns 0 when it passes OR when nothing is configured; 1 when it fails.
+# Reads the "verify" command out of a given t4.json. Split out because WHICH t4.json
+# is the whole question below.
+_verify_cmd_from() {
+  local v
+  v="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < "$1" 2>/dev/null)"
+  v="${v//\\\"/\"}"; v="${v//\\\\/\\}"
+  printf '%s' "$v"
+}
+
 run_verify() {
-  local vcmd
-  vcmd="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < .claude/t4.json 2>/dev/null)"
-  vcmd="${vcmd//\\\"/\"}"; vcmd="${vcmd//\\\\/\\}"
-  [ -n "$vcmd" ] || return 0
-  local rc
+  local vcmd rc
 
   # THE EVIDENCE IS BOUND TO THE COMMIT BEING MERGED (#245). This used to run the
   # verify command in the CURRENT WORKING DIRECTORY and never look at the PR at all --
@@ -148,6 +153,19 @@ run_verify() {
     # and `mktemp -d` creates one.
     wt="$(mktemp -d)/t4-verify"
     if git worktree add --detach "$wt" "$head" >/dev/null 2>&1; then
+      # AND THE COMMAND COMES FROM THE HEAD TOO, not from local disk. `.claude/t4.json`
+      # is a TRACKED file, so an UNCOMMITTED edit to it changes what the ship gate
+      # executes while the pull request's diff shows nothing at all -- `"verify":
+      # "true"` on disk and the gate is off, invisibly, with no artifact for a reviewer
+      # to notice. Binding the run to the head (above) and then taking its instructions
+      # from the working tree would have left exactly that hole open.
+      vcmd="$(_verify_cmd_from "$wt/.claude/t4.json")"
+      if [ -z "$vcmd" ]; then
+        # The head configures no verify: nothing to run, and the local file does not
+        # get to volunteer a command on its behalf.
+        git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+        return 0
+      fi
       if command -v timeout >/dev/null 2>&1; then
         VERIFY_OUTPUT="$(cd "$wt" && timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
       else
@@ -168,6 +186,8 @@ run_verify() {
   # every repo without gh -- the fail-closed trap #129 traced. THIS PATH IS THE KNOWN
   # GAP: what it verifies is the working tree, and the suite pins that it is only
   # reached when no head could be resolved.
+  vcmd="$(_verify_cmd_from .claude/t4.json)"
+  [ -n "$vcmd" ] || return 0
   if command -v timeout >/dev/null 2>&1; then
     VERIFY_OUTPUT="$(timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
   else
