@@ -56,11 +56,23 @@ grep -q "PURE BASH" "$AUDIT" && ok "and extraction spawns no subprocess per asse
 
 echo ""
 echo "POSITIVE CONTROL -- a new positive-only corrective suite MUST be caught:"
-PROBE="$REPO_ROOT/tests/skills/test-zz-probe-positive-only.sh"
-# The probe writes a file this suite OWNS and nothing else reads, and removes it
-# from a trap. Three probes in this branch mutated a file the repository tracks and
-# left it dirty when a run ended early; a probe must not be able to do that.
-trap 'rm -f "$PROBE"' EXIT
+# THE PROBE LIVES OUTSIDE THE REPOSITORY, and the reason is measured rather than
+# theoretical. It used to be written to $REPO_ROOT/tests/skills/, which is inside the
+# tree the audit globs -- so TWO CONCURRENT RUNS SEE EACH OTHER'S PROBE. Reproduced
+# 2026-08-17 by running the suite twice at once: one run red on this file, the other
+# green, same commit, same tree.
+#
+# That is not a laboratory condition. `t4-gate` runs the repo's `verify` before every
+# merge, and the session that triggers it may be running the suite too -- so the ship
+# gate denies on a suite that is not actually failing. It cost 90 s and a wrong
+# verdict once today already.
+#
+# The old comment on these lines claimed the probe "writes a file this suite OWNS and
+# nothing else reads". That was false the moment a second run existed.
+TMPROOT="$(mktemp -d)"
+mkdir -p "$TMPROOT/tests/skills"
+PROBE="$TMPROOT/tests/skills/test-zz-probe-positive-only.sh"
+trap 'rm -rf "$TMPROOT"' EXIT
 cat > "$PROBE" <<'PROBESH'
 #!/usr/bin/env bash
 # Written and removed by tests/skills/test-anchor-quality-audit.sh. Deliberately
@@ -70,12 +82,26 @@ ok() { echo "  PASS: $1"; }
 has() { case "$1" in *"$2"*) ok "$3";; esac; }
 has "some text" "some" "a positive assertion and nothing else"
 PROBESH
-bash "$AUDIT" --only-a >/dev/null 2>&1; rc=$?
-rm -f "$PROBE"
+bash "$AUDIT" --only-a --root "$TMPROOT" >/dev/null 2>&1; rc=$?
 [ "$rc" -ne 0 ] && ok "a positive-only corrective suite makes the audit fail" \
                 || bad "the audit stayed green on a suite that can only ever add"
-bash "$AUDIT" --only-a >/dev/null 2>&1 && ok "removing it makes the audit pass again" \
+rm -f "$PROBE"
+bash "$AUDIT" --only-a --root "$TMPROOT" >/dev/null 2>&1 && ok "removing it makes the audit pass again" \
                                        || bad "the audit stayed red after cleanup"
+
+# The invariant, asserted rather than trusted to the code above staying correct.
+git -C "$REPO_ROOT" status --porcelain 2>/dev/null | grep -q 'test-zz-probe' \
+  && bad "a probe file is sitting in the repository" \
+  || ok "and no probe file is ever written inside the repository"
+# Asserted on the VARIABLE, not on the file's text. The first version of this line
+# grepped its own source for the old path -- and matched its own pattern literal,
+# failing while the code was correct. A textual detector that lives in the file it
+# scans is one that reports on itself; the audit's own header records the same trap
+# from the other direction.
+case "$PROBE" in
+  "$REPO_ROOT"/*) bad "the probe path is back inside the tree the audit scans" ;;
+  *)              ok "the probe path is outside the tree the audit scans, so two runs cannot collide" ;;
+esac
 
 echo ""
 echo "the exemption list is stated per suite with a reason, not a bare list:"

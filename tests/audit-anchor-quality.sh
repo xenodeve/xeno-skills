@@ -83,9 +83,21 @@ set -uo pipefail
 # around. A is a `grep -c` and runs in under a second, and A is what fails a build;
 # B and C stay a report someone runs deliberately.
 ONLY_A=0
-[ "${1:-}" = "--only-a" ] && ONLY_A=1
-
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# --root SCANS SOMEWHERE ELSE, and it exists so the positive control does not have to
+# write its probe into the tree this script globs. It did, and two concurrent runs
+# then saw each other's probe -- reproduced 2026-08-17, one run red and one green on
+# the same commit. `t4-gate` runs `verify` before every merge while the session may
+# also be running it, so that flake denied a merge on a suite that was not failing.
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --only-a) ONLY_A=1 ;;
+    --root)   shift; REPO_ROOT="${1:-$REPO_ROOT}" ;;
+    *)        ;;
+  esac
+  shift
+done
 
 # Suites exempt from finding A — see CLASSIFICATION above.
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
