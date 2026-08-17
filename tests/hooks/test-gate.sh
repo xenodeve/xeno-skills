@@ -127,6 +127,33 @@ allowed "$(run "$REPO" "$(bashj 'sh -c \"x; git reset --hard\"')")" \
 allowed "$(run "$REPO" "$(bashj 'bash -c \"git reset --hard\"')")" \
         "and was not caught before this change either -- the control for that claim"
 
+echo "#84 — an executable invoked by absolute or quoted path is still the same command:"
+# NOT EXOTIC — IT IS WHAT ACTUALLY GETS TYPED HERE. `gh` is not on the PATH that agent
+# tool shells inherit on this machine, so every `gh` call in the session that filed #84
+# used the quoted absolute path, and the gate was bypassed continuously by an agent
+# trying to comply. Measured 2026-08-03: same payload, only the spelling changed.
+#
+# The anchor itself is kept. It is what stops `git commit -m "reset --hard"` from
+# tripping the gate. What changes is that the executable at a command position is
+# reduced to its BASENAME first, so the anchor still sees a command and not a path.
+denied "$(run "$REPO" "$(bashj '\"/c/Program Files/GitHub CLI/gh.exe\" pr create --title x --body nothing')")" \
+       "deny: pr create by quoted absolute path, no issue ref"
+asked  "$(run "$REPO" "$(bashj '\"/c/Program Files/GitHub CLI/gh.exe\" pr merge 34 --merge')")" \
+       "ask:  pr merge by quoted absolute path"
+denied "$(run "$REPO" "$(bashj '\"/c/Program Files/Git/bin/git.exe\" push --force origin main')")" \
+       "deny: force-push by quoted absolute path"
+denied "$(run "$REPO" "$(bashj '/usr/bin/git reset --hard HEAD~1')")" \
+       "deny: reset --hard by unquoted absolute path"
+denied "$(run "$REPO" "$(bashj 'git.exe reset --hard HEAD~1')")" \
+       "deny: the .exe spelling with no directory"
+# THE CONTROL. Reducing to a basename must not become a substring search — that is
+# exactly the loosening #84 warns against, and it would reintroduce the false
+# positives the anchor was written to prevent.
+allowed "$(run "$REPO" "$(bashj '/usr/bin/notgh pr merge 34')")" \
+        "allow: an executable whose basename merely ENDS in gh is not gh"
+allowed "$(run "$REPO" "$(bashj '/usr/bin/mygit reset --hard')")" \
+        "allow: and one that ends in git is not git"
+
 echo "dangerous git — a quoted FLAG must still be denied (no bypass):"
 denied "$(run "$REPO" "$(bashj 'git reset \"--hard\" HEAD~1')")"     "deny: git reset with a quoted --hard"
 denied "$(run "$REPO" "$(bashj 'git push \"--force\" origin main')")" "deny: git push with a quoted --force"

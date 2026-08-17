@@ -77,9 +77,26 @@ fi
 # commit. Backticks are in POS because backtick command substitution is real; inside a
 # heredoc body nothing is. Dropping the body is exact rather than heuristic -- it is
 # the one region of a shell command that can never contain a command position.
+#
+# AND THE EXECUTABLE AT A COMMAND POSITION IS REDUCED TO ITS BASENAME (#84). `gh` is
+# not on the PATH that agent tool shells inherit on this machine, so every `gh` call in
+# the session that filed #84 used a quoted absolute path -- and the gate was bypassed
+# continuously, by an agent trying to comply, with no signal that anything was skipped.
+#
+# THE ANCHOR IS KEPT, NOT LOOSENED. Turning the patterns into a substring search would
+# catch the path forms and reintroduce every false positive the anchor exists to
+# prevent. Reducing the executable to its basename FIRST leaves the anchor matching a
+# command, which is what it was always meant to match. `/usr/bin/notgh` reduces to
+# `notgh` and is still not `gh`.
 scan="$(printf '%s' "$cmd" | perl -0777 -pe '
   s{<<-?\x27?"?([A-Za-z_][A-Za-z0-9_]*)\x27?"?(.*?)^\s*\1\s*$}{<<HEREDOC\nHEREDOC}gms;
   s{(\x27[^\x27]*\x27|"(?:\\.|[^"\\])*")}{ my $q = $1; $q =~ tr/;&|`()/      /; $q }ge;
+  s{(^|[;&|`(][ \t]*)(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s;&|`()]+))(?=[ \t])}{
+     my $pre = $1;
+     my $p = defined $2 ? $2 : defined $3 ? $3 : $4;
+     my $b = $p; $b =~ s{.*[\\/]}{}; $b =~ s{\.exe$}{}i;
+     ($b eq "git" or $b eq "gh") ? $pre . $b : $&;
+  }ge;
 ')"
 # FAIL TOWARD DETECTION, NEVER AWAY FROM IT. If that perl ever dies -- a future edit
 # to the pattern, a perl the machine does not have -- `scan` comes back empty, every
