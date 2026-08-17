@@ -135,6 +135,42 @@ allowed "$(run "$REPO" "$(bashj 'sh -c \"x; git reset --hard\"')")" \
 allowed "$(run "$REPO" "$(bashj 'bash -c \"git reset --hard\"')")" \
         "and was not caught before this change either -- the control for that claim"
 
+echo "#245 — the ship gate must verify the PR BEING MERGED, not whatever is checked out:"
+# THE FIXTURE IS THE POINT. Every other fixture in this file has ONE tree, so it cannot
+# tell "verified the working tree" from "verified the PR head" -- which is why 82
+# assertions never caught this. Here the working tree is commit A and the PR head is
+# commit B, and `verify` records which commit it actually ran against. That is a
+# behavioural observation: whatever tree the gate chose is what gets written down.
+GITREPO="$TMP/gitrepo"; mkdir -p "$GITREPO/.claude"
+( cd "$GITREPO" && git init -q . && git config user.email t@t && git config user.name t
+  echo a > f.txt && git add -A && git commit -qm A
+  echo b > f.txt && git add -A && git commit -qm B ) >/dev/null 2>&1
+HEAD_B="$(cd "$GITREPO" && git rev-parse HEAD)"
+( cd "$GITREPO" && git checkout -q HEAD~1 ) >/dev/null 2>&1
+HEAD_A="$(cd "$GITREPO" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD_B" > "$TMP/prhead.txt"
+VERIFIED="$TMP/verified.txt"; rm -f "$VERIFIED"
+python - "$GITREPO/.claude/t4.json" "$VERIFIED" <<'PYJSON'
+import json, sys
+json.dump({"t4": True, "verify": "git rev-parse HEAD > '%s'" % sys.argv[2]},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PYJSON
+# A stub gh that can answer for the PR head. It READS the sha from a file rather than
+# having it interpolated in, so no quoting in this fixture can corrupt it.
+GHSTUB="$TMP/bin245"; mkdir -p "$GHSTUB"
+cat > "$GHSTUB/gh" <<'STUB245'
+#!/usr/bin/env bash
+if [ "${1:-}" = "pr" ] && [ "${2:-}" = "view" ]; then cat "$T4_TEST_PRHEAD"; exit 0; fi
+if [ "${1:-}" = "pr" ] && [ "${2:-}" = "diff" ]; then printf 'README.md\n'; exit 0; fi
+exit 0
+STUB245
+chmod +x "$GHSTUB/gh"
+( cd "$GITREPO" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead.txt"
+  printf '%s' "$(bashj 'gh pr merge 7 --squash')" | bash "$HOOK" ) >/dev/null 2>&1
+GOT="$(cat "$VERIFIED" 2>/dev/null || echo NONE)"
+[ "$GOT" = "$HEAD_B" ] && ok "verify ran against the PR head, not the checked-out tree" \
+                       || bad "verify ran against ${GOT:0:12} instead of the PR head ${HEAD_B:0:12} (tree is ${HEAD_A:0:12})"
+
 echo "#141 — under autoMerge/afk the review ask now depends on what the diff TOUCHES:"
 # THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from the four in #129. Those are ways
 # PAST the gate. Here the gate runs, sees the command, and CHOOSES to stand down — so

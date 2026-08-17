@@ -128,6 +128,46 @@ run_verify() {
   vcmd="${vcmd//\\\"/\"}"; vcmd="${vcmd//\\\\/\\}"
   [ -n "$vcmd" ] || return 0
   local rc
+
+  # THE EVIDENCE IS BOUND TO THE COMMIT BEING MERGED (#245). This used to run the
+  # verify command in the CURRENT WORKING DIRECTORY and never look at the PR at all --
+  # so `gh pr merge 3` from any other branch ran that branch's suite, saw green, and
+  # permitted the merge of a PR whose head was never tested. The gate reported the ship
+  # gate as satisfied either way, which is the exact defect class this file exists to
+  # prevent, at its most load-bearing point.
+  #
+  # Found by a clink panel reading the hook rather than the prompt; two independent
+  # models reported it, and it was verified here before being acted on.
+  local head="" wt=""
+  if [ -n "${PR_NUM:-}" ] && command -v gh >/dev/null 2>&1 \
+     && git rev-parse --git-dir >/dev/null 2>&1; then
+    head="$(gh pr view "$PR_NUM" --json headRefOid --jq .headRefOid 2>/dev/null | tr -d '[:space:]')"
+  fi
+  if [ -n "$head" ]; then
+    # A path that does not exist yet: `git worktree add` refuses an existing directory,
+    # and `mktemp -d` creates one.
+    wt="$(mktemp -d)/t4-verify"
+    if git worktree add --detach "$wt" "$head" >/dev/null 2>&1; then
+      if command -v timeout >/dev/null 2>&1; then
+        VERIFY_OUTPUT="$(cd "$wt" && timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
+      else
+        VERIFY_OUTPUT="$(cd "$wt" && bash -c "$vcmd" 2>&1)"; rc=$?
+      fi
+      git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+      return "$rc"
+    fi
+    # A head was resolved and could not be checked out. That is a real failure, not a
+    # missing capability, so it denies rather than quietly falling back to the tree
+    # that happens to be here -- falling back is the bug.
+    rm -rf "$wt"
+    VERIFY_OUTPUT="could not check out PR head $head to verify it"
+    return 1
+  fi
+  # No PR head resolvable (no gh, not a git checkout, or a merge with no number). The
+  # pre-#245 behaviour is kept here rather than denying, because denying would deadlock
+  # every repo without gh -- the fail-closed trap #129 traced. THIS PATH IS THE KNOWN
+  # GAP: what it verifies is the working tree, and the suite pins that it is only
+  # reached when no head could be resolved.
   if command -v timeout >/dev/null 2>&1; then
     VERIFY_OUTPUT="$(timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
   else
@@ -247,13 +287,13 @@ case "$tool" in
         deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first." ;;
 
       mcp__github__merge_pull_request)
-        # The ship gate, identical to the `gh pr merge` path below.
+        # The ship gate, identical to the shell path below.
+        PR_NUM=""
+        [[ "$input" =~ \"(pullNumber|pull_number)\"[[:space:]]*:[[:space:]]*([0-9]+) ]] && PR_NUM="${BASH_REMATCH[2]}"
         run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
 --- last verify output ---
 $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
-        pr_num=""
-        [[ "$input" =~ \"(pullNumber|pull_number)\"[[:space:]]*:[[:space:]]*([0-9]+) ]] && pr_num="${BASH_REMATCH[2]}"
-        review_ask_required "$pr_num" || exit 0
+        review_ask_required "$PR_NUM" || exit 0
         ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?" ;;
 
       *)
@@ -299,6 +339,9 @@ fi
 # Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
 # e2e to the CI required-check.
 if [[ "$scan" =~ ${POS}${GHH}merge ]]; then
+  # Resolved before run_verify, which needs it to bind the evidence to the PR (#245).
+  rest2="${cmd#*pr }"; rest2="${rest2#merge}"; PR_NUM=""
+  [[ "$rest2" =~ ^[[:space:]]+([0-9]+) ]] && PR_NUM="${BASH_REMATCH[1]}"
   # CI first: it's one cheap network call, and "a check is red/pending" is a
   # faster, more useful answer than a local suite that passes anyway.
   if grep -Eq '"requireGreenCI"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
@@ -313,9 +356,7 @@ $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
   # ORDINARY work -- the developer authorized the batch, and re-asking a decided call
   # is the 'sticking' anti-pattern. It does NOT skip when the diff touches an
   # enforcement path (#141): see review_ask_required above.
-  rest2="${cmd#*pr }"; rest2="${rest2#merge}"; pr_num=""
-  [[ "$rest2" =~ ^[[:space:]]+([0-9]+) ]] && pr_num="${BASH_REMATCH[1]}"
-  review_ask_required "$pr_num" || exit 0
+  review_ask_required "$PR_NUM" || exit 0
   ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?"
 fi
 
