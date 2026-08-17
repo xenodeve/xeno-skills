@@ -37,6 +37,54 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 | **Consolidating** (work scattered; agent misses MD-only items) | + a full `docs/OPEN-WORK-LEDGER.md` reconciliation pass + Serena `mem:` graph. This is the tier where the ledger earns its keep. |
 | **Formal delivery** (academic / client dossier) | + the optional 7-phase SE set — see `references/se-deliverables.md`. On demand only. |
 
+## Before you start: check what this bootstrap depends on
+
+Two prerequisites, and both fail the same way — **quietly, leaving a trail that looks like success.** Steps 1–5 each drop a visible file, so a run that could not create a single label or reach a single companion skill is indistinguishable from one that did. Check both before you reach the step that needs them; this is step 11's argument applied to the inputs rather than the outputs.
+
+### 1. Resolve every tool you depend on — "not on PATH" is not "not installed"
+
+**Before any step that shells out, check `command -v <tool>`. If it comes back empty, resolve the absolute path before concluding the tool is absent** — Windows: `where <tool>` from cmd (git-bash has no `where`); POSIX: `which <tool>`; then the known install locations. Use the resolved **absolute path**, quoted, for the rest of the run.
+
+**The two states look identical from a failed `command -v` and need opposite responses.** Measured on the developer's machine, in this repo:
+
+| tool | `command -v` | actually installed at |
+|---|---|---|
+| `gh` | **fails** | `C:\Program Files\GitHub CLI\gh.exe` |
+| `bun` | **fails** | `%USERPROFILE%\.bun\bin\bun.exe` |
+| `git`, `node`, `npx` | resolve | on PATH |
+
+Both of the ones that fail are tools this skill depends on — `gh` in steps 5 and 7, `bun` in the package-manager rule. An agent that reads `command not found` as "not installed here" skips the step, and **steps 1–5 each leave a visible file behind, so a bootstrap that could not create a single label looks exactly like one that did** — the argument step 11 makes for saying the hooks result out loud, applied to the inputs.
+
+**This is not a new pattern; the repo already ships it.** `run-hook.cmd` searches two Git-for-Windows locations for `bash` before falling back to PATH, for exactly this reason. Generalise that rather than re-deriving it per tool.
+
+**And it has already gone wrong on the record.** PRD `#129`'s problem statement is an agent writing *"this tool has never been installed or run"* into a research document — the tool was installed, under `~/.bun/bin/`, simply absent from PATH, and had never been checked. Same directory as `bun` above.
+
+**Only when it resolves nowhere is it missing.** Then name the step you are leaving undone and why; do not let a PATH lookup decide it silently. Do not edit the developer's environment either — resolving the path is the bootstrap's job for the length of the run, not a change to their machine.
+
+**This instruction is safe to give only since `#84`.** Until that fix an executable invoked by absolute path escaped the `PreToolUse` gate entirely, so falling back to `"C:\Program Files\GitHub CLI\gh.exe" pr create` would have skipped the PR-needs-an-issue rule with no signal that anything had been skipped. The gate now reduces an executable to its basename before matching, so the quoted absolute path meets exactly the same rules as a bare `gh`. In a repo whose gate predates `#84`, the fallback is still correct and the gate is still blind to it — check before relying on it.
+
+### 2. Check the companion ecosystems, and let the developer decide
+
+**This bootstrap depends on them and never checked.** Step 5 *invokes* `/setup-matt-pocock-skills` outright, and the `CLAUDE.md` wiring written in step 3 routes work to superpowers and 9arm — so on a machine without them, step 5 fails the way a missing `gh` does and the tracker conventions never land, while the docs that surround them do.
+
+**Check the session's available-skills list for one entry per ecosystem** — the skills are what the wiring actually reaches, so their presence is the check that matters:
+
+| Ecosystem | Present if you can see | What the bootstrap uses it for |
+|---|---|---|
+| **matt pocock** | `setup-matt-pocock-skills`, `grilling`, `to-prd`, `to-issues` | step 5 — the tracker choice and the five canonical triage roles |
+| **superpowers** | `superpowers:using-superpowers` | the general process discipline `using-t4` routes to |
+| **9arm** | `debug-mantra`, `scrutinize`, `post-mortem`, `qwen-agent` | the debugging and adversarial-review gates the workflow names |
+
+**Anything missing: ask the user whether to install it — one at a time, recommended answer first, exactly as step 2 asks every other question.** Say what each one buys and what stays undone without it. **Do not install it yourself:** putting software on the developer's machine is outward-facing and hard to undo, and nothing else in this skill touches anything outside the repo.
+
+**Use the commands `using-t4` records; do not invent one.**
+
+- **9arm** — `npx skills add thananon/9arm-skills`. Run it from **outside** the `xeno-skills` clone: pointed at that library it rewrites the source tree it is reading.
+- **matt pocock** — `/setup-matt-pocock-skills`, which installs *and* configures the tracker/label/domain layout, so it replaces step 5's invocation rather than preceding it.
+- **superpowers** — **no install command is recorded anywhere in this family.** Ask the developer how they install it. A plausible-looking guess is worse than the question: it fails on their machine with this skill's name on it.
+
+**Record the answer in `CLAUDE.md` either way**, the way the `clink-masteragent` question in step 3 is recorded — so a later reader can tell a declined ecosystem from one nobody asked about. A skipped install that was *chosen* is fine; a silent one is the failure this section exists to close.
+
 ## Bootstrap procedure
 
 1. **Read the target repo first.** `git remote -v` (get `<ORG>/<REPO>`), the existing `CLAUDE.md`/`AGENTS.md`, `package.json` (package manager, pinned framework versions), any `docs/` present. Never overwrite a governed doc — reconcile.
@@ -70,6 +118,8 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
    **Then create the labels, with `gh label create`, and report which were created, which already existed, and which the vocabulary names but you skipped.** Neither skill did this before: pocock's `triage-labels.md` is a mapping table that assumes the labels exist, and T4's told the agent to create them lazily and proceed silently if the vocabulary was thin — which combine into never creating them and never saying so. Measured 2026-08-04 on a repo that had been bootstrapped: **8 of 19 documented labels existed**, `needs-triage` among the missing. A documented vocabulary with no labels behind it is the failure this step now forecloses.
 6. **Install the hooks layer** from `references/hooks-layer.md` — copy the marker (`.claude/t4.json`), the `.claude/hooks/` scripts + `run-hook.cmd`, merge the hook entries into `.claude/settings.json`, and write `using-t4.snapshot.md`. This keeps a session on the rails: session-start injects `using-t4`, a per-turn reminder re-anchors it, and a `PreToolUse` gate blocks a PR with no issue and dangerous git. **Arm the local ship gate** by setting `.claude/t4.json` `"verify"` to the repo's *fast* command (lint + typecheck + unit + build). Tell the user what the gate will block.
 7. **Install the CI/CD layer** from `references/ci-cd-layer.md` — the workflows in `references/ci/` into `.github/workflows/`, then make `lint`/`typecheck`/`test`/`build` **required checks** on `main` and disallow direct pushes. Do this in the same pass as step 6: a repo with the local gate and no CI has the *appearance* of enforcement with none of the guarantee. Where a ruleset isn't available, set `.claude/t4.json` `"requireGreenCI": true` as the (weaker) fallback. Add `t4-deploy.yml` only if the repo deploys.
+
+   **If CI cannot run at all — a locked billing account, an exhausted quota, Actions disabled — that fallback is the wrong one and makes things worse:** `gh pr checks` reports non-zero for *no checks* exactly as it does for *failing*, so `requireGreenCI` then denies every merge forever. Turn it off and follow **"When CI cannot run at all"** in `references/ci-cd-layer.md`, which lists what to do instead to keep the codebase quality the missing tier was carrying.
 8. **Install the guards layer** from `references/guards-layer.md` — copy `references/guards/` into `<repo>/.githooks/`, tell the user to run `git config core.hooksPath .githooks`, and wire the same three scripts into the CI gate. This is the tier that binds Codex/Gemini/humans; the Claude hooks in step 6 do not.
 9. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
 10. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.

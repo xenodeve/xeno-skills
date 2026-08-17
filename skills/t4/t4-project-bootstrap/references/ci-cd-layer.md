@@ -189,6 +189,23 @@ Private repos on the free plan can't enforce rulesets. Then the fallback is the 
 
 Honest scope: this is weaker than a ruleset — it only binds commands the agent runs through the hook, and a human merging on the web bypasses it entirely. Use it as a stopgap, and say so; don't present it as equivalent.
 
+## When CI cannot run at all — billing, quota, or a disabled Actions plan
+
+**This is a different failure from the one above, and the fallback above makes it worse.** There the ruleset can't be enforced but the workflows still run; here no run starts. A locked billing account fails every job at provisioning — *"the job was not started because your account is locked due to a billing issue"* — so no check ever reports.
+
+**First, turn `requireGreenCI` off.** `gh pr checks` reports non-zero for a PR with no checks exactly as it does for a failing one, so with `true` the gate denies **every merge, forever**. That is a deadlock wearing a guard's clothing, and under `"afk"` it stalls the whole batch. `false` is the honest setting; it says the check is absent rather than pretending it is pending.
+
+Then compensate deliberately. Tier 3 is what caught the things Tier 0 misses, so removing it silently lowers the bar on everything:
+
+1. **The local `verify` is now the only executable gate, so it has to widen.** Its whole design was to be the *fast prefix* of CI, with e2e left to the server. With no server, e2e has no home at all. Either fold the slow suite into a second command run before merge, or **write down which suites no longer run anywhere** — "fast verify" must not quietly come to mean "less checked".
+2. **Make the pre-push guards actually bind.** `git config core.hooksPath .githooks` is opt-in *per clone*. With CI gone this is the only tier that reaches another agent or a human on the same machine, so confirm it is configured rather than installed — and treat a habitual `--no-verify` as the gate being off.
+3. **Keep the half of the ruleset that does not need a check.** Blocking direct pushes to `main` and requiring a pull request depend on no workflow running. Install that even when no status check can be attached; it is the part that survives a billing lock, and it is what stops a push straight to `main`.
+4. **State it where it will be read — `CLAUDE.md` and the open-work ledger.** A merged PR in this repo means *"the author ran `verify`"*, not *"CI passed"*, and the next agent has no way to tell those apart from the merge alone. This is the same *looks-enforced-and-isn't* failure the hooks-without-CI warning names, one tier up.
+5. **File the restoration as an issue, not a memory.** A billing lock is temporary and this configuration is not. Without a tracked item to re-enable the required checks and re-run the ruleset step, the stopgap becomes the permanent state and nobody decides that it has.
+6. **The `T4-Gates:` trailer stops being paperwork.** With no CI, the trailer plus `check-gate-ledger` is the only record that the judgment gates ran at all, and `not-run` is a legal answer precisely so the record can be honest. Under `"afk"`, the review ask still fires for a diff touching an enforcement path — that rule is load-bearing here in a way it is not in a repo with CI.
+
+**The ceiling, stated rather than implied: none of this binds a human merging on the web.** That gap is exactly what required checks existed to close and it cannot be closed locally. Say so in the repo's own docs; do not present the compensations as equivalent cover.
+
 ## CD gating
 
 If the repo deploys, the discipline is that **deploy is downstream of the same gate as merge** — `t4-deploy.yml` triggers on `workflow_run` of `T4 verify` completing successfully on `main`, and checks out `workflow_run.head_sha` so it ships the exact commit that passed.

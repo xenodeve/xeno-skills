@@ -17,10 +17,10 @@ clink skill's rules govern a delegation that has its own reviewer
 
 | | machine-decidable | needs a trace | undecidable | **total** |
 |---|---|---|---|---|
-| **master** | 40 | 33 | 46 | **119** |
+| **master** | 42 | 33 | 46 | **121** |
 | **native subagent** | 1 | 2 | 1 | **4** |
 | **foreign CLI worker** | 1 | 0 | 0 | **1** |
-| **total** | **42** | **35** | **47** | **124** |
+| **total** | **44** | **35** | **47** | **126** |
 
 **What the foreign row means.** Those rules are listed separately rather than
 folded into undecidable because the distinction is actionable: a foreign trace
@@ -175,6 +175,8 @@ count is therefore a floor, not a total.
 | `t4-project-bootstrap` | `t4-dev-workflow` | undecidable | master |
 | `t4-project-bootstrap` | `t4-engineering-records` | undecidable | master |
 | `t4-project-bootstrap` | `using-t4` | trace | subagent |
+| `t4-project-bootstrap` | matt pocock | machine | master |
+| `t4-project-bootstrap` | superpowers | machine | master |
 | `using-t4` | Act on what's already decided; don't re-ask. | undecidable | master |
 | `using-t4` | Bilingual is tracker-only, Thai mirrors English exactly | machine | master |
 | `using-t4` | Coding behavior follows `karpathy-guidelines` | undecidable | master |

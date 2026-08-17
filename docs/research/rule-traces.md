@@ -17,12 +17,12 @@ not, and a reviewer handed it will invent a verdict.
 | State | Count | Meaning |
 |---|---|---|
 | `traced` | 31 | The rule names an order, and the trace states it as observable records |
-| `machine` | 41 | Settled by a script without a transcript |
+| `machine` | 43 | Settled by a script without a transcript |
 | `untraced` | 0 | **Needs a trace; none written yet — work not done, not work impossible** |
 | `out-of-scope` | 51 | **Undecidable from a transcript, marked with its reason** |
 | -- of which reclassified from `trace` | 4 | **Argued one by one, never with the blanket reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **124** | |
+| **total** | **126** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
@@ -74,7 +74,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-bro` | `9be243f040d4` | `skills/t4/t4-bro/SKILL.md` |
 | `t4-dev-workflow` | `3e7795e0e77e` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cecfde44d90b` | `skills/t4/t4-engineering-records/SKILL.md` |
-| `t4-project-bootstrap` | `5c9626cb656f` | `skills/t4/t4-project-bootstrap/SKILL.md` |
+| `t4-project-bootstrap` | `fd4309539dea` | `skills/t4/t4-project-bootstrap/SKILL.md` |
 | `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
 
 ## Traces
@@ -192,6 +192,8 @@ cries wolf gets switched off along with its true findings.
 | `t4-project-bootstrap/a381ff0421cf` | `t4-project-bootstrap` | out-of-scope | `t4-dev-workflow` | asks whether the work was done well; no sequence of messages settles that |
 | `t4-project-bootstrap/26b92ba6d309` | `t4-project-bootstrap` | out-of-scope | `t4-engineering-records` | asks whether the work was done well; no sequence of messages settles that |
 | `t4-project-bootstrap/7f5a1f9adfca` | `t4-project-bootstrap` | traced | `using-t4` | the record for '`using-t4`' is the first of its kind in the segment |
+| `t4-project-bootstrap/54dcd15a2200` | `t4-project-bootstrap` | machine | matt pocock | settled by a script; no transcript needed |
+| `t4-project-bootstrap/b225390a8984` | `t4-project-bootstrap` | machine | superpowers | settled by a script; no transcript needed |
 | `using-t4/d12b5b01a05f` | `using-t4` | out-of-scope | Act on what's already decided; don't re-ask. | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/3695106b611c` | `using-t4` | machine | Bilingual is tracker-only, Thai mirrors English exactly | settled by a script; no transcript needed |
 | `using-t4/e9e075221384` | `using-t4` | out-of-scope | Coding behavior follows `karpathy-guidelines` | asks whether the work was done well; no sequence of messages settles that |
