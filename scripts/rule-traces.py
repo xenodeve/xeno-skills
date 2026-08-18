@@ -125,6 +125,19 @@ RECLASSIFIED = {
 }
 
 
+# ALREADY OUT OF SCOPE, BUT NOT FOR THE BLANKET REASON. These are not rules about how
+# work is done -- they are FACTS ABOUT A TOOL that a reader must hold in order to use the
+# surrounding rule correctly. "Asks whether the work was done well" is simply false of
+# them, and letting them inherit it inflates the blanket population, which is the exact
+# measure the suite pins so that reclassification cannot become a quiet dumping ground.
+ARGUED = {
+    "6f24fbd6fc60":                  # The rollup counts DIRECT CHILDREN only.
+        "states a fact about the tracker's API, not a behaviour performed in any order",
+    "7994bc1ca25f":                  # A child has exactly one parent
+        "states a constraint the tracker enforces, which no transcript can evidence",
+}
+
+
 def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
 
@@ -200,7 +213,7 @@ def rows():
                 state, detail = "untraced", ("the census classes this as needing a trace; "
                                              "no trace shape covers it yet")
         else:
-            state, detail = "out-of-scope", REASONS["quality"]
+            state, detail = "out-of-scope", ARGUED.get(sha(rule), REASONS["quality"])
         out.append({"id": rid, "skill": r["skill"], "rule": rule,
                     "sha": sha(rule), "state": state, "detail": detail})
     return out

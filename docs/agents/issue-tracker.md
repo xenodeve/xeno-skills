@@ -26,6 +26,12 @@ Every issue body, PRD body, and PR description must be **bilingual**:
 - **Comment**: `gh issue comment <n> --body "..."`.
 - **Label**: `gh issue edit <n> --add-label "..."` / `--remove-label "..."`.
 - **Close (with REASON)**: `gh issue close <n> --comment "<reason + evidence>"`.
+- **Link a child to its parent** (`gh` has no command; use the API):
+  `gh api --method POST repos/{owner}/{repo}/issues/<parent>/sub_issues -F sub_issue_id=<child INTERNAL id>`
+  The child's internal id is `gh api repos/{owner}/{repo}/issues/<n> --jq .id` — **not** its number. Undo with `--method DELETE .../issues/<parent>/sub_issue`.
+- **Read a tree**: `gh api repos/{owner}/{repo}/issues/<n>/sub_issues` · progress: `gh api .../issues/<n> --jq .sub_issues_summary`.
+
+**The hierarchy is plan → PRD → issues, expressed as sub-issues, never as a `## Parent` heading.** The heading may stay for a human reader; it is not the mechanism. Three caveats that mislead if unknown: the rollup counts **direct children only** (a plan at 0% may have thirty slices done), a child has **exactly one parent**, and **`## Blocked by` stays prose** — a sub-issue is decomposition, not ordering, and GitHub has no dependency edge.
 
 Infer the repo from `git remote -v` — `gh` does this automatically inside a clone.
 
@@ -64,6 +70,12 @@ Issue และ PRD ของ repo นี้อยู่เป็น GitHub issu
 - **คอมเมนต์**: `gh issue comment <n> --body "..."`
 - **Label**: `gh issue edit <n> --add-label "..."` / `--remove-label "..."`
 - **ปิด (พร้อมเหตุผล)**: `gh issue close <n> --comment "<เหตุผล + หลักฐาน>"`
+- **ผูกลูกเข้ากับ parent** (`gh` ไม่มีคำสั่งให้ ต้องใช้ API):
+  `gh api --method POST repos/{owner}/{repo}/issues/<parent>/sub_issues -F sub_issue_id=<id ภายในของลูก>`
+  id ภายในของลูกมาจาก `gh api repos/{owner}/{repo}/issues/<n> --jq .id` — **ไม่ใช่** เลข issue · ถอนด้วย `--method DELETE .../issues/<parent>/sub_issue`
+- **อ่านต้นไม้**: `gh api repos/{owner}/{repo}/issues/<n>/sub_issues` · ความคืบหน้า: `gh api .../issues/<n> --jq .sub_issues_summary`
+
+**ลำดับชั้นคือ plan → PRD → issues แสดงด้วย sub-issue ไม่ใช่หัวข้อ `## Parent`** · หัวข้อนั้นคงไว้ให้คนอ่านได้ แต่ไม่ใช่กลไก · ข้อควรระวังสามข้อที่ทำให้เข้าใจผิดถ้าไม่รู้: การรวมยอดนับ **เฉพาะลูกชั้นเดียว** (plan ที่ค้างอยู่ 0% อาจมี slice เสร็จไปสามสิบอัน), ลูกมี **parent ได้ตัวเดียว**, และ **`## Blocked by` ยังเป็นข้อความ** — sub-issue คือการแตกงาน ไม่ใช่ลำดับก่อนหลัง และ GitHub ไม่มีเส้น dependency
 
 อนุมาน repo จาก `git remote -v` — `gh` ทำอัตโนมัติเมื่อรันใน clone
 

@@ -17,12 +17,12 @@ not, and a reviewer handed it will invent a verdict.
 | State | Count | Meaning |
 |---|---|---|
 | `traced` | 31 | The rule names an order, and the trace states it as observable records |
-| `machine` | 43 | Settled by a script without a transcript |
+| `machine` | 44 | Settled by a script without a transcript |
 | `untraced` | 0 | **Needs a trace; none written yet — work not done, not work impossible** |
-| `out-of-scope` | 51 | **Undecidable from a transcript, marked with its reason** |
+| `out-of-scope` | 53 | **Undecidable from a transcript, marked with its reason** |
 | -- of which reclassified from `trace` | 4 | **Argued one by one, never with the blanket reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **126** | |
+| **total** | **129** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
@@ -72,7 +72,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-afk` | `6386c091e189` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `296ecdf99bd8` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `9be243f040d4` | `skills/t4/t4-bro/SKILL.md` |
-| `t4-dev-workflow` | `3e7795e0e77e` | `skills/t4/t4-dev-workflow/SKILL.md` |
+| `t4-dev-workflow` | `c467f97aee70` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cecfde44d90b` | `skills/t4/t4-engineering-records/SKILL.md` |
 | `t4-project-bootstrap` | `fd4309539dea` | `skills/t4/t4-project-bootstrap/SKILL.md` |
 | `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
@@ -122,6 +122,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-bro/37bef6758799` | `t4-bro` | out-of-scope | The shipped skills and docs in this repository | asks whether the work was done well; no sequence of messages settles that |
 | `t4-bro/dc6c9e7c84b1` | `t4-bro` | machine | Tracker bodies | settled by a script; no transcript needed |
 | `t4-dev-workflow/f1be46028078` | `t4-dev-workflow` | out-of-scope | A Thai body that summarizes instead of mirrors. | asks whether the work was done well; no sequence of messages settles that |
+| `t4-dev-workflow/7994bc1ca25f` | `t4-dev-workflow` | out-of-scope | A child has exactly one parent | states a constraint the tracker enforces, which no transcript can evidence |
 | `t4-dev-workflow/8789a2627ae8` | `t4-dev-workflow` | foreign | Agent-agnostic guards | produced inside a foreign CLI; reachable when xenodeve/openclink#116 lands |
 | `t4-dev-workflow/139fcdd52969` | `t4-dev-workflow` | traced | Another agent said so. | a record checking the claim appears BETWEEN the subagent report that made it and the record t… |
 | `t4-dev-workflow/445f3af6113c` | `t4-dev-workflow` | out-of-scope | Anything the user has just told you to do. | asks whether the work was done well; no sequence of messages settles that |
@@ -147,7 +148,9 @@ cries wolf gets switched off along with its true findings.
 | `t4-dev-workflow/164e952fac69` | `t4-dev-workflow` | machine | Tests and fixtures | settled by a script; no transcript needed |
 | `t4-dev-workflow/20c4cea7a61b` | `t4-dev-workflow` | machine | The GitHub MCP surface is gated too | settled by a script; no transcript needed |
 | `t4-dev-workflow/c5c290d2989b` | `t4-dev-workflow` | out-of-scope | The Thai must mirror the English exactly | asks whether the work was done well; no sequence of messages settles that |
+| `t4-dev-workflow/6f24fbd6fc60` | `t4-dev-workflow` | out-of-scope | The rollup counts DIRECT CHILDREN only. | states a fact about the tracker's API, not a behaviour performed in any order |
 | `t4-dev-workflow/0535833b98df` | `t4-dev-workflow` | out-of-scope | Translating code identifiers into Thai. | asks whether the work was done well; no sequence of messages settles that |
+| `t4-dev-workflow/72292a44f688` | `t4-dev-workflow` | machine | `## Blocked by` stays prose, always. | settled by a script; no transcript needed |
 | `t4-engineering-records/7f87fceaefe2` | `t4-engineering-records` | out-of-scope | A feature/refactor is not a post-mortem | asks whether the work was done well; no sequence of messages settles that |
 | `t4-engineering-records/1926aba6c550` | `t4-engineering-records` | machine | A trivial one-liner needs neither | settled by a script; no transcript needed |
 | `t4-engineering-records/2b4f93e2ec90` | `t4-engineering-records` | out-of-scope | Blameless, active voice, no hedging. | asks whether the work was done well; no sequence of messages settles that |

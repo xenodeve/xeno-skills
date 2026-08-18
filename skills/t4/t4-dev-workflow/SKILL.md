@@ -22,6 +22,22 @@ When planning or implementing a feature, follow this order:
 
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
 
+## The hierarchy is a sub-issue tree, not prose
+
+**plan → PRD → issues**, and each edge is a **native GitHub sub-issue**, created through `POST /repos/{owner}/{repo}/issues/{n}/sub_issues` with the child's internal `id` (not its number). `DELETE …/issues/{n}/sub_issue` undoes it, so the structure is safe to build incrementally.
+
+**A plan gets a tracking issue, and keeps its markdown.** The file in `docs/plans/` is the reviewable artifact — it has a diff, a history, and arrives through a PR, none of which an issue body has. The **tracking issue** is the plan's presence on the tracker: a short body linking the file, carrying the tree. Two artifacts, two jobs, a link each way. Record the issue number in `docs/plans/README.md` so the index resolves both directions.
+
+**Why this replaced a heading.** Parenthood used to be `## Parent xeno-skills#176` inside each child. GitHub cannot read that, so nothing could answer *"what did this plan produce, and how much is done"*. Measured 2026-08-17: answering it took exporting 107 open issues, extracting numbers from 54 commit subjects, and a set difference in a shell pipeline — to recover a fact the tracker already held and could not report. **Keep the prose heading if a human reader wants it; it is no longer the mechanism.**
+
+Three things the API will not tell you, each of which misleads if unknown:
+
+- **The rollup counts DIRECT CHILDREN only.** `sub_issues_summary` on a plan reports its PRDs, not its slices — measured on a three-level tree that reported `total: 1` at the top, not 2. **A plan sitting at 0% may have thirty slices done.** Never read a plan's percentage as slice progress.
+- **A child has exactly one parent**, enforced by GitHub. Where a slice genuinely serves two, it belongs under the one that *decomposed* it; the other reference stays prose.
+- **`## Blocked by` stays prose, always.** A sub-issue expresses **decomposition**, not **ordering**, and GitHub has no native dependency edge. Folding blocked-by into the tree does not move that information — it destroys it.
+
+**Not available here, so do not plan around them:** *Issue Types* are organisation-only and 404 on a user account; *Projects v2* needs a `read:project` scope this tooling may not hold. Sub-issues work on a personal repo, which is why they are the mechanism.
+
 ## Survey the change sites before writing the plan
 
 Most "surprise cases" aren't surprises — they're **sites the plan never knew about**. They surface mid-implementation, when the cheapest moment to have found them has already passed, and they arrive as scope growth (which under AFK is a 🛑 park). The survey is the step that converts them from surprises into line items.
