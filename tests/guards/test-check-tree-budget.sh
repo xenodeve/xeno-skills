@@ -63,6 +63,18 @@ mkdir -p "$r/src" && echo 'export const a = 1' > "$r/src/thing.ts"
 run "$r"
 if [ "$rc" -eq 0 ]; then ok "exits 0 for a normal untracked source file"; else bad "false artifact match on src/thing.ts, got $rc ($out)"; fi
 
+echo "this repo does not trip its own artifact gate (#258):"
+# The guard is right to block every untracked *.log unconditionally, so the burden is on the
+# repo to hide the ones its own tooling writes. The skill-usage invocation log lands inside a
+# COMMITTED vault directory, so without a rule it is untracked, matches \.log$, and blocks every
+# push from the clone -- which is exactly how it was found.
+INVLOG="Obsidian-xeno-skills/skill-usage/.invocations.log"
+if git -C "$REPO_ROOT" check-ignore -q "$INVLOG"; then
+  ok "$INVLOG is gitignored, so the guard can never see it"
+else
+  bad "$INVLOG is not gitignored - check-tree-budget blocks every push while it exists"
+fi
+
 echo ""
 echo "check-tree-budget: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
