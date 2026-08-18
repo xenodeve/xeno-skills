@@ -123,6 +123,28 @@ every park below names the thing it needs rather than the fact that it stopped.
 | **#169 · #170 · #172** | 🔴 | **PARKED — behind #166** | An ADR that is `ready-for-human`. |
 | **#88 · #89 · #90 · #204** | 🔴 | labelled `blocked` | Not this track. |
 
+## Track 8 — the tracker hierarchy, and what it found (#248)
+
+**The rule landed in `a2f1dba`; the five slices that apply it are done and closed** (2026-08-19). PR
+**#259 is merged to `main`** — the only thing this session shipped that did not have to wait for #235.
+
+| Item | Status | Gate | Next action |
+|---|---|---|---|
+| #248 the rule — a sub-issue tree, not prose | 🟡 | PR #235 | All five children closed; the rule itself ships with #235. Close on merge. |
+| #251 · #252 · #253 · #254 the four trees | ✅ | — | **Closed with evidence.** #215→3, #129→4, #165→10, #176→42. Every count read back from `sub_issues_summary`. |
+| #255 a tracking issue per plan | ✅ | merged | **#256** (08-13 compliance plan → #176) and **#257** (08-16 clink contract → #215). Three plans get none, each with its reason in `docs/plans/README.md`, pinned by `tests/skills/test-plan-index.sh`. |
+| #258 the invocation log blocked every push | ✅ | merged | `.gitignore` + an assertion in `tests/guards/test-check-tree-budget.sh`. Found by the guard refusing #259's push. |
+| **#260** 20 of 24 hooks are committed CRLF | 🔴 | **PARKED — trust boundary** | `.gitattributes` pins the source side file-by-file (4 entries, written when `hooks/` had 4 files) and the installed side by glob, so every hook added since gets opposite endings on the two sides. Two suites are red at HEAD because of it. The fix rewrites 20 files of the enforcement layer, so it is the developer's 20 seconds, not an unattended commit. |
+| #244 the bootstrap session has no T4 wiring | ✅ | PR #235 | Implemented in `ed01ed6` — the procedure now opens by invoking `using-t4` and `t4-bro`, with the audit of what else runs pre-wiring. Close on merge. |
+
+**#141 has no parent, deliberately.** #252 reserved the call; #129's own body names #83, #84, #85,
+#126 as its four bypasses, and #141's title says *"the fifth bypass, not in #129"*. A root with no
+parent is the accurate answer, not a gap.
+
+**#165 has no plan file, checked rather than assumed.** Nothing under `docs/plans/` names it and its
+own body names none — so its plan was never written rather than predating the directory. `#255`
+recorded that as `none` instead of inventing one.
+
 ## Management Plan — phased execution order
 
 **Phase 0 — this bootstrap (#93).** The repo runs the standard it ships; installing the operating
