@@ -39,9 +39,32 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 
 ## Before you start: check what this bootstrap depends on
 
-Two prerequisites, and both fail the same way — **quietly, leaving a trail that looks like success.** Steps 1–5 each drop a visible file, so a run that could not create a single label or reach a single companion skill is indistinguishable from one that did. Check both before you reach the step that needs them; this is step 11's argument applied to the inputs rather than the outputs.
+Three prerequisites, and all three fail the same way — **quietly, leaving a trail that looks like success.** Steps 1–5 each drop a visible file, so a run that never loaded the disciplines, could not create a single label, or reached no companion skill is indistinguishable from one that did all three. Check all three before you reach the step that needs them; this is step 11's argument applied to the inputs rather than the outputs.
 
-### 1. Resolve every tool you depend on — "not on PATH" is not "not installed"
+### 1. Load the disciplines yourself — nothing in the repo will do it for you
+
+**Invoke `using-t4` and `t4-bro` before you read the target repo.** Not "consult", not "keep in mind" — invoke them, the way `using-t4` says to invoke a skill rather than work from memory of it.
+
+**Why this step exists, and why it is not redundant.** Every mechanism that normally surfaces the T4 disciplines is an artifact **this procedure installs**:
+
+| Surfacing mechanism | Installed by | Present during this session |
+|---|---|---|
+| `.claude/t4.json` marker — every hook exits silently without it | step 6 | **no** |
+| `.claude/settings.json` hooks — session-start injection, per-turn reminder | step 6 | **no** |
+| `CLAUDE.md` carrying `using-t4` as a standing default | step 3 | **no** |
+| `.claude/using-t4.snapshot.md` | step 6 | **no** |
+
+The wiring that would have loaded `using-t4` **is the thing being written**, so it cannot have fired yet. The bootstrap session is, by definition, the only session in a T4 repo's life where none of them exist — **the one session that most needs the standard is the one guaranteed to run without it.**
+
+**The step and the session-start hook cover different sessions; they are not duplicates.** The hook covers every session after step 6 lands. This step covers the one before it. Written down because a maintainer who reads them as duplicates deletes this step, and **the deletion is invisible: a bootstrap that skipped the disciplines produces byte-identical files to one that followed them.** Same class as step 11's argument, one level up.
+
+**`ask-xeno` does not close the gap.** It names `using-t4` as the destination, but nothing checks that the agent arrived and nothing fails when it does not — which is exactly how `#244` happened: `/ask-xeno` was invoked at the top of the session, `using-t4` was never entered, and several thousand words went to the developer with `t4-bro` never loaded.
+
+**Two, not three.** `using-t4`'s own session-start protocol carries `karpathy-guidelines` and `t4-agent-memory`, so invoking it reaches them; do not write a separate instruction for either.
+
+**Audited: which other skills run before the wiring exists?** Two entry points are reachable in an unwired repo — `ask-xeno` and this skill — and only this one has a procedure to open. `ask-xeno` is a four-row routing table that also serves non-T4 work, so a "load the T4 disciplines" step there would fire on repos that are not T4 repos. Every other `t4-*` skill is reached either through this procedure (`t4-agent-memory` at step 4, the tracker skills at step 5) or after step 6 has landed the wiring, so neither is exposed to this gap.
+
+### 2. Resolve every tool you depend on — "not on PATH" is not "not installed"
 
 **Before any step that shells out, check `command -v <tool>`. If it comes back empty, resolve the absolute path before concluding the tool is absent** — Windows: `where <tool>` from cmd (git-bash has no `where`); POSIX: `which <tool>`; then the known install locations. Use the resolved **absolute path**, quoted, for the rest of the run.
 
@@ -63,7 +86,7 @@ Both of the ones that fail are tools this skill depends on — `gh` in steps 5 a
 
 **This instruction is safe to give only since `#84`.** Until that fix an executable invoked by absolute path escaped the `PreToolUse` gate entirely, so falling back to `"C:\Program Files\GitHub CLI\gh.exe" pr create` would have skipped the PR-needs-an-issue rule with no signal that anything had been skipped. The gate now reduces an executable to its basename before matching, so the quoted absolute path meets exactly the same rules as a bare `gh`. In a repo whose gate predates `#84`, the fallback is still correct and the gate is still blind to it — check before relying on it.
 
-### 2. Check the companion ecosystems, and let the developer decide
+### 3. Check the companion ecosystems, and let the developer decide
 
 **This bootstrap depends on them and never checked.** Step 5 *invokes* `/setup-matt-pocock-skills` outright, and the `CLAUDE.md` wiring written in step 3 routes work to superpowers and 9arm — so on a machine without them, step 5 fails the way a missing `gh` does and the tracker conventions never land, while the docs that surround them do.
 

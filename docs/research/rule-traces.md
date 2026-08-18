@@ -74,7 +74,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-bro` | `9be243f040d4` | `skills/t4/t4-bro/SKILL.md` |
 | `t4-dev-workflow` | `c467f97aee70` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cecfde44d90b` | `skills/t4/t4-engineering-records/SKILL.md` |
-| `t4-project-bootstrap` | `fd4309539dea` | `skills/t4/t4-project-bootstrap/SKILL.md` |
+| `t4-project-bootstrap` | `31925d889588` | `skills/t4/t4-project-bootstrap/SKILL.md` |
 | `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
 
 ## Traces
