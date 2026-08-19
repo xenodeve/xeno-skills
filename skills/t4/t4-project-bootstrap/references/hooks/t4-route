@@ -45,10 +45,22 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # Step 1 -- match the table and judge the answer. Two lines out: the decision, then
 # the base object. A marker line rather than re-parsing the JSON in bash, so nothing
 # here greps for a boolean inside a string.
-base="$(python - "$HERE" "$prompt" <<'PY'
+# THE PAYLOAD GOES THROUGH A FILE, NOT ARGV (#265). argv is capped at ~32 KB on
+# Windows; bisected on this machine, 32,000 bytes is accepted and 33,000 is not. Over
+# the cap python never launches, the hook exits 0, and whatever this step was for is
+# lost with no signal. t4-reviewer already passed its payload this way; the rest did
+# not, and a Skill payload carries the whole skill body in `tool_response`.
+prompt_file="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-route.$$")"
+trap 'rm -f "$prompt_file"' EXIT
+printf %s "$prompt" > "$prompt_file"
+base="$(python - "$HERE" "$prompt_file" <<'PY'
 import json, os, re, sys
 
-here, prompt = sys.argv[1], sys.argv[2]
+here = sys.argv[1]
+try:
+    prompt = open(sys.argv[2], encoding="utf-8").read()
+except Exception:
+    sys.exit(0)
 if not prompt.strip():
     sys.exit(0)
 try:

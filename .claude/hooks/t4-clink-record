@@ -35,14 +35,22 @@ command -v python >/dev/null 2>&1 || { cat >/dev/null; printf 'delegated\n'; exi
 # raises, and the fallback then answers `delegated` for every record forever.
 record_json="$(cat)"
 
-python - "$record_json" <<'PY'
+# AND IT GOES THROUGH A FILE, NOT ARGV (#265). argv is capped at ~32 KB on Windows;
+# bisected on this machine, 32,000 bytes is accepted and 33,000 is not, and over the cap
+# python never launches while the hook still exits 0. Six other hooks had the same shape.
+# The suite derives the check from `x="$(cat)"` rather than from a list of names, which
+# is what caught this one -- the first version listed five variables and missed this.
+record_json_file="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-clink-record.$$")"
+trap 'rm -f "$record_json_file"' EXIT
+printf %s "$record_json" > "$record_json_file"
+python - "$record_json_file" <<'PY'
 import json, sys
 
 # No record at all is not a failing record. It is every client with no retained
 # event stream and every delegation the reviewer was off for, and turning that into
 # a violation would punish the absence of a feature.
 try:
-    record = json.loads(sys.argv[1])
+    record = json.loads(open(sys.argv[1], encoding="utf-8").read())
 except Exception:
     print("delegated")
     sys.exit(0)

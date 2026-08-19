@@ -31,10 +31,22 @@ command -v python >/dev/null 2>&1 || exit 0
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-python - "$HERE" "$PWD" "$prompt" <<'PY'
+# THE PAYLOAD GOES THROUGH A FILE, NOT ARGV (#265). argv is capped at ~32 KB on
+# Windows; bisected on this machine, 32,000 bytes is accepted and 33,000 is not. Over
+# the cap python never launches, the hook exits 0, and whatever this step was for is
+# lost with no signal. t4-reviewer already passed its payload this way; the rest did
+# not, and a Skill payload carries the whole skill body in `tool_response`.
+prompt_file="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-classifier.$$")"
+trap 'rm -f "$prompt_file"' EXIT
+printf %s "$prompt" > "$prompt_file"
+python - "$HERE" "$PWD" "$prompt_file" <<'PY'
 import json, os, shutil, signal, subprocess, sys
 
-here, cwd, prompt = sys.argv[1], sys.argv[2], sys.argv[3]
+here, cwd = sys.argv[1], sys.argv[2]
+try:
+    prompt = open(sys.argv[3], encoding="utf-8").read()
+except Exception:
+    sys.exit(0)
 
 def count(kind):
     """#192: every skipped, timed-out or failed invocation is counted. A classifier
