@@ -12,3 +12,13 @@ Obsidian-xeno-skills/skill-usage/.invocations.log
 # and `git add -A` swept it in. They are build output of a generator, not the generator.
 __pycache__/
 *.pyc
+
+# Hook-written RUNTIME STATE, not configuration. The reviewer's state file, the receipt
+# counters and the canary's off switch are written into .claude/ by the hooks while a
+# session runs — per machine, per session, and meaningless in anyone else's checkout.
+# Untracked inside tracked territory is how the invocation log ended up blocking every
+# push (#258); these three are the same class, and are listed before they are written
+# rather than after. tests/guards/test-check-tree-budget.sh asserts all four.
+.claude/t4-review-state.json
+.claude/t4-receipt-counts.json
+.claude/t4-canary-disabled

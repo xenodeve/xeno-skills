@@ -68,12 +68,16 @@ echo "this repo does not trip its own artifact gate (#258):"
 # repo to hide the ones its own tooling writes. The skill-usage invocation log lands inside a
 # COMMITTED vault directory, so without a rule it is untracked, matches \.log$, and blocks every
 # push from the clone -- which is exactly how it was found.
-INVLOG="Obsidian-xeno-skills/skill-usage/.invocations.log"
-if git -C "$REPO_ROOT" check-ignore -q "$INVLOG"; then
-  ok "$INVLOG is gitignored, so the guard can never see it"
-else
-  bad "$INVLOG is not gitignored - check-tree-budget blocks every push while it exists"
-fi
+# Every path the hooks write into the repo at runtime, not just the one that was found
+# the hard way. The invocation log was caught because it BLOCKED a push; these three are
+# the same class and have not been written yet only because their hooks ship dark.
+for RUNTIME in "Obsidian-xeno-skills/skill-usage/.invocations.log"                ".claude/t4-review-state.json"                ".claude/t4-receipt-counts.json"                ".claude/t4-canary-disabled"; do
+  if git -C "$REPO_ROOT" check-ignore -q "$RUNTIME"; then
+    ok "$RUNTIME is gitignored, so the guard can never see it"
+  else
+    bad "$RUNTIME is hook-written runtime state and is not gitignored"
+  fi
+done
 
 echo ""
 echo "check-tree-budget: $pass passed, $fail failed"

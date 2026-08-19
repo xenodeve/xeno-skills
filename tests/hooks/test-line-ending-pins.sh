@@ -76,5 +76,27 @@ done
                  || bad "CR is in the committed blob of:$withcr"
 
 echo ""
+echo "and no RAW control byte is embedded in any of them:"
+# THE DEFECT THIS CAUGHT, in code written the same day. `hooks/t4-gate` gained a
+# _display_cmd that strips control bytes from PR-author-controlled text -- and the
+# generator that wrote it emitted the RANGE as raw bytes instead of as the escape TEXT
+# `tr` expects, so the file itself carried NUL, BS, VT, US and DEL. bash cannot hold NUL
+# in a string, so `tr` was handed a different set than the one written down. The gate
+# suite passed BOTH WAYS, which is the point: a behavioural assertion cannot see the
+# difference between a set that works and a set that happens to work.
+#
+# Tab and newline are the only control characters a shell script has any business
+# containing. Anything else is a generator bug, and it is invisible in a diff.
+ctl=""
+for d in $DIRS; do
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in *.png|*.jpg|*.ico) continue;; esac
+    if LC_ALL=C perl -ne 'exit 1 if /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/' "$f"; then :; else ctl="$ctl $f"; fi
+  done < <(git ls-files "$d")
+done
+[ -z "$ctl" ] && ok "only tab and newline appear as control characters"               || bad "raw control bytes in:$ctl"
+
+echo ""
 echo "line-ending-pins: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

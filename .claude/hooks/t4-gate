@@ -144,7 +144,7 @@ _verify_cmd_from() {
 # JSON escaping handles them and a wrapped command is still readable.
 _display_cmd() {
   local v
-  v="$(printf '%s' "$1" | tr -d ' --')"
+  v="$(printf '%s' "$1" | tr -d '\000-\010\013-\037\177')"
   [ "${#v}" -gt 300 ] && v="${v:0:300}… (truncated, ${#1} chars)"
   printf '%s' "${v:-(no verify configured)}"
 }
