@@ -106,7 +106,21 @@ Three rules:
 - **Only what happened in this session.** A reconstructed retrospective is a hypothesis wearing a log's clothing.
 - **Name the skill file and quote what was actually written or done.** A finding without its artifact cannot be acted on by whoever reads it next.
 
-**Writing the entry is agent discipline.** No hook produces it, and none can — a hook enforces checkable actions, not process (`docs/adr/0001-hook-based-workflow-enforcement.md`). Treat a missing entry as a missing entry, not as a session in which nothing went wrong.
+**Writing the entry is agent discipline.** No hook produces the *findings*, and none can — a hook enforces checkable actions, not judgement (`docs/adr/0001-hook-based-workflow-enforcement.md`). Treat a missing entry as a missing entry, not as a session in which nothing went wrong.
+
+**Only the judgement half is beyond mechanism, and the sentence above used to claim the whole obligation was.** The *denominator* — which skills a session actually invoked — is a checkable action and `hooks/t4-skill-log` performs it, wired on `PostToolUse`. Read the distinction the way it is: nothing can decide **whether a rule held**; something already records **what was loaded**. Two sessions stood behind the overstated version.
+
+**`/handoff` is not the end of the session, and it is where the report keeps dying.** It produces a document, it feels terminal, and the report is not part of it — so the agent reaches it, writes a good handoff, and stops. **Reaching `/handoff` does not discharge the session-end report**, the same way `using-t4` says a parent skill does not discharge its leaves.
+
+**Measured across three consecutive sessions**, which is this file's own threshold for *a design problem in the rule rather than a bad session*:
+
+| session | tracker issues | local note |
+|---|---|---|
+| 2026-08-14 | none | none — the handoff *named the debt* and did not pay it |
+| 2026-08-17 | written | owed |
+| 2026-08-19 | written | written — **only because the session ran on past `/handoff`** |
+
+The third row is not a success. The report was produced because something external kept the session going, not because reaching the end produced it.
 
 ## Dev notifications (agent → developer)
 
