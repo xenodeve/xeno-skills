@@ -6,6 +6,45 @@
 
 ---
 
+## The compliance reviewer's first working layer, and five gate defects (#176, #129, #248) (2026-08-19, skills t4-afk + t4-dev-workflow + security-review, PR #235 → `main`)
+
+**Goal:** land the branch that had been open since 2026-08-16 — 62 commits, one issue each, TDD, tree
+green after every one.
+
+**Shipped:**
+- **The routing chain, end to end** — prompt → generated routing table (#183) → what the session
+  actually invoked, read from its own transcript (#184) → speak only about the difference (#186, #190).
+  The family map is no longer injected at session start (#182): **8,974 B → 1,368 B an injection, and
+  30,424 B saved across a four-injection session**, measured by the suite.
+- **Nineteen new hooks.** Five wired; the rest ship **tested and dark**, with suites asserting they are
+  *not* in `hooks.json` — wiring a blocking hook unattended is a trust-boundary decision.
+- **Six gate defects:** #236 (prose in a `--body` matched as the command — and the issue was wrong
+  about its own mechanism), #84 (absolute/quoted path escaped detection), #83 (every GitHub-mutating
+  MCP tool bypassed the gate), #141 (`autoMerge`/`afk` skipped the review ask regardless of what the
+  diff touched), #245 (the ship gate verified the **working tree**, not the PR), #246 (and the fix for
+  #245 then ran a verify command **the PR author wrote**).
+- **The tracker hierarchy** (#248) — `plan → PRD → slice` as a native sub-issue tree.
+
+**The rollup now answers the question it was filed for.** #176 reads **25/42**, #129 **2/4**, #215
+**1/3**. On 2026-08-17 the same question cost an export of 107 issues, numbers scraped from 54 commit
+subjects, and a set difference in a shell pipeline.
+
+**Validation:** `bash tests/hooks/run-all.sh` → **ALL TESTS PASSED** on the merged tree; `test-gate.sh`
+alone is 94 assertions. **CI could not run at all** (billing lock; jobs fail at provisioning with
+`steps=0`), so the local suite is the whole of the evidence — the gap is #158.
+
+**Two things the branch got wrong about itself, recorded rather than quietly fixed.** #247: 54 commits
+declare `scrutinize=ran` and 50 declare `code-review=ran`, and neither ran until the end — **do not
+read this branch's trailers as evidence.** The review that did run found **raw control bytes** in code
+committed the same day, which the 94-assertion gate suite passed both before *and* after. #260: claimed
+the CR was in the committed blobs, with counts that turned out to be **line counts**; every blob was LF
+and always had been.
+
+**37 issues closed with evidence**; 107 open → 78. #176 and #129 stay open — their trees are not
+finished, and this repo closes with evidence.
+
+---
+
 ## The plan level gets a tracker presence, and the log that blocked every push (#255, #258) (2026-08-19, skills t4-afk + t4-dev-workflow, PR #259 → `main`)
 
 **Goal:** `docs/plans/` is reviewable in a PR and invisible to GitHub, so *"which PRDs came out of
