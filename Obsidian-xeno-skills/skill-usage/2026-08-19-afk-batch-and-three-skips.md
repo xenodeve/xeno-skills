@@ -127,3 +127,19 @@ the same artifact: none.
 **The generalisable line for the next session:** a rule attached to a loop fires while you are in the
 loop. Once the work changes shape — tracker ops to code, one item to a branch — the loop is not where
 you are any more, and the rule goes quiet without being broken on any single step.
+
+## The fifth, and it is the rule I had written that afternoon
+
+The pass that closed 37 issues after the merge **derived its list from the trailing `(#N)` of each commit
+subject.** That sees only the last issue a commit names — so a slice landing under its PRD (`... (#176)`),
+or four adapters in one commit, was invisible to it. **Fourteen issues stayed open with nobody having
+decided they should**, and `#176` read 25/42 when it was 37/42.
+
+**#268 — "derive the set a guard checks; never list it" — was written and merged hours earlier, by me,
+on the same day.** It did not fire here because I had filed it as a rule about *guards*, and this was a
+one-off closing task. The shape was identical: a pattern that matches one member per commit, applied to a
+population where commits carry several.
+
+**So the rule's own scope was too narrow on the day it was written.** Not "a guard that enumerates" —
+**any derivation that assumes one match per source.** Re-derived by searching the full commit message
+instead of the subject's tail, which moved the open count 79 → 65 and the rollup to 88%.

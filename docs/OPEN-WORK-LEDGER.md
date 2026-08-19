@@ -148,31 +148,28 @@ parent is the accurate answer, not a gap.
 own body names none — so its plan was never written rather than predating the directory. `#255`
 recorded that as `none` instead of inventing one.
 
-**LANDED, 2026-08-19.** `feat/185-turn-end-wiring` merged to `main` as **`4c4dbf3`** (PR #235,
-62 commits squashed). **37 issues closed with evidence; 107 open → 78.** `bash tests/hooks/run-all.sh`
-is ALL TESTS PASSED on the merged tree.
+**LANDED, 2026-08-19/20.** `feat/185-turn-end-wiring` merged to `main` as **`4c4dbf3`** (PR #235,
+62 commits squashed), plus eight follow-up PRs. **53 issues closed with evidence; 107 open → 65.**
+`bash tests/hooks/run-all.sh` is ALL TESTS PASSED on `main`.
 
-**The rollup now answers the question #248 was filed for**, without anyone maintaining it: **#176 reads
-25/42**, **#129 2/4**, **#215 1/3**, **#165 0/10**. On 2026-08-17 the same question cost an export of
-107 issues, numbers scraped from 54 commit subjects, and a set difference in a shell pipeline.
+**#176 reads 37/42 (88%)**, #129 2/4, #215 1/3, #165 0/10 — the rollup answering, unmaintained, the
+question that on 2026-08-17 cost an export of 107 issues and a set difference in a shell pipeline.
+**#176's five remaining children are all decisions or research**: #177, #178, #179 (`ready-for-human`)
+and #196, #199 parked behind them.
 
-**#176 and #129 stay open** — their trees are not finished, and closing a parent whose children are open
-is what the rollup exists to make visible.
+**THE CLOSING PASS ITSELF GOT THIS WRONG FIRST, and it is the third instance of #268 in one day.** It
+derived its list from the **trailing** `(#N)` of each commit subject, so it saw only the last issue a
+commit named — and every slice landing under its PRD, or four adapters in one commit, was invisible.
+**Fourteen issues stayed open with nobody having decided they should.** The rule was written for guards
+that afternoon; this was a one-off task and went wrong the same way anyway. Re-derived by searching the
+full commit message, which is how the count moved 79 → 65.
 
-**The review that #247 says the branch never had is now done, in two passes, and both found things.**
-Pass one (`35a4e09`) found **raw control bytes** in `hooks/t4-gate` committed the same day — bytes the
-94-assertion gate suite passed both before *and* after, which is precisely the gap a review covers and a
-green suite does not. Pass one also declared what it had **not** read: ~2,300 lines of unwired component
-logic.
-
-**Pass two read that, and #265 is what was in it** — eight hooks handed an unbounded input to `python`
-through `argv`, which is capped at ~32 KB. Bisected on the one hook that is wired: 32,000 bytes logged,
-33,000 dropped, hook exit 0 either way. In `.invocations.log` that reports the **opposite** of the truth,
-inside the mechanism built to measure truthfully. Fixed in `e3cdde8`; the guard **derives** the check from
-`x="$(cat)"` assignments rather than listing names, which is what caught the last two after the first
-version listed five and missed them.
-
-**Treat the branch's 54 `scrutinize=ran` trailers as unverified regardless** — that is what #247 is for.
+**The review the branch never had is now done, in two passes, and both found things.** Pass one
+(`35a4e09`) found **raw control bytes** in `hooks/t4-gate` committed the same day — bytes the
+94-assertion gate suite passed both before *and* after. Pass two read the ~2,300 lines pass one declared
+uncovered and found **#265**: eight hooks losing input to the ~32 KB argv cap, silently. **Treat the
+branch's 54 `scrutinize=ran` trailers as unverified regardless** — #247, and now #270 for why a deferred
+gate leaves the same record as a falsely-declared one.
 
 ## Management Plan — phased execution order
 
