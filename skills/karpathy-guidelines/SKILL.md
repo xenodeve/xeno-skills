@@ -41,12 +41,15 @@ When editing existing code:
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
+- **If you notice something incomplete, mention it - don't complete it.** A list missing an entry, a table missing a row, a doc missing a case. Finishing it is the same move as improving adjacent code, and it does not feel like one because the gap looks like an error.
 
 When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-The test: Every changed line should trace directly to the user's request.
+The test: Every changed line should trace directly to the user's request — **code, config, docs and lists alike.**
+
+**Disclosing an extra change does not authorise it.** Saying so in the PR body makes it visible, not requested; the reviewer now has to reject it rather than never see it. Measured: editing a preset list to add one entry, an agent noticed a second had never been added, added it too, and disclosed it — three separate things the test above forbids, and the disclosure was read as making it acceptable.
 
 ## 4. Goal-Driven Execution
 

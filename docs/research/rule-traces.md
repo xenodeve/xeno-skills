@@ -19,10 +19,10 @@ not, and a reviewer handed it will invent a verdict.
 | `traced` | 32 | The rule names an order, and the trace states it as observable records |
 | `machine` | 45 | Settled by a script without a transcript |
 | `untraced` | 0 | **Needs a trace; none written yet — work not done, not work impossible** |
-| `out-of-scope` | 53 | **Undecidable from a transcript, marked with its reason** |
+| `out-of-scope` | 54 | **Undecidable from a transcript, marked with its reason** |
 | -- of which reclassified from `trace` | 4 | **Argued one by one, never with the blanket reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **131** | |
+| **total** | **132** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
@@ -68,7 +68,7 @@ cries wolf gets switched off along with its true findings.
 
 | skill | version | path |
 |---|---|---|
-| `karpathy-guidelines` | `1cf6329e9ec6` | `skills/karpathy-guidelines/SKILL.md` |
+| `karpathy-guidelines` | `bfc39c3a1eaa` | `skills/karpathy-guidelines/SKILL.md` |
 | `t4-afk` | `696e98d5b2ef` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `feae5b49c226` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `96e63e10a251` | `skills/t4/t4-bro/SKILL.md` |
@@ -81,6 +81,7 @@ cries wolf gets switched off along with its true findings.
 
 | id | skill | state | rule | trace / reason |
 |---|---|---|---|---|
+| `karpathy-guidelines/ae4da41e11fb` | `karpathy-guidelines` | out-of-scope | If you notice something incomplete, mention it - don't complete it. | the transcript shows an edit, never the incompleteness the agent DECLINED to finish -- a comp… |
 | `t4-afk/25ba82ab0db8` | `t4-afk` | out-of-scope | A reviewer disagrees with a settled spec. | asks whether the work was done well; no sequence of messages settles that |
 | `t4-afk/a86b9b6d6f2a` | `t4-afk` | out-of-scope | A senior engineer wouldn't ask. | asks whether the work was done well; no sequence of messages settles that |
 | `t4-afk/ec9e939aa01e` | `t4-afk` | out-of-scope | A standing instruction covers it. | asks whether the work was done well; no sequence of messages settles that |
