@@ -163,6 +163,14 @@ T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a ve
 
 **`not-run` is a legal answer** and `check-gate-ledger` accepts it. The guard raises the cost of skipping a judgment gate from zero; it does not pretend to verify the reasoning, which it cannot. What it refuses is a gate you say nothing about, because an unrun gate is otherwise indistinguishable from a passed one in the only report anybody reads.
 
+**And passing the guard does not discharge this rule — they set different bars, deliberately.** `check-gate-ledger` demands *state it*. This section demands *state it **and** justify it with a checkable fact, or do not skip*. A commit can satisfy the first while violating the second, and **nothing anywhere notices**.
+
+Measured: `pal-mcp-server` PR #86 carries `T4-Gates: simplify=not-run code-review=not-run scrutinize=not-run security-review=not-run verify=ran`. **Against the guard it passes cleanly** — every gate stated, every value legal. **Against this section it is four violations**, because not one carries the checkable fact. Its author believed the ledger had discharged the obligation.
+
+**That belief is the predictable one, and that is why this paragraph exists.** The guard is what speaks at commit time; the section is a document. An agent optimising against the mechanism that talks back lands on a bare `not-run`, which is exactly what the proof requirement was written to prevent. **A permissive guard beside a strict rule relaxes the strict rule in practice** unless the difference is stated where the rule is.
+
+**Neither side is going to grow into the other.** The guard cannot check whether a reason is *true*, and this file already says so — *"hooks can raise the cost of skipping a judgment skill but can't verify the reasoning."* So the bar the guard enforces is a floor, and the bar here is the actual requirement. **Read a green `check-gate-ledger` as "nothing was silent", never as "the skips were justified."**
+
 **Say it where the work is reported.** An exemption that lives only in your head is a violation, not an exemption: write it in the PR body / the message reporting the work, in the form *rule → the checkable fact → how to verify it*. This is what makes it reviewable, and what makes a wrong exemption catchable later.
 
 **Never exemptable by argument:**
