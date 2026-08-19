@@ -28,3 +28,21 @@ skills/t4/t4-project-bootstrap/references/guards/*  text eol=lf
 # The comparison is byte-exact, so BOTH sides have to be pinned or neither is.
 .claude/hooks/*  text eol=lf
 .githooks/*      text eol=lf
+
+# THE PIN HAS TO BE A GLOB ON BOTH SIDES (#260). The four `hooks/` lines above were
+# written when that directory held four files; it now holds two dozen, and every hook
+# added since was unpinned HERE while its installed copy was pinned by the
+# `.claude/hooks/*` glob below. A Windows checkout then gives the two sides opposite
+# endings and the byte-exact sync tests report DRIFTED on identical content — the third
+# time this failure mode has been hit, and the first time the fix is not another list.
+# `tests/hooks/test-line-ending-pins.sh` asserts the class, so a hook added tomorrow is
+# covered on the day it lands.
+hooks/*                                            text eol=lf
+skills/t4/t4-project-bootstrap/references/hooks/*  text eol=lf
+
+# A skill's VERSION is the sha256 of its SKILL.md BYTES (tests/hooks/test-skill-version.sh:
+# "the version is the sha of the file itself"). Unpinned, the same commit hashes
+# differently per checkout, so docs/research/rule-traces.md publishes one machine's
+# answer and every other machine reports a mismatch it cannot fix without changing the
+# file. using-t4's SKILL.md was already pinned above, for the adjacent byte-budget reason.
+skills/**/SKILL.md  text eol=lf
