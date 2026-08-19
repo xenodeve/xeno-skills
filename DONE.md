@@ -6,6 +6,45 @@
 
 ---
 
+## The plan level gets a tracker presence, and the log that blocked every push (#255, #258) (2026-08-19, skills t4-afk + t4-dev-workflow, PR #259 → `main`)
+
+**Goal:** `docs/plans/` is reviewable in a PR and invisible to GitHub, so *"which PRDs came out of
+this plan?"* was answerable only by a human reading five markdown files. This is the plan level of
+#248's `plan → PRD → slice` tree — the one level that had no tracker presence at all.
+
+**Shipped:**
+- **#256** and **#257** — tracking issues for `2026-08-13-skill-compliance-plan.md` (→ PRD #176) and
+  `2026-08-16-clink-delegation-contract.md` (→ PRD #215), each carrying its PRD as a native sub-issue.
+- `docs/plans/README.md` — a **Tracking issue** column. Three of the five plans get `none` **with a
+  stated reason**: the 08-04 remediation plan (no PRD names it; #99 filed the audits, #220 holds its
+  ADR), `2026-08-13-review-handoff.md` (a component of slice 3, not a plan with a PRD), and
+  `2026-08-14-compliance-reviewer-recut.md` (re-cuts #176, which hangs from the 08-13 plan; a PRD has
+  exactly one parent).
+- `tests/skills/test-plan-index.sh` — every plan on disk must have a parsed row, and every row an
+  issue number **or** `none` plus a reason. A blank cell is refused: it is indistinguishable from a
+  plan nobody has got to yet, the same shape `check-gate-ledger` enforces for gates.
+- `.gitignore` + an assertion in `tests/guards/test-check-tree-budget.sh` (**#258**) —
+  `Obsidian-xeno-skills/skill-usage/.invocations.log` is an untracked `*.log` inside the *committed*
+  vault directory, so the guard refused every push from this clone. The guard was right; the repo was
+  missing one line.
+
+**The two reserved decisions, settled from the artifacts rather than from judgement.** #176's body,
+line 5, names the 08-13 plan as where its design detail lives, while the recut appears one line later
+in the *evidence* sentence beside two research documents — so the 08-13 plan owns #176.
+`2026-08-13-review-handoff.md` says of itself *"design only. Nothing here is built."*
+
+**Validation:** `bash tests/hooks/run-all.sh` → ALL TESTS PASSED, before and after the commit. Four
+positive controls on the new suite, each red for the reason it names: a blanked cell, a bare `none`, a
+plan file with no row, and the two issue numbers swapped between their rows. `/scrutinize` found the
+column index hardcoded at `2` — a reordered table would have scored the **Status** cell and gone red
+for the wrong reason; it now reads the column by header name. CI could not run (billing lock; jobs
+fail at provisioning with `steps=0`), so the local suite is the whole of the evidence.
+
+**Not covered, and said so in the file rather than left silent:** the suite never calls GitHub, so
+deleting the sub-issue links on #256/#257 leaves it green.
+
+---
+
 ## Bootstrap the T4 operating layer into this repo (#93) (2026-08-09, skill t4-project-bootstrap, branch `main`)
 
 **Goal:** this repo ships the T4 standard (hooks, CI templates, bootstrap) but had never had the
