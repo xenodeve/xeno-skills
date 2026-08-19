@@ -18,6 +18,22 @@ Every issue body, PRD body, and PR description must be **bilingual**:
   the Thai explains them, never translates identifiers.
 - Review-reply comments may be English-only; anything a teammate reads to decide gets both languages.
 
+**The mirror is checked when the body is EDITED, not only when it is created.** A PR body is the
+one tracker artifact that outlives the turn that wrote it: it is created early as a working index
+and extended later, and *"update the PR body"* reads as an edit to existing text — so the rule that
+governs authoring a tracker body never re-fires. The English half grows in place and the absent Thai
+half is never noticed, because there is nothing there to look wrong. **PR #235's body stayed
+English-only across 42 commits and 34 issues** — 9,465 characters, zero Thai — in a repo whose
+`CLAUDE.md` was in context the whole time.
+
+**And never reuse a commit message as a PR body.** Commit messages are English *by this repo's rule*;
+tracker bodies are bilingual by the same rule. Passing the one file to both `git commit -F` and
+`gh pr create --body-file` imports the wrong language rule across a boundary where it changes.
+Measured on 2026-08-19: of 25 PR bodies written in one session **9 were bilingual and then 16
+consecutive ones were English-only**, and the switch point is exactly where the commit-message file
+started being reused as the body. **A clean break like that is a mechanism, not a lapse of
+attention.**
+
 ## Conventions
 
 - **Create**: `gh issue create --title "..." --body "..."` (heredoc for multi-line bodies).
@@ -61,6 +77,18 @@ Issue และ PRD ของ repo นี้อยู่เป็น GitHub issu
 - code identifiers, filenames, log excerpts และ acceptance-criteria checkboxes คงเป็นอังกฤษ
   ไทยอธิบายรอบๆ ไม่แปล identifiers
 - comment ตอบ review อาจเป็นอังกฤษล้วน; สิ่งที่ teammate อ่านเพื่อตัดสินใจต้องได้สองภาษา
+
+**การ mirror ถูกตรวจตอน EDIT ไม่ใช่แค่ตอนสร้าง** · PR body เป็น artifact เดียวใน tracker ที่อายุยืนกว่า turn
+ที่เขียนมัน: มันถูกสร้างแต่เนิ่น ๆ เป็นดัชนีชั่วคราวแล้วต่อเติมทีหลัง และคำว่า *"อัปเดต PR body"* อ่านได้ว่าเป็นการแก้
+ข้อความที่มีอยู่ — กฎที่กำกับ *การเขียน* tracker body จึงไม่ยิงซ้ำ · ครึ่งอังกฤษโตขึ้นในที่เดิม ส่วนครึ่งไทยที่ไม่มีอยู่
+ก็ไม่มีใครสังเกต เพราะไม่มีอะไรให้ดูผิด · **body ของ PR #235 เป็นอังกฤษล้วนตลอด 42 commit และ 34 issue** —
+9,465 อักขระ ไทยศูนย์ — ใน repo ที่ `CLAUDE.md` อยู่ใน context ตลอดเวลา
+
+**และห้ามเอา commit message มาใช้เป็น PR body** · commit message เป็นอังกฤษ *ตามกฎของ repo นี้* ส่วน
+tracker body เป็นสองภาษาตามกฎเดียวกัน · การส่งไฟล์เดียวกันให้ทั้ง `git commit -F` และ
+`gh pr create --body-file` คือการนำกฎภาษาที่ผิดข้ามเส้นที่กฎมันเปลี่ยน · วัดเมื่อ 2026-08-19: จาก PR body
+25 อันที่เขียนใน session เดียว **9 อันเป็นสองภาษา แล้ว 16 อันติดกันเป็นอังกฤษล้วน** และจุดเปลี่ยนคือตรงที่เริ่ม
+เอาไฟล์ commit message มาใช้เป็น body พอดี · **การขาดตอนที่คมขนาดนั้นคือกลไก ไม่ใช่ความไม่ใส่ใจ**
 
 ## ธรรมเนียม
 
