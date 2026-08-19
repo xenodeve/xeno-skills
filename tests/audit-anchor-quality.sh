@@ -51,6 +51,10 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-tracker-body-edit-rule (adds an EDIT moment and a substitution ban to a
+#       rule that previously spoke only about authoring. The authoring wording is
+#       kept, so nothing was withdrawn; the suite's own negative is structural --
+#       it asserts BOTH governed mirrors carry the rule.)
 #     test-synthesis-steps-rule (adds an artifact to the synthesis and a condition
 #       on a waiver. The stop condition itself is KEPT and the suite asserts it is
 #       still there, so nothing was withdrawn.)
@@ -123,7 +127,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule test-tracker-body-edit-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
