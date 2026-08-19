@@ -1,0 +1,351 @@
+{
+  "generated_by": "scripts/generate-routing-table.py",
+  "source": "skills/**/SKILL.md frontmatter",
+  "note": "Generated. Do not hand-edit -- regenerate. Thai terms live in the generator.",
+  "skills": [
+    "ask-xeno",
+    "clink-brainstorm",
+    "clink-debug",
+    "clink-masteragent",
+    "clink-subagents",
+    "design-audit",
+    "design-psychology",
+    "design-rules",
+    "design-setup",
+    "karpathy-guidelines",
+    "t4-afk",
+    "t4-agent-memory",
+    "t4-bro",
+    "t4-dev-workflow",
+    "t4-engineering-records",
+    "t4-project-bootstrap",
+    "using-clink",
+    "using-design",
+    "using-t4"
+  ],
+  "routes": [
+    {
+      "skill": "ask-xeno",
+      "family": true,
+      "path": "skills/ask-xeno/SKILL.md",
+      "triggers_en": [
+        "ask",
+        "ask-xeno",
+        "how do we do x here",
+        "is there a skill for x",
+        "which skill should i use",
+        "xeno"
+      ],
+      "triggers_th": [
+        "มีสกิลไหม",
+        "ใช้สกิลอะไร",
+        "ไม่รู้จะใช้อะไร"
+      ]
+    },
+    {
+      "skill": "clink-brainstorm",
+      "family": false,
+      "path": "skills/multi-agent/clink-brainstorm/SKILL.md",
+      "triggers_en": [
+        "brainstorm",
+        "clink",
+        "clink-brainstorm"
+      ],
+      "triggers_th": [
+        "ระดมความคิด",
+        "ขอความเห็น",
+        "หลายโมเดล",
+        "brainstorm"
+      ]
+    },
+    {
+      "skill": "clink-debug",
+      "family": false,
+      "path": "skills/multi-agent/clink-debug/SKILL.md",
+      "triggers_en": [
+        "clink",
+        "clink-debug",
+        "debug"
+      ],
+      "triggers_th": [
+        "หาบั๊ก",
+        "ทำไมพัง",
+        "debug"
+      ]
+    },
+    {
+      "skill": "clink-masteragent",
+      "family": false,
+      "path": "skills/multi-agent/clink-masteragent/SKILL.md",
+      "triggers_en": [
+        "clink",
+        "clink-masteragent",
+        "masteragent"
+      ],
+      "triggers_th": [
+        "เลือกโมเดล",
+        "ใครควรทำ",
+        "โมเดลไหน"
+      ]
+    },
+    {
+      "skill": "clink-subagents",
+      "family": false,
+      "path": "skills/multi-agent/clink-subagents/SKILL.md",
+      "triggers_en": [
+        "clink",
+        "clink-subagents",
+        "subagents"
+      ],
+      "triggers_th": [
+        "แบ่งงาน",
+        "ให้ตัวอื่นทำ",
+        "subagent"
+      ]
+    },
+    {
+      "skill": "design-audit",
+      "family": false,
+      "path": "skills/design/design-audit/SKILL.md",
+      "triggers_en": [
+        "audit",
+        "design",
+        "design-audit"
+      ],
+      "triggers_th": [
+        "ตรวจดีไซน์",
+        "รีวิว ui"
+      ]
+    },
+    {
+      "skill": "design-psychology",
+      "family": false,
+      "path": "skills/design/design-psychology/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-psychology",
+        "psychology"
+      ],
+      "triggers_th": [
+        "จิตวิทยาการออกแบบ"
+      ]
+    },
+    {
+      "skill": "design-rules",
+      "family": false,
+      "path": "skills/design/design-rules/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-rules",
+        "rules"
+      ],
+      "triggers_th": [
+        "กฎการออกแบบ",
+        "typography",
+        "สี"
+      ]
+    },
+    {
+      "skill": "design-setup",
+      "family": false,
+      "path": "skills/design/design-setup/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-setup",
+        "setup"
+      ],
+      "triggers_th": [
+        "เริ่มโปรเจกต์ดีไซน์",
+        "ตั้งค่าดีไซน์"
+      ]
+    },
+    {
+      "skill": "karpathy-guidelines",
+      "family": false,
+      "path": "skills/karpathy-guidelines/SKILL.md",
+      "triggers_en": [
+        "guidelines",
+        "karpathy",
+        "karpathy-guidelines"
+      ],
+      "triggers_th": [
+        "เขียนโค้ด",
+        "แก้โค้ด",
+        "refactor"
+      ]
+    },
+    {
+      "skill": "t4-afk",
+      "family": false,
+      "path": "skills/t4/t4-afk/SKILL.md",
+      "triggers_en": [
+        "afk",
+        "t4-afk"
+      ],
+      "triggers_th": [
+        "ทำต่อเลย",
+        "จัดการให้หมด",
+        "ไม่ต้องถาม",
+        "เคลียร์คิว"
+      ]
+    },
+    {
+      "skill": "t4-agent-memory",
+      "family": false,
+      "path": "skills/t4/t4-agent-memory/SKILL.md",
+      "triggers_en": [
+        "agent",
+        "memory",
+        "read the project memory",
+        "record what i shipped",
+        "t4-agent-memory",
+        "what's still open",
+        "where did we leave off"
+      ],
+      "triggers_th": [
+        "ค้างอยู่",
+        "ทำถึงไหน",
+        "จำไว้",
+        "บันทึกไว้"
+      ]
+    },
+    {
+      "skill": "t4-bro",
+      "family": false,
+      "path": "skills/t4/t4-bro/SKILL.md",
+      "triggers_en": [
+        "bro",
+        "t4-bro"
+      ],
+      "triggers_th": [
+        "อธิบาย",
+        "สรุปให้ฟัง",
+        "รายงาน",
+        "ตอบมา"
+      ]
+    },
+    {
+      "skill": "t4-dev-workflow",
+      "family": false,
+      "path": "skills/t4/t4-dev-workflow/SKILL.md",
+      "triggers_en": [
+        "dev",
+        "file an issue for this",
+        "how do we work here",
+        "let's build x",
+        "open a pr",
+        "t4-dev-workflow",
+        "what labels",
+        "workflow",
+        "write the prd"
+      ],
+      "triggers_th": [
+        "เปิด issue",
+        "เปิด pr",
+        "แตก issue",
+        "ทำ prd",
+        "merge"
+      ]
+    },
+    {
+      "skill": "t4-engineering-records",
+      "family": false,
+      "path": "skills/t4/t4-engineering-records/SKILL.md",
+      "triggers_en": [
+        "engineering",
+        "log this change",
+        "record this decision",
+        "records",
+        "should this be an adr",
+        "t4-engineering-records",
+        "write a post-mortem"
+      ],
+      "triggers_th": [
+        "บันทึกการตัดสินใจ",
+        "post-mortem",
+        "adr"
+      ]
+    },
+    {
+      "skill": "t4-project-bootstrap",
+      "family": false,
+      "path": "skills/t4/t4-project-bootstrap/SKILL.md",
+      "triggers_en": [
+        "add claude.md + docs/agents",
+        "bootstrap",
+        "bootstrap the governance layer",
+        "port the mangadock conventions",
+        "project",
+        "scaffold the docs/conventions",
+        "set up a new t4 project",
+        "t4-project-bootstrap"
+      ],
+      "triggers_th": [
+        "ตั้ง repo",
+        "ติดตั้งมาตรฐาน",
+        "repo ใหม่"
+      ]
+    },
+    {
+      "skill": "using-clink",
+      "family": true,
+      "path": "skills/multi-agent/using-clink/SKILL.md",
+      "triggers_en": [
+        "ask the other ais",
+        "clink",
+        "delegate this",
+        "get a second opinion",
+        "run this in parallel",
+        "using",
+        "using-clink",
+        "which model should review this"
+      ],
+      "triggers_th": [
+        "ส่งให้ ai อื่น",
+        "ถามตัวอื่น",
+        "delegate"
+      ]
+    },
+    {
+      "skill": "using-design",
+      "family": true,
+      "path": "skills/design/using-design/SKILL.md",
+      "triggers_en": [
+        "design",
+        "using",
+        "using-design"
+      ],
+      "triggers_th": [
+        "ออกแบบ",
+        "หน้าเว็บ",
+        "ui",
+        "ดีไซน์"
+      ]
+    },
+    {
+      "skill": "using-t4",
+      "family": true,
+      "path": "skills/t4/using-t4/SKILL.md",
+      "triggers_en": [
+        "how do we work in this repo",
+        "using",
+        "using-t4",
+        "which t4 skill"
+      ],
+      "triggers_th": [
+        "ทำยังไง",
+        "ขั้นตอน",
+        "เริ่มงาน",
+        "สกิลไหน"
+      ]
+    }
+  ],
+  "phases": {
+    "handoff": "t4-agent-memory",
+    "ship": "t4-dev-workflow",
+    "unattended": "t4-afk",
+    "จบ session": "t4-agent-memory",
+    "ปล่อยไว้": "t4-afk",
+    "ปิด issue": "t4-dev-workflow"
+  }
+}

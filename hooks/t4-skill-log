@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-skill-log
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Log every Skill invocation -- the DENOMINATOR half of the skill-usage log (#145, #143).
+#
+# Seam: a PostToolUse payload on stdin -> one appended line. Nothing on stdout.
+#
+# WHY IT IS NOT THE AGENT'S JOB. #143's session entry carries a `skills:` field, and
+# the agent fills it from memory of its own session -- the one source least able to
+# notice a skill it SHOULD have loaded and did not. #134 is exactly that failure: a
+# session filed six issues, opened two PRs and wrote a PRD without ever loading
+# `t4-dev-workflow`, and a self-reported list would have recorded five skills and no
+# gap.
+#
+# AND THE GAP IS THE DENOMINATOR. Without a count of sessions in which a skill was
+# loaded, "three sessions failed this rule" has no rate attached -- the same defect
+# that invalidated an earlier analysis in this repo, which would otherwise be
+# reproduced inside the mechanism built to prevent it.
+#
+# PostToolUse, NOT PreToolUse. The gate is the only hook that should ever deny; a
+# logger able to fail a tool call is a new way to break a session for zero benefit.
+# Append-only, exit 0 unconditionally, and never a word on stdout.
+set -uo pipefail
+
+payload="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+python - "$PWD" "$payload" <<'PY' 2>/dev/null || true
+import json, os, sys, datetime
+
+cwd, raw = sys.argv[1], sys.argv[2]
+try:
+    p = json.loads(raw)
+except Exception:
+    sys.exit(0)
+
+if p.get("tool_name") != "Skill":
+    sys.exit(0)
+
+skill = (p.get("tool_input") or {}).get("skill")
+if not skill:
+    sys.exit(0)
+
+# The vault directory is named after the repo. Find it rather than hardcoding one,
+# so a bootstrapped repo logs into its own vault instead of silently into nothing.
+target = None
+for entry in sorted(os.listdir(cwd)):
+    if entry.startswith("Obsidian-") and os.path.isdir(os.path.join(cwd, entry)):
+        target = os.path.join(cwd, entry, "skill-usage")
+        break
+if target is None:
+    sys.exit(0)
+
+try:
+    os.makedirs(target, exist_ok=True)
+    line = "%s\t%s\t%s\n" % (
+        datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat(),
+        p.get("session_id") or "unknown",
+        skill,
+    )
+    with open(os.path.join(target, ".invocations.log"), "a", encoding="utf-8", newline="\n") as f:
+        f.write(line)
+except Exception:
+    sys.exit(0)                   # a logger must never be the reason a turn fails
+PY
+exit 0

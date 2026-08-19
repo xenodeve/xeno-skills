@@ -2028,3 +2028,39 @@ agy            NOT_FOUND
 ```
 
 No CLI binary was installed or mutated for this research. Findings therefore come from shipped/open-source schemas where available, vendor documentation, vendor changelogs, and clearly labeled lower-confidence vendor issue/forum evidence; direct live behavior on the target machine remains a required follow-up for release-specific PAL integration.
+
+---
+
+## Addendum 2026-08-16 — a `PreToolUse` matcher fires on an MCP tool name (#219)
+
+**Graded [L].** The capability reference and `docs/plans/2026-08-16-clink-delegation-contract.md`
+both carried this as **[D]** — documented, never probed here — and named it as the one measurement
+the host-side half of the delegation gate waits on. It is now measured.
+
+**The probe, with its control in the same run and the same configuration.** A temp workspace with
+three `PreToolUse` entries and a `claude -p` turn instructed to do exactly two things: run `echo` with
+Bash, then call `mcp__pal__version`.
+
+| Entry | `matcher` | Fired | `tool_name` in the payload |
+|---|---|---|---|
+| **control** | `Bash` | **yes** | `Bash` |
+| target, exact | `mcp__pal__version` | **yes** | `mcp__pal__version` |
+| target, regex | `mcp__.*` | **yes** | `mcp__pal__version` |
+
+`claude.exe 2.1.222`, `subtype: success`, 6 turns. **The control fired, so the run is valid and the
+negatives-would-have-been-real.**
+
+**What it settles.** A matcher matches an MCP tool name both exactly and by pattern, and the payload
+carries the fully-qualified `mcp__<server>__<tool>`. So the delegation gate can see a `clink` call
+before it runs, with its arguments, exactly as it sees `Agent`, `spawn_agent`, `Task` and
+`invoke_subagent`. The host-side half of `#215`'s request seam is unblocked, and so is `#232`.
+
+**A second thing the same run confirmed, unlooked for.** The server answered *"OpenClink"*, version
+`9.8.2` — while the tool it was reached through is still `mcp__pal__version`. That is `#204`'s finding
+from a third angle: **the project rename has landed and the tool prefix has not moved, because the
+prefix is the client's registration key.** Anything that renames the 25 references before this
+machine registers an `openclink` key breaks every clink call.
+
+**Method note.** The workspace was a fresh temp directory, so the project settings under test were the
+only project settings — `--settings` *adds to* the project file rather than replacing it, and a
+leftover config is how an earlier probe in this repo was contaminated.

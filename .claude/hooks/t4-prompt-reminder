@@ -2,19 +2,141 @@
 # SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-prompt-reminder
 #       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
 #       ships its own copies so a repo installed without the plugin is self-contained.
-# T4 UserPromptSubmit hook — a short rails reminder, injected every turn in a T4
-# repo so the workflow doesn't get buried as the session grows. Guard only; no
-# per-session dedup (re-anchoring each turn is the point). Kept intentionally
-# short to avoid context bloat.
+# T4 UserPromptSubmit hook — the GAP NOTICE (#186).
+#
+# It used to inject the same four sentences every turn regardless of state. That
+# text was persisted into one session's transcript 142 times, and after the first
+# turn it carried no new information: the same bytes, in the same place, every turn.
+# Making it louder or longer does not change that -- it only spends more of the
+# budget the injection is capped by.
+#
+# So: match the prompt against the GENERATED routing table (#183), read which
+# skills the session has ACTUALLY invoked from its own transcript (#184), and speak
+# only when a routed skill is absent. Otherwise emit nothing.
+#
+# IT DOES NOT CLAIM TO ENFORCE LOADING. It reports an absence. A non-blocking hook
+# cannot compel an answer, and writing it as though it could is the fictional
+# enforcement `docs/adr/0001` warns about.
+#
+# WHY THE TRANSCRIPT READER IS INVOKED FROM BASH AND NOT FROM PYTHON. Windows
+# python resolves a bare `bash` to WSL's bash, which fails with
+# `execvpe(/bin/bash) failed`. The reader then returned nothing, every routed skill
+# looked absent, and the notice fired on every turn -- silently reverting this hook
+# to the constant reminder it replaces. So bash calls bash, and python is handed
+# the result. Do not "simplify" this back into one python step.
 set -uo pipefail
 
-cat >/dev/null  # drain stdin (payload unused)
+# THE DEVELOPER WRITES THAI, AND WINDOWS PYTHON PRINTS cp1252 BY DEFAULT. Passing a
+# Thai prompt back out through `print()` raises UnicodeEncodeError, the step dies,
+# and what reaches the next stage is an EMPTY prompt -- so every routed skill looks
+# unmatched and the notice goes silent on exactly the prompts this repo is written
+# for. Found by the suite going nine-red the moment the prompt crossed a stdout
+# boundary; it never crossed one before.
+export PYTHONIOENCODING=utf-8
+
+payload="$(cat)"
 
 [ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
 
-# The reminder is a static, JSON-safe literal (no quotes / backslashes / control
-# chars), so it needs no escaping — emit it directly.
-reminder="T4 repo — stay on the rails: route this task through the \`using-t4\` map before acting. For build/feature/issue/PR work, follow \`t4-dev-workflow\` (PRD -> issues -> PR gate; a PR needs a referenced issue; TDD is mandatory). Record what you ship (\`t4-agent-memory\`). Don't work from memory of a skill — load the current one."
+HERE="$(cd "$(dirname "$0")" && pwd)"
 
-printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"%s"}}\n' "$reminder"
+# Step 1 -- pull the transcript path out of the payload.
+transcript="$(printf '%s' "$payload" | python -c '
+import json, sys
+try:
+    print(json.load(sys.stdin).get("transcript_path") or "")
+except Exception:
+    pass
+' 2>/dev/null || true)"
+
+# Step 2 -- ask the reader, in bash, where `bash` means this bash. The answer goes
+# to a FILE, not to argv: a long session yields thousands of names, argv blows the
+# platform limit, and the hook then exits silently -- so the gap notice goes quiet
+# exactly when a session is long enough to need it. That failure passed a timing
+# assertion before a correctness one caught it.
+invoked_file="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-invoked.$$")"
+trap 'rm -f "$invoked_file"' EXIT
+: > "$invoked_file"
+if [ -n "$transcript" ] && [ -f "$HERE/t4-transcript-skills" ]; then
+  bash "$HERE/t4-transcript-skills" "$transcript" > "$invoked_file" 2>/dev/null || true
+fi
+
+# Step 3 -- ask the ROUTER which skills this prompt routes to (#191). The matching
+# used to live here, and a second copy of it is a second routing universe that drifts
+# the day someone edits one and not the other -- the duplicate-site defect the
+# generated table exists to remove, rebuilt one layer up.
+#
+# NOTE WHAT IS NOT PASSED: `--with-classifier`. The router will consult the
+# classifier when the table's answer is untrustworthy, and the classifier is a model
+# call; this is a hook, and a hook is a synchronous barrier on every host (#187). The
+# second opinion belongs to the detached judge. tests/hooks/test-route.sh asserts
+# this file does not pass the flag.
+prompt_text="$(printf '%s' "$payload" | python -c '
+import json, sys
+try:
+    print(json.load(sys.stdin).get("prompt") or "")
+except Exception:
+    pass
+' 2>/dev/null || true)"
+route_json="$(printf '%s' "$prompt_text" | bash "$HERE/t4-route" 2>/dev/null || true)"
+
+# Step 4 -- subtract what the session actually invoked, and speak only if something
+# is missing.
+python - "$HERE" "$route_json" "$invoked_file" <<'PY'
+import json, os, sys
+
+here, route_raw, invoked_path = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    route = json.loads(route_raw)
+except Exception:
+    sys.exit(0)                       # no route answer -> say nothing, never crash the turn
+
+try:
+    with open(os.path.join(here, "routing-table.json"), encoding="utf-8") as f:
+        table = json.load(f)
+except Exception:
+    sys.exit(0)                       # no table -> no opinion; never guess a route
+
+def emit(text):
+    print(json.dumps({"hookSpecificOutput": {
+        "hookEventName": "UserPromptSubmit",
+        "additionalContext": text,
+    }}, ensure_ascii=False))
+
+routed = route.get("routed", [])
+
+if not routed:
+    # NOTHING MATCHED -- the one turn where the agent has to route itself, so the
+    # one turn worth paying for (#190). Emitting this every turn instead costs
+    # 18-71 KB across a 55-turn session depending on how honest the list is;
+    # paying it on misses only is what makes this cheaper rather than differently
+    # expensive. The entries come from the table's own `family` flag, never from a
+    # second list kept here.
+    family = [r["skill"] for r in table.get("routes", []) if r.get("family")]
+    if family:
+        emit("T4: nothing in the routing table matched this prompt. "
+             "The family entries are " + " · ".join("`%s`" % f for f in family) + ".")
+    sys.exit(0)
+
+try:
+    with open(invoked_path, encoding="utf-8") as f:
+        invoked = {ln.strip() for ln in f if ln.strip()}
+except Exception:
+    invoked = set()
+missing = [s for s in routed if s not in invoked]
+if not missing:
+    sys.exit(0)                       # present -> silence is the whole point
+
+# One notice. Naming more than a few turns a correction into a wall of text that
+# gets skimmed, which is the failure the delivery rule names.
+named = ", ".join("`%s`" % s for s in missing[:3])
+more = "" if len(missing) <= 3 else " (and %d more)" % (len(missing) - 3)
+notice = ("T4: this prompt routes to %s%s, and this session has not invoked %s. "
+          "Stated as an absence, not a requirement — you may have a reason not to."
+          % (named, more, "it" if len(missing) == 1 else "them"))
+
+emit(notice)
+PY
 exit 0

@@ -37,6 +37,77 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
 | **Consolidating** (work scattered; agent misses MD-only items) | + a full `docs/OPEN-WORK-LEDGER.md` reconciliation pass + Serena `mem:` graph. This is the tier where the ledger earns its keep. |
 | **Formal delivery** (academic / client dossier) | + the optional 7-phase SE set — see `references/se-deliverables.md`. On demand only. |
 
+## Before you start: check what this bootstrap depends on
+
+Three prerequisites, and all three fail the same way — **quietly, leaving a trail that looks like success.** Steps 1–5 each drop a visible file, so a run that never loaded the disciplines, could not create a single label, or reached no companion skill is indistinguishable from one that did all three. Check all three before you reach the step that needs them; this is step 11's argument applied to the inputs rather than the outputs.
+
+### 1. Load the disciplines yourself — nothing in the repo will do it for you
+
+**Invoke `using-t4` and `t4-bro` before you read the target repo.** Not "consult", not "keep in mind" — invoke them, the way `using-t4` says to invoke a skill rather than work from memory of it.
+
+**Why this step exists, and why it is not redundant.** Every mechanism that normally surfaces the T4 disciplines is an artifact **this procedure installs**:
+
+| Surfacing mechanism | Installed by | Present during this session |
+|---|---|---|
+| `.claude/t4.json` marker — every hook exits silently without it | step 6 | **no** |
+| `.claude/settings.json` hooks — session-start injection, per-turn reminder | step 6 | **no** |
+| `CLAUDE.md` carrying `using-t4` as a standing default | step 3 | **no** |
+| `.claude/using-t4.snapshot.md` | step 6 | **no** |
+
+The wiring that would have loaded `using-t4` **is the thing being written**, so it cannot have fired yet. The bootstrap session is, by definition, the only session in a T4 repo's life where none of them exist — **the one session that most needs the standard is the one guaranteed to run without it.**
+
+**The step and the session-start hook cover different sessions; they are not duplicates.** The hook covers every session after step 6 lands. This step covers the one before it. Written down because a maintainer who reads them as duplicates deletes this step, and **the deletion is invisible: a bootstrap that skipped the disciplines produces byte-identical files to one that followed them.** Same class as step 11's argument, one level up.
+
+**`ask-xeno` does not close the gap.** It names `using-t4` as the destination, but nothing checks that the agent arrived and nothing fails when it does not — which is exactly how `#244` happened: `/ask-xeno` was invoked at the top of the session, `using-t4` was never entered, and several thousand words went to the developer with `t4-bro` never loaded.
+
+**Two, not three.** `using-t4`'s own session-start protocol carries `karpathy-guidelines` and `t4-agent-memory`, so invoking it reaches them; do not write a separate instruction for either.
+
+**Audited: which other skills run before the wiring exists?** Two entry points are reachable in an unwired repo — `ask-xeno` and this skill — and only this one has a procedure to open. `ask-xeno` is a four-row routing table that also serves non-T4 work, so a "load the T4 disciplines" step there would fire on repos that are not T4 repos. Every other `t4-*` skill is reached either through this procedure (`t4-agent-memory` at step 4, the tracker skills at step 5) or after step 6 has landed the wiring, so neither is exposed to this gap.
+
+### 2. Resolve every tool you depend on — "not on PATH" is not "not installed"
+
+**Before any step that shells out, check `command -v <tool>`. If it comes back empty, resolve the absolute path before concluding the tool is absent** — Windows: `where <tool>` from cmd (git-bash has no `where`); POSIX: `which <tool>`; then the known install locations. Use the resolved **absolute path**, quoted, for the rest of the run.
+
+**The two states look identical from a failed `command -v` and need opposite responses.** Measured on the developer's machine, in this repo:
+
+| tool | `command -v` | actually installed at |
+|---|---|---|
+| `gh` | **fails** | `C:\Program Files\GitHub CLI\gh.exe` |
+| `bun` | **fails** | `%USERPROFILE%\.bun\bin\bun.exe` |
+| `git`, `node`, `npx` | resolve | on PATH |
+
+Both of the ones that fail are tools this skill depends on — `gh` in steps 5 and 7, `bun` in the package-manager rule. An agent that reads `command not found` as "not installed here" skips the step, and **steps 1–5 each leave a visible file behind, so a bootstrap that could not create a single label looks exactly like one that did** — the argument step 11 makes for saying the hooks result out loud, applied to the inputs.
+
+**This is not a new pattern; the repo already ships it.** `run-hook.cmd` searches two Git-for-Windows locations for `bash` before falling back to PATH, for exactly this reason. Generalise that rather than re-deriving it per tool.
+
+**And it has already gone wrong on the record.** PRD `#129`'s problem statement is an agent writing *"this tool has never been installed or run"* into a research document — the tool was installed, under `~/.bun/bin/`, simply absent from PATH, and had never been checked. Same directory as `bun` above.
+
+**Only when it resolves nowhere is it missing.** Then name the step you are leaving undone and why; do not let a PATH lookup decide it silently. Do not edit the developer's environment either — resolving the path is the bootstrap's job for the length of the run, not a change to their machine.
+
+**This instruction is safe to give only since `#84`.** Until that fix an executable invoked by absolute path escaped the `PreToolUse` gate entirely, so falling back to `"C:\Program Files\GitHub CLI\gh.exe" pr create` would have skipped the PR-needs-an-issue rule with no signal that anything had been skipped. The gate now reduces an executable to its basename before matching, so the quoted absolute path meets exactly the same rules as a bare `gh`. In a repo whose gate predates `#84`, the fallback is still correct and the gate is still blind to it — check before relying on it.
+
+### 3. Check the companion ecosystems, and let the developer decide
+
+**This bootstrap depends on them and never checked.** Step 5 *invokes* `/setup-matt-pocock-skills` outright, and the `CLAUDE.md` wiring written in step 3 routes work to superpowers and 9arm — so on a machine without them, step 5 fails the way a missing `gh` does and the tracker conventions never land, while the docs that surround them do.
+
+**Check the session's available-skills list for one entry per ecosystem** — the skills are what the wiring actually reaches, so their presence is the check that matters:
+
+| Ecosystem | Present if you can see | What the bootstrap uses it for |
+|---|---|---|
+| **matt pocock** | `setup-matt-pocock-skills`, `grilling`, `to-prd`, `to-issues` | step 5 — the tracker choice and the five canonical triage roles |
+| **superpowers** | `superpowers:using-superpowers` | the general process discipline `using-t4` routes to |
+| **9arm** | `debug-mantra`, `scrutinize`, `post-mortem`, `qwen-agent` | the debugging and adversarial-review gates the workflow names |
+
+**Anything missing: ask the user whether to install it — one at a time, recommended answer first, exactly as step 2 asks every other question.** Say what each one buys and what stays undone without it. **Do not install it yourself:** putting software on the developer's machine is outward-facing and hard to undo, and nothing else in this skill touches anything outside the repo.
+
+**Use the commands `using-t4` records; do not invent one.**
+
+- **9arm** — `npx skills add thananon/9arm-skills`. Run it from **outside** the `xeno-skills` clone: pointed at that library it rewrites the source tree it is reading.
+- **matt pocock** — `/setup-matt-pocock-skills`, which installs *and* configures the tracker/label/domain layout, so it replaces step 5's invocation rather than preceding it.
+- **superpowers** — **no install command is recorded anywhere in this family.** Ask the developer how they install it. A plausible-looking guess is worse than the question: it fails on their machine with this skill's name on it.
+
+**Record the answer in `CLAUDE.md` either way**, the way the `clink-masteragent` question in step 3 is recorded — so a later reader can tell a declined ecosystem from one nobody asked about. A skipped install that was *chosen* is fine; a silent one is the failure this section exists to close.
+
 ## Bootstrap procedure
 
 1. **Read the target repo first.** `git remote -v` (get `<ORG>/<REPO>`), the existing `CLAUDE.md`/`AGENTS.md`, `package.json` (package manager, pinned framework versions), any `docs/` present. Never overwrite a governed doc — reconcile.
@@ -70,6 +141,8 @@ An agent-primary repo needs its **memory layer from day one** — that's what ma
    **Then create the labels, with `gh label create`, and report which were created, which already existed, and which the vocabulary names but you skipped.** Neither skill did this before: pocock's `triage-labels.md` is a mapping table that assumes the labels exist, and T4's told the agent to create them lazily and proceed silently if the vocabulary was thin — which combine into never creating them and never saying so. Measured 2026-08-04 on a repo that had been bootstrapped: **8 of 19 documented labels existed**, `needs-triage` among the missing. A documented vocabulary with no labels behind it is the failure this step now forecloses.
 6. **Install the hooks layer** from `references/hooks-layer.md` — copy the marker (`.claude/t4.json`), the `.claude/hooks/` scripts + `run-hook.cmd`, merge the hook entries into `.claude/settings.json`, and write `using-t4.snapshot.md`. This keeps a session on the rails: session-start injects `using-t4`, a per-turn reminder re-anchors it, and a `PreToolUse` gate blocks a PR with no issue and dangerous git. **Arm the local ship gate** by setting `.claude/t4.json` `"verify"` to the repo's *fast* command (lint + typecheck + unit + build). Tell the user what the gate will block.
 7. **Install the CI/CD layer** from `references/ci-cd-layer.md` — the workflows in `references/ci/` into `.github/workflows/`, then make `lint`/`typecheck`/`test`/`build` **required checks** on `main` and disallow direct pushes. Do this in the same pass as step 6: a repo with the local gate and no CI has the *appearance* of enforcement with none of the guarantee. Where a ruleset isn't available, set `.claude/t4.json` `"requireGreenCI": true` as the (weaker) fallback. Add `t4-deploy.yml` only if the repo deploys.
+
+   **If CI cannot run at all — a locked billing account, an exhausted quota, Actions disabled — that fallback is the wrong one and makes things worse:** `gh pr checks` reports non-zero for *no checks* exactly as it does for *failing*, so `requireGreenCI` then denies every merge forever. Turn it off and follow **"When CI cannot run at all"** in `references/ci-cd-layer.md`, which lists what to do instead to keep the codebase quality the missing tier was carrying.
 8. **Install the guards layer** from `references/guards-layer.md` — copy `references/guards/` into `<repo>/.githooks/`, tell the user to run `git config core.hooksPath .githooks`, and wire the same three scripts into the CI gate. This is the tier that binds Codex/Gemini/humans; the Claude hooks in step 6 do not.
 9. **Install the records layer** from `t4-engineering-records` (`docs/adr/README.md`; the templates the tier calls for).
 10. **Write the domain/product docs** from `references/governance-docs.md` at the chosen tier.
@@ -91,7 +164,7 @@ Then run **steps 6 to 8 in order and nothing else** — hooks, CI, guards. Those
 - **`references/se-deliverables.md`** — the optional 7-phase Software-Engineering deliverable set + UML outline (formal delivery only).
 - **`references/hooks-layer.md`** + **`references/hooks/`** — the workflow-hooks layer (path A): the `.claude/t4.json` marker, the `.claude/hooks/` scripts + `run-hook.cmd`, and the `settings.json` hook entries. Session-start / prompt-reminder / PreToolUse-gate keep a session on the rails. The scripts are byte-identical to the `xeno-skills` plugin's `hooks/` (a repo test enforces the sync).
 - **`references/ci-cd-layer.md`** + **`references/ci/`** — the server-side gate: `t4-verify.yml` (lint · typecheck · test · build as separate required checks), `t4-e2e.yml` (the slow suite, kept out of the local `verify`), `t4-deploy.yml` (CD gated on a green verify), plus the ruleset commands that make them required and block direct pushes to `main`. This is the layer that also covers a human merging on the web.
-- **`references/guards-layer.md`** + **`references/guards/`** — the agent-agnostic tier: a git `pre-push` hook running `check-issue-ref`, `check-tree-budget` and `check-gate-ledger` (a push must state every judgment gate as `ran` / `not-run` / `n-a` — silence about one is what it forbids). The Claude `PreToolUse` gate only sees commands Claude runs; these bind every agent and human on the clone, and the same scripts go into CI.
+- **`references/guards-layer.md`** + **`references/guards/`** — the agent-agnostic tier: a git `pre-push` hook running `check-issue-ref`, `check-tree-budget` and `check-gate-ledger` (a push must state every judgment gate as `ran` / `not-run` / `n-a` — silence about one is what it forbids). The Claude `PreToolUse` gate only sees tool calls Claude makes (Bash, and the GitHub MCP tools since #83); these bind every agent and human on the clone, and the same scripts go into CI.
 
 ## The non-negotiable team rules
 

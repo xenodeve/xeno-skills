@@ -38,7 +38,7 @@ Master ──BrainstormRequest v1──► [gate] ──► clink worker ──R
 | `mcp__pal__clink` has **no** structured-output parameter — `prompt`, `cli_name`, `model`, `role`, `reasoning_effort`, `continuation_id`, `absolute_file_paths`, `images` and nothing else | **[L]** read from the live tool schema, 2026-08-16 | this session |
 | `role` presets exist per CLI (`codereviewer`, `default`, `planner`) and live in the PAL fork's `conf/cli_clients/*.json` | **[L]** tool schema + `clink-brainstorm` SKILL.md:59 | — |
 | Client config is cached at MCP-server start, not per call | **[D]** recorded from experience in `clink-brainstorm` SKILL.md:254 | — |
-| A `PreToolUse` matcher fires on an **MCP** tool name (`mcp__pal__clink`) | **[D]** documented, **never probed here** | **owed — Phase B cannot be enforced host-side without it** |
+| A `PreToolUse` matcher fires on an **MCP** tool name (`mcp__pal__clink`) | **[L]** measured 2026-08-16 with a control in the same run (#219) | **no longer owed** — exact and regex matchers both fire, payload carries the full name |
 | The contract survives a nested delegation through a clink worker | **[U]** | the worker is a foreign process whose hooks we do not install |
 
 **The last two are the plan's real risk.** Everything else it needs has been run.

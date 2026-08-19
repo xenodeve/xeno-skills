@@ -2,7 +2,13 @@
 # SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-session-start
 #       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
 #       ships its own copies so a repo installed without the plugin is self-contained.
-# T4 SessionStart hook — inject the `using-t4` map into a T4 repo, once per session.
+# T4 SessionStart hook — inject the COMPACT DIRECTIVE into a T4 repo, once per session.
+#
+# It used to inject the whole `using-t4` map: 8,974 B an injection, and one measured
+# session took four of them. The map is now injected by nothing -- the agent invokes
+# `using-t4` and reads it -- and the per-turn hook names the specific skill a prompt
+# needs, saying nothing when it is already loaded (#186). So this event no longer has
+# to carry the map; it has to make the agent go and read it (#182).
 #
 # Guard:  runs only when the current repo carries the `.claude/t4.json` marker.
 # Dedup:  a short time-window lock (shared path with the bootstrap copy) collapses
@@ -38,12 +44,12 @@ printf '%s' "$now" > "$lock"
 
 # --- resolve using-t4 content ------------------------------------------------
 content=""
-for f in "${CLAUDE_PLUGIN_ROOT:-}/skills/t4/using-t4/SKILL.md" ".claude/hooks/using-t4.snapshot.md"; do
+for f in "${CLAUDE_PLUGIN_ROOT:-}/hooks/t4-directive.md" "$(dirname "$0")/t4-directive.md" ".claude/hooks/t4-directive.md"; do
   # A file at literal /skills/... (empty CLAUDE_PLUGIN_ROOT) can't exist, so -f
   # skips it naturally and we fall through to the snapshot / directive.
   if [ -f "$f" ]; then content="$(<"$f")"; break; fi
 done
-[ -n "$content" ] || content="Invoke the \`using-t4\` skill now to load the T4 operating map before doing anything else."
+[ -n "$content" ] || content="Route first: invoke the \`using-t4\` skill now and route this task through its map before acting."
 
 # Drop maintainer notes — but only lines that are ENTIRELY a comment. The map is
 # injected verbatim on every session start AND every compaction, and it sits at
@@ -67,8 +73,6 @@ content="$(printf '%s\n' "$content" | awk '
 ')"
 
 wrapped="<EXTREMELY_IMPORTANT>
-You are in a T4 repo. Below is your \`using-t4\` map — route every task through it before acting.
-
 ${content}
 </EXTREMELY_IMPORTANT>"
 

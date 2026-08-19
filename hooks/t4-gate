@@ -18,16 +18,97 @@ set -uo pipefail
 input="$(cat)"
 [ -f ".claude/t4.json" ] || exit 0
 
-# hooks.json already scopes this to the Bash tool; this in-process check is a
+# hooks.json scopes this to Bash and the GitHub MCP tools; this in-process check is a
 # cheap defensive guard for the bootstrap path, no subprocess.
 tool=""
 [[ "$input" =~ \"tool_name\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]] && tool="${BASH_REMATCH[1]}"
-[ "$tool" = "Bash" ] || exit 0
+case "$tool" in
+  Bash|mcp__github__*) ;;
+  *) exit 0 ;;
+esac
 
 cmd="$(printf '%s' "$input" | perl -0777 -ne '
   if (/"command"\s*:\s*"((?:\\.|[^"\\])*)"/s) {
     my $c=$1; $c=~s/\\n/\n/g; $c=~s/\\t/\t/g; $c=~s/\\"/"/g; $c=~s/\\\\/\\/g; print $c;
   }')"
+
+# A MARKED REPO WITH NO EXTRACTABLE COMMAND IS DENIED, NOT WAVED THROUGH. Both the
+# extraction above and the scan below are `perl`, so a machine without perl -- or a
+# perl that dies on a future edit to either pattern -- yields an empty `cmd`, every
+# pattern below fails to match, and the gate goes silent on `git reset --hard` while
+# looking exactly like a gate with no opinion. A guard that is off is indistinguishable
+# from a guard that allowed, which is the whole complaint in #85 about the marker file.
+#
+# Found by the security review this file's own workflow requires, while fixing #236.
+# It is NOT caused by that fix -- it predates it -- and it is the same shape as #126's
+# missing-`bash` case, so it takes #129's stated decision for that case: a static deny
+# for the gate specifically, in a MARKED repository only. An unmarked repo already
+# exited at the top and is untouched.
+if [ "$tool" = "Bash" ] && [ -z "$cmd" ]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' \
+    "T4 gate: could not read the command to check it (is perl available?). Denying rather than passing, because a gate that cannot inspect a command must not pretend it approved one."
+  exit 0
+fi
+
+# --- what detection actually reads (#236) ------------------------------------
+# `scan` is `cmd` with the SHELL SEPARATORS INSIDE QUOTED SPANS blanked out. Every
+# pattern below matches against `scan`; only the issue-reference lookup reads `cmd`.
+#
+# WHY, MEASURED WITH A CONTROL. The gate never stripped quotes, so detection relied
+# entirely on POS anchoring -- and one `(`, `|`, `;` or `&` inside a quoted argument
+# manufactures a command position out of nothing. `gh issue comment 1 --body 'see
+# (gh pr merge) in the docs'` was asked; the identical sentence without the paren was
+# silent. Six such cases, each flipping on one character. Hit live four times on
+# 2026-08-16, and each one also ran the full verify suite.
+#
+# THE CONTENTS ARE KEPT, ONLY THE SEPARATORS GO. Stripping quoted spans wholesale
+# would take `git reset "--hard"` with them, and that quoted-FLAG case is a pinned
+# regression from #15 -- the bypass this anchoring was written to close.
+#
+# WHAT THIS NARROWS, said out loud rather than discovered later: a genuinely
+# dangerous command nested inside a quoted string -- `sh -c 'x; git reset --hard'` --
+# used to be caught by accident, through the very separator this blanks, and is not
+# caught now. It was never caught deliberately: `bash -c "git reset --hard"` with no
+# separator was always silent. A regex is not a shell parser, and the guarantee is
+# narrowed here rather than overstated. tests/hooks/test-gate.sh pins it as a known
+# limit so it is a decision on the record, not a hole someone finds later.
+#
+# HEREDOC BODIES ARE DATA AND ARE DROPPED WHOLE. Blanking separators inside quotes is
+# not enough, and the proof is that this very fix could not be committed: a commit
+# message written with `git commit -F- <<'MSG'` is not a quoted span, so a markdown
+# BACKTICK around a command name in the prose stayed a command position and denied the
+# commit. Backticks are in POS because backtick command substitution is real; inside a
+# heredoc body nothing is. Dropping the body is exact rather than heuristic -- it is
+# the one region of a shell command that can never contain a command position.
+#
+# AND THE EXECUTABLE AT A COMMAND POSITION IS REDUCED TO ITS BASENAME (#84). `gh` is
+# not on the PATH that agent tool shells inherit on this machine, so every `gh` call in
+# the session that filed #84 used a quoted absolute path -- and the gate was bypassed
+# continuously, by an agent trying to comply, with no signal that anything was skipped.
+#
+# THE ANCHOR IS KEPT, NOT LOOSENED. Turning the patterns into a substring search would
+# catch the path forms and reintroduce every false positive the anchor exists to
+# prevent. Reducing the executable to its basename FIRST leaves the anchor matching a
+# command, which is what it was always meant to match. `/usr/bin/notgh` reduces to
+# `notgh` and is still not `gh`.
+scan="$(printf '%s' "$cmd" | perl -0777 -pe '
+  s{<<-?\x27?"?([A-Za-z_][A-Za-z0-9_]*)\x27?"?(.*?)^\s*\1\s*$}{<<HEREDOC\nHEREDOC}gms;
+  s{(\x27[^\x27]*\x27|"(?:\\.|[^"\\])*")}{ my $q = $1; $q =~ tr/;&|`()/      /; $q }ge;
+  s{(^|[;&|`(][ \t]*)(?:"([^"]*)"|\x27([^\x27]*)\x27|([^\s;&|`()]+))(?=[ \t])}{
+     my $pre = $1;
+     my $p = defined $2 ? $2 : defined $3 ? $3 : $4;
+     my $b = $p; $b =~ s{.*[\\/]}{}; $b =~ s{\.exe$}{}i;
+     ($b eq "git" or $b eq "gh") ? $pre . $b : $&;
+  }ge;
+')"
+# FAIL TOWARD DETECTION, NEVER AWAY FROM IT. If that perl ever dies -- a future edit
+# to the pattern, a perl the machine does not have -- `scan` comes back empty, every
+# match below fails, and the gate goes silent on `git reset --hard` while looking
+# exactly like a gate with no opinion. That is the worst failure this file has: a
+# guard that is off and indistinguishable from a guard that allowed. Falling back to
+# the raw command restores the pre-#236 behaviour, which over-denies rather than
+# under-denies, and over-denying is the direction you can see.
+[ -n "$scan" ] || scan="$cmd"
 
 _decide() {  # $1 = deny|ask ; $2 = reason
   local r="$2"
@@ -41,12 +122,117 @@ ask()  { _decide ask  "$1"; }
 # Runs the repo's configured verify command (.claude/t4.json "verify") itself, so
 # the ship gate is real, un-forgeable enforcement — not a claim to trust.
 # Returns 0 when it passes OR when nothing is configured; 1 when it fails.
+# Reads the "verify" command out of a given t4.json. Split out because WHICH t4.json
+# is the whole question below.
+_verify_cmd_from() {
+  local v
+  v="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < "$1" 2>/dev/null)"
+  v="${v//\\\"/\"}"; v="${v//\\\\/\\}"
+  printf '%s' "$v"
+}
+
+# Renders a verify command for a human to read in a decision message. #246 made this
+# string PR-AUTHOR-CONTROLLED, and the refusal below is the entire value of that check --
+# a maintainer reads the two commands and sees which one changed. So the attacker now
+# writes into the artifact the decision rests on: an ESC sequence repaints or erases the
+# line, and four thousand characters push the explanation out of view. Neither touches
+# the comparison; both degrade the control.
+#
+# _decide already escapes backslash, quote, newline, CR and tab for JSON validity. That
+# was sufficient while this text came from the maintainer's own config and is not
+# sufficient now. Control bytes out, length capped; tab and newline are kept because the
+# JSON escaping handles them and a wrapped command is still readable.
+_display_cmd() {
+  local v
+  v="$(printf '%s' "$1" | tr -d '\000-\010\013-\037\177')"
+  [ "${#v}" -gt 300 ] && v="${v:0:300}… (truncated, ${#1} chars)"
+  printf '%s' "${v:-(no verify configured)}"
+}
+
 run_verify() {
-  local vcmd
-  vcmd="$(perl -0777 -ne 'print $1 if /"verify"\s*:\s*"((?:\\.|[^"\\])*)"/' < .claude/t4.json 2>/dev/null)"
-  vcmd="${vcmd//\\\"/\"}"; vcmd="${vcmd//\\\\/\\}"
+  local vcmd lcmd rc
+
+  # THE EVIDENCE IS BOUND TO THE COMMIT BEING MERGED (#245). This used to run the
+  # verify command in the CURRENT WORKING DIRECTORY and never look at the PR at all --
+  # so `gh pr merge 3` from any other branch ran that branch's suite, saw green, and
+  # permitted the merge of a PR whose head was never tested. The gate reported the ship
+  # gate as satisfied either way, which is the exact defect class this file exists to
+  # prevent, at its most load-bearing point.
+  #
+  # Found by a clink panel reading the hook rather than the prompt; two independent
+  # models reported it, and it was verified here before being acted on.
+  local head="" wt=""
+  if [ -n "${PR_NUM:-}" ] && command -v gh >/dev/null 2>&1 \
+     && git rev-parse --git-dir >/dev/null 2>&1; then
+    head="$(gh pr view "$PR_NUM" --json headRefOid --jq .headRefOid 2>/dev/null | tr -d '[:space:]')"
+  fi
+  if [ -n "$head" ]; then
+    # A path that does not exist yet: `git worktree add` refuses an existing directory,
+    # and `mktemp -d` creates one.
+    wt="$(mktemp -d)/t4-verify"
+    if git worktree add --detach "$wt" "$head" >/dev/null 2>&1; then
+      # AND THE COMMAND COMES FROM THE HEAD TOO, not from local disk. `.claude/t4.json`
+      # is a TRACKED file, so an UNCOMMITTED edit to it changes what the ship gate
+      # executes while the pull request's diff shows nothing at all -- `"verify":
+      # "true"` on disk and the gate is off, invisibly, with no artifact for a reviewer
+      # to notice. Binding the run to the head (above) and then taking its instructions
+      # from the working tree would have left exactly that hole open.
+      vcmd="$(_verify_cmd_from "$wt/.claude/t4.json")"
+      # #246: AND THE HEAD COMMIT IS EVIDENCE, NOT INSTRUCTIONS. Taking the command from
+      # the head -- which is what the paragraph above argues for, and correctly, as far
+      # as it goes -- hands the author of the pull request a string this hook runs with
+      # the maintainer's credentials at merge time. A download-and-execute one-liner is
+      # ONE LINE of a tracked config file; it does not look wrong in a diff, because the
+      # gate is SUPPOSED to run the repo's verify; and no approval prompt fires, because
+      # this hook is the thing already trusted to run commands on their behalf.
+      #
+      # So both sides are a trust boundary and neither config alone can be believed: the
+      # local one can be edited without committing (#245 slice 2), and the head one is
+      # written by whoever opened the pull request. THE RESOLUTION IS TO REQUIRE THEM TO
+      # AGREE. A changed verify then becomes a visible refusal instead of a silent
+      # execution, and both tampers are refused by the same check.
+      #
+      # This runs BEFORE the command does. A deny after the fact would report the
+      # exploit rather than prevent it.
+      lcmd="$(_verify_cmd_from .claude/t4.json)"
+      if [ "$vcmd" != "$lcmd" ]; then
+        git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+        deny "T4 gate: the PR head's verify command differs from this repo's, so it was not run. The head commit is evidence, not instructions - a pull request does not get to choose what the ship gate executes on your machine. Reconcile .claude/t4.json between the two, then merge.
+--- local (.claude/t4.json) ---
+$(_display_cmd "$lcmd")
+--- PR head ($head) ---
+$(_display_cmd "$vcmd")"
+      fi
+      if [ -z "$vcmd" ]; then
+        # Both configure no verify -- the equality check above already established that
+        # -- so there is nothing to run and nothing to disagree about. A head that
+        # REMOVES verify while the local config still has one is a mismatch and was
+        # denied above; before #246 it returned 0 here and disarmed the gate silently.
+        git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+        return 0
+      fi
+      if command -v timeout >/dev/null 2>&1; then
+        VERIFY_OUTPUT="$(cd "$wt" && timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
+      else
+        VERIFY_OUTPUT="$(cd "$wt" && bash -c "$vcmd" 2>&1)"; rc=$?
+      fi
+      git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+      return "$rc"
+    fi
+    # A head was resolved and could not be checked out. That is a real failure, not a
+    # missing capability, so it denies rather than quietly falling back to the tree
+    # that happens to be here -- falling back is the bug.
+    rm -rf "$wt"
+    VERIFY_OUTPUT="could not check out PR head $head to verify it"
+    return 1
+  fi
+  # No PR head resolvable (no gh, not a git checkout, or a merge with no number). The
+  # pre-#245 behaviour is kept here rather than denying, because denying would deadlock
+  # every repo without gh -- the fail-closed trap #129 traced. THIS PATH IS THE KNOWN
+  # GAP: what it verifies is the working tree, and the suite pins that it is only
+  # reached when no head could be resolved.
+  vcmd="$(_verify_cmd_from .claude/t4.json)"
   [ -n "$vcmd" ] || return 0
-  local rc
   if command -v timeout >/dev/null 2>&1; then
     VERIFY_OUTPUT="$(timeout 600 bash -c "$vcmd" 2>&1)"; rc=$?
   else
@@ -76,6 +262,40 @@ check_ci() {
   return "$rc"
 }
 
+# --- the standing-authorization skip, and what suspends it (#141) ------------
+# THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from #129's four. Those are ways PAST
+# the gate; here the gate runs, sees the command, and CHOOSES to stand down -- so it
+# survives all four of their fixes. Under "autoMerge"/"afk" the review ask was skipped
+# unconditionally, so an unattended run could merge a PR modifying hooks/, .claude/,
+# .github/workflows/ or skills/t4/ with no human ever seeing it -- INCLUDING a PR that
+# weakens the gate performing the skip.
+#
+# The old defence was "the checkable guard (verify) still holds". True and
+# insufficient: verify is the test suite, not a review. A change to this file that
+# keeps every test green and removes a deny is exactly what verify cannot see, and
+# exactly what the review ask exists for.
+#
+# Ordinary work still skips, which is the property that made the skip worth having.
+ENFORCEMENT_PATHS='^(hooks/|\.claude/|\.githooks/|\.github/workflows/|skills/t4/|docs/adr/)'
+
+# Returns 0 when the review ask must be kept despite standing authorization.
+review_ask_required() {
+  grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null || return 0
+  local files rc
+  if command -v timeout >/dev/null 2>&1; then
+    files="$(timeout 60 gh pr diff $1 --name-only 2>/dev/null)"; rc=$?
+  else
+    files="$(gh pr diff $1 --name-only 2>/dev/null)"; rc=$?
+  fi
+  # FAIL TOWARD THE ASK. If the diff cannot be read, the gate does not know whether an
+  # enforcement path was touched, and answering "probably not" is how this bypass got
+  # here. No deadlock risk: if gh cannot answer, `gh pr merge` cannot run either.
+  [ "$rc" -ne 0 ] && return 0
+  [ -z "$files" ] && return 0
+  printf '%s\n' "$files" | grep -Eq "$ENFORCEMENT_PATHS" && return 0
+  return 1
+}
+
 # --- command-position anchoring ----------------------------------------------
 # A real command starts at the beginning or right after a shell separator
 # (`;` `&` `|` `` ` `` `(`). Anchoring detection to a command position — and to the
@@ -95,18 +315,73 @@ FLAG_F="[[:space:]\"']-f([[:space:]\"']|$)"
 is_afk=""
 grep -Eq '"afk"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null && is_afk="yes"
 
+# --- the GitHub MCP surface (#83) --------------------------------------------
+# THE SAME AGENT, IN THE SAME SESSION, REACHING THE SAME API WITHOUT A SHELL. An agent
+# that cannot run `gh pr merge` past this gate could perform the identical action
+# through `mcp__github__merge_pull_request`, and the gate never saw it: hooks.json
+# registered only `Bash`, and the in-process check exited for everything else. The
+# session that filed #83 merged SIX pull requests that way across two repositories --
+# no verify, no review confirmation, and none of them looked like a bypass at the time.
+#
+# DECISIONS COME FROM tool_name PLUS tool_input, because these calls have no shell
+# string to anchor in. The rules themselves are the shell path's rules, reusing
+# run_verify and is_afk rather than restating them -- two copies of the ship gate
+# would drift, and the drift would be silent on exactly the surface that was already
+# invisible once.
+#
+# AN UNRECOGNISED mcp__github__ TOOL ASKS. Failing open would reintroduce this bypass
+# the moment the MCP server gains a capability, which is how the hole got here. Asking
+# rather than denying is deliberate: a deny on an unknown name deadlocks a run with no
+# way out, and #129 traced exactly that deadlock for the fail-closed design it
+# rejected. A read-only name is allowed outright, because a gate that stops `get_me`
+# is a gate that gets switched off -- #236's lesson, one surface over.
+case "$tool" in
+  mcp__github__*)
+    case "$tool" in
+      # Read-only. Named explicitly: the default below is ask, so anything not listed
+      # here pays a prompt, and that is only tolerable if the common calls are listed.
+      mcp__github__get_*|mcp__github__list_*|mcp__github__search_*|\
+      mcp__github__issue_read|mcp__github__pull_request_read|mcp__github__download_*)
+        exit 0 ;;
+
+      mcp__github__create_pull_request)
+        # Same rule as `gh pr create`: the body or title must reference an issue. The
+        # whole tool_input is searched, which is the MCP equivalent of reading the raw
+        # command rather than the anchored one.
+        [[ "$input" =~ \#[0-9]+ ]] && exit 0
+        deny "T4 gate: a PR needs a referenced issue (PRD -> issues -> PR). Add an issue number (e.g. 'Closes #12') to the PR body/title, or file an issue first." ;;
+
+      mcp__github__merge_pull_request)
+        # The ship gate, identical to the shell path below.
+        PR_NUM=""
+        [[ "$input" =~ \"(pullNumber|pull_number)\"[[:space:]]*:[[:space:]]*([0-9]+) ]] && PR_NUM="${BASH_REMATCH[2]}"
+        run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
+--- last verify output ---
+$(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
+        review_ask_required "$PR_NUM" || exit 0
+        ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?" ;;
+
+      *)
+        # Every other GitHub MCP tool, known-mutating or not yet invented. push_files,
+        # create_or_update_file and delete_file write into the repository without
+        # touching git at all, so no git-side guard can see them; they land here rather
+        # than in a list that would go stale the same way `Bash` did.
+        ask "T4 gate: '$tool' mutates the repository through the GitHub API, where no git-side guard can see it. Confirm this is intended — or use the shell path, which is fully gated." ;;
+    esac ;;
+esac
+
 # --- dangerous git -----------------------------------------------------------
-if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
+if [ -z "$is_afk" ] && [[ "$scan" =~ ${POS}${GITH}reset[[:space:]].*--hard ]]; then
   deny "T4 gate: 'git reset --hard' is destructive (discards working-tree changes). Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
-if [[ "$cmd" =~ ${POS}${GITH}push[[:space:]] ]] && [[ ! "$cmd" =~ --force-with-lease ]] \
-   && { [[ "$cmd" =~ --force([^-]|$) ]] || [[ "$cmd" =~ $FLAG_F ]]; }; then
+if [[ "$scan" =~ ${POS}${GITH}push[[:space:]] ]] && [[ ! "$scan" =~ --force-with-lease ]] \
+   && { [[ "$scan" =~ --force([^-]|$) ]] || [[ "$scan" =~ $FLAG_F ]]; }; then
   deny "T4 gate: force-push is blocked. Use --force-with-lease, or run it yourself if intended."
 fi
-if [ -z "$is_afk" ] && [[ "$cmd" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$cmd" =~ [-][a-zA-Z]*f ]] || [[ "$cmd" =~ --force ]]; }; then
+if [ -z "$is_afk" ] && [[ "$scan" =~ ${POS}${GITH}clean[[:space:]] ]] && { [[ "$scan" =~ [-][a-zA-Z]*f ]] || [[ "$scan" =~ --force ]]; }; then
   deny "T4 gate: 'git clean -f' deletes untracked files irreversibly. Park it, run it yourself, or set .claude/t4.json \"afk\": true for an unattended revert-to-green run."
 fi
-if [[ "$cmd" =~ ${POS}${GITH}branch[[:space:]].*-D ]]; then
+if [[ "$scan" =~ ${POS}${GITH}branch[[:space:]].*-D ]]; then
   deny "T4 gate: 'git branch -D' force-deletes a branch (unmerged work lost). Use -d, or run it yourself."
 fi
 
@@ -114,7 +389,7 @@ fi
 # Detect the command via the anchored `gh ... pr create` (so a commit message
 # that merely says "gh pr create" doesn't trip it); detect the issue ref on the
 # raw `cmd` (so a ref inside a quoted --body still counts).
-if [[ "$cmd" =~ ${POS}${GHH}create ]]; then
+if [[ "$scan" =~ ${POS}${GHH}create ]]; then
   ref=""
   [[ "$cmd" =~ \#[0-9]+ ]] && ref="yes"
   if [ -z "$ref" ] && [[ "$cmd" =~ --body-file[[:space:]=]+([^[:space:]]+) ]]; then
@@ -128,7 +403,10 @@ fi
 # verify runs on `merge` only, not the iterative `create` (CI builds on push).
 # Keep .claude/t4.json "verify" a FAST suite (unit + build + lint) and leave
 # e2e to the CI required-check.
-if [[ "$cmd" =~ ${POS}${GHH}merge ]]; then
+if [[ "$scan" =~ ${POS}${GHH}merge ]]; then
+  # Resolved before run_verify, which needs it to bind the evidence to the PR (#245).
+  rest2="${cmd#*pr }"; rest2="${rest2#merge}"; PR_NUM=""
+  [[ "$rest2" =~ ^[[:space:]]+([0-9]+) ]] && PR_NUM="${BASH_REMATCH[1]}"
   # CI first: it's one cheap network call, and "a check is red/pending" is a
   # faster, more useful answer than a local suite that passes anyway.
   if grep -Eq '"requireGreenCI"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
@@ -139,12 +417,11 @@ $(printf '%s' "${CI_OUTPUT:-}" | tail -n 15)"
   run_verify || deny "T4 gate: verify failed — the configured verify command (.claude/t4.json \"verify\") did not pass. A green verify is the ship gate; fix it before merging.
 --- last verify output ---
 $(printf '%s' "${VERIFY_OUTPUT:-}" | tail -n 15)"
-  # Standing authorization (AFK / auto-merge) skips the review-confirm ask — the
-  # developer already authorized the batch, and re-asking a decided call is the
-  # 'sticking' anti-pattern. The checkable guard (verify, above) still holds.
-  if grep -Eq '"(autoMerge|afk)"[[:space:]]*:[[:space:]]*true' .claude/t4.json 2>/dev/null; then
-    exit 0
-  fi
+  # Standing authorization (AFK / auto-merge) skips the review-confirm ask for
+  # ORDINARY work -- the developer authorized the batch, and re-asking a decided call
+  # is the 'sticking' anti-pattern. It does NOT skip when the diff touches an
+  # enforcement path (#141): see review_ask_required above.
+  review_ask_required "$PR_NUM" || exit 0
   ask "T4 before-merge gate: confirm /scrutinize + /code-review (and /security-review if a boundary was touched) have run against the final change. Proceed with the merge?"
 fi
 

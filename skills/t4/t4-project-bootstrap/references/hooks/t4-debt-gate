@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-debt-gate
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# STICKY DEBT: an unpaid finding gates the NEXT action (#218).
+#
+# Seam: a PreToolUse payload on stdin + cwd -> a deny decision, or nothing.
+#
+# WHY THIS EXISTS. Everything else in this design REPORTS and never GATES. #199
+# delivers a finding at the next prompt and its own body says why that is the
+# ceiling: a non-blocking hook cannot compel an answer, and writing it as though it
+# could is the fictional enforcement docs/adr/0001 warns about. So a verdict that
+# arrives after the turn that earned it has no consequence at all.
+#
+# Sticky debt is the consequence. The finding does not block the turn that produced
+# it -- that turn is over, and pretending otherwise is the error the whole re-cut
+# exists to fix. It gates the NEXT action of the kind the finding is about, at a
+# seam that is a REAL deny rather than a request that the model comply. The model
+# can still resolve it, or dismiss it with a receipt (#203). It cannot walk past it
+# by ignoring it.
+#
+# OFF BY DEFAULT, and this hook is deliberately NOT wired into the live PreToolUse
+# chain here. Wiring a new deny path alongside t4-gate is a trust-boundary change,
+# and an unattended run has removed the reviewer who would confirm it does what it
+# claims -- so the mechanism ships tested and dark, and the wiring is a decision for
+# a session with a human in it.
+set -uo pipefail
+
+payload="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+python - "$PWD" "$payload" <<'PY'
+import json, os, sys
+
+cwd, payload_raw = sys.argv[1], sys.argv[2]
+
+def off():
+    sys.exit(0)                        # silence = no opinion, normal permission flow
+
+try:
+    cfg = json.load(open(os.path.join(cwd, ".claude", "t4.json"), encoding="utf-8"))
+except Exception:
+    off()
+
+# Off by default. An enforcement path that arrives switched on is one nobody chose.
+if not cfg.get("stickyDebt"):
+    off()
+
+try:
+    payload = json.loads(payload_raw)
+except Exception:
+    off()
+
+state_path = os.path.join(cwd, ".claude", "t4-review-state.json")
+try:
+    state = json.load(open(state_path, encoding="utf-8"))
+except Exception:
+    off()                              # no state -> no debt -> no opinion
+
+decided = {d.get("finding") for d in state.get("decided", [])}
+debt = [f for f in state.get("findings", []) if f.get("finding") not in decided]
+if not debt:
+    off()
+
+# EXPIRY IS #178'S NUMBER, NOT A GUESS. The plan is explicit that a guessed value
+# written as though it were derived is the failure that section exists to prevent,
+# so there is no default here: with no value configured, debt does not expire, and
+# the absence is visible rather than papered over with an invented number.
+max_age = cfg.get("stickyDebtExpirySegments")
+segment = int(payload.get("segment_index") or 0)
+if isinstance(max_age, int) and max_age > 0:
+    fresh = []
+    for f in debt:
+        born = int(f.get("segment_index") or 0)
+        if segment - born >= max_age:
+            print("t4-debt-gate: finding %s expired after %d segments"
+                  % (f.get("finding"), segment - born), file=sys.stderr)
+        else:
+            fresh.append(f)
+    debt = fresh
+    if not debt:
+        off()
+
+f = debt[0]
+reason = ("T4 sticky debt: finding %s on rule `%s` is unresolved. It was raised after "
+          "the turn that earned it, so it gates this action rather than that one. "
+          "Resolve it, or dismiss it with a receipt (`%s DISMISS reason: ...`)."
+          % (f.get("finding"), f.get("rule"), f.get("finding")))
+
+# Compact separators to match hooks/t4-gate's existing output shape -- the suites
+# match on "permissionDecision":"deny" with no space, and a differently-spaced
+# deny would read as no deny at all to anything grepping for it.
+print(json.dumps({"hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": reason,
+}}, ensure_ascii=False, separators=(",", ":")))
+PY
+exit 0

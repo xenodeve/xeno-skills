@@ -12,7 +12,11 @@ pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL: $1"; fail=$((fail+1)); }
 
-for f in t4-session-start t4-prompt-reminder t4-gate run-hook.cmd; do
+# The list is DERIVED, not maintained: every shippable file under hooks/ must have
+# a bootstrap copy. A hand-kept list silently stops covering the next script added,
+# which is exactly what happened when t4-turn-end, t4-review-state and
+# t4-transcript-skills were added and this suite kept passing without them.
+for f in $(cd "$SRC" && ls | grep -v '^hooks\.json$'); do
   if [ ! -f "$DST/$f" ]; then
     bad "$f: missing in bootstrap references/hooks/"
   elif cmp -s "$SRC/$f" "$DST/$f"; then

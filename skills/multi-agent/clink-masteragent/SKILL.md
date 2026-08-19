@@ -22,6 +22,7 @@ So the score table is **in this file**, below the guidance, rather than in a doc
 | **Final verification** | The buck stops here. A subagent's report is a hypothesis until checked — a worker in this repo's own history claimed a merged PR that did not exist, and `git` disproved it. |
 | **Security and trust boundaries** | Auth, secrets, permissions, entitlement paths. Blast radius, not diff size, decides. |
 | **Anything you cannot check** | If you cannot verify the output, delegating it converts an unknown into a false confidence. |
+| **Building the delegation contract** | The `BrainstormRequest v1` states the objective, the scope the worker may not leave, and what is fact versus assumption. Handing that authoring to the worker asks it to decide what it was supposed to be constrained by. Shape: [`clink-brainstorm/references/request-v1.md`](../clink-brainstorm/references/request-v1.md). |
 
 **A delegated green is not a green.** Two failures seen in this repo, both from workers that did good work otherwise: a test that pinned message *wording* rather than behaviour (the suite passed either way; only reading it found the problem), and a suite in which no test had ever been observed to fail, because the prompt asked for "the function and its tests" in one pass. **Ask for the RED first, and require the failing output back before the implementation exists.** Then mutate: mutation is what converts a delegated green into evidence.
 

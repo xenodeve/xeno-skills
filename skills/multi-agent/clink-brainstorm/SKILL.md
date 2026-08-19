@@ -58,6 +58,29 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 
 `mcp__pal__consensus`'s `models[]` roster only accepts PAL-configured provider models — it has no concept of a clink CLI agent (they live in a completely separate registry: `clink/registry.py` + `conf/cli_clients/*.json`). There is no single tool call that spans both. Orchestrate manually instead (see below).
 
+## The delegation contract — build the request before you call (#215)
+
+Every `clink` delegation carries a **`BrainstormRequest v1`** and comes back as a
+**`BrainstormResponse v1`**. The shapes are in
+[`references/request-v1.md`](references/request-v1.md) and
+[`references/response-v1.md`](references/response-v1.md), with worked examples under
+[`references/examples/`](references/examples/). They are not inline because this file is
+already large and the master pays for its size on every load.
+
+**Required going out:** `protocol`, `version`, `problem`, `objective`, `scope.exclude`,
+`questions`. **Required coming back:** `decision_status`, `confidence`, and the sections
+`Summary`, `Findings`, `Recommendation`, `Evidence boundary`.
+
+**Two of those are the point.** `decision_status: needs_user_input` **stops implementation** —
+without it a recommendation about product behaviour reads exactly like one about an
+implementation detail. And `Evidence boundary` states what the worker did *not* check:
+omitting a risk that does not exist is honest, and omitting what was never checked is
+indistinguishable from having checked it.
+
+**`permissions.execute_commands` defaults to `false` for a measured reason** — antigravity
+cannot run shell through this transport and returns the permission error *instead of* its
+output with `return_code: 0`.
+
 ## How to run a brainstorm round
 
 1. **Write one precise question/proposal** — the same exact prompt goes to every agent. Vague or drifting prompts make answers incomparable. State the question, relevant constraints, and what kind of answer you want (recommendation, critique, risk list, etc.) — these agents have **zero context from your conversation**, so include everything they need to answer standalone (paths, prior decisions, what's already been tried).

@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-delegation-gate
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The delegation gate: a required shape, checked BEFORE the delegation runs (#232).
+#
+# Seam: a PreToolUse payload on stdin + cwd -> a deny decision, or nothing.
+#
+# THE ONE SEAM ALL FOUR HOSTS SHARE. Every one of them exposes the spawn of a child
+# agent as an ordinary tool, visible to the pre-action hook WITH ITS ARGUMENTS,
+# before it runs:
+#
+#     Claude Code   Agent          codex   spawn_agent
+#     cursor        Task           agy     invoke_subagent
+#
+# All four verified live. And a `PreToolUse` matcher fires on an MCP tool name too
+# -- exact and by regex, with the fully-qualified `mcp__<server>__<tool>` in the
+# payload (#219, measured with a control in the same run) -- so a `clink` call is
+# gateable at the same seam as a native spawn.
+#
+# WHAT IT CHECKS. The request contract of #216: a delegation must carry `objective`,
+# `scope.exclude` and at least one question before it is allowed to spend a worker's
+# time. This is the thing `clink-brainstorm` currently tries to achieve by writing a
+# skill that ASKS the master to write a good prompt.
+#
+# RECURSIVE ENFORCEMENT IS NEARLY FREE. Hooks fire INSIDE native subagents on Claude
+# Code, cursor and agy, each payload carrying that agent's own identity, so one
+# config covers an agent tree. The identity is recorded on the denial so a child's
+# activity is attributable rather than anonymous.
+#
+# OFF BY DEFAULT, AND NOT WIRED HERE. Adding a deny path alongside t4-gate is a
+# trust-boundary change and an unattended run has removed the reviewer who would
+# confirm it does what it claims. It ships tested and dark; the wiring is a decision
+# for a session with a human in it.
+set -uo pipefail
+
+payload="$(cat)"
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+python - "$PWD" "$payload" <<'PY'
+import json, os, re, sys
+
+cwd, payload_raw = sys.argv[1], sys.argv[2]
+
+def off():
+    sys.exit(0)                       # silence = no opinion, normal permission flow
+
+try:
+    cfg = json.load(open(os.path.join(cwd, ".claude", "t4.json"), encoding="utf-8"))
+except Exception:
+    off()
+if not cfg.get("delegationGate"):
+    off()                             # off by default: a gate that arrives on is one nobody chose
+
+try:
+    payload = json.loads(payload_raw)
+except Exception:
+    off()
+
+SPAWN = {
+    "Agent": "claude-code",
+    "spawn_agent": "codex",
+    "Task": "cursor",
+    "invoke_subagent": "agy",
+}
+
+tool = str(payload.get("tool_name") or "")
+if tool in SPAWN:
+    kind = SPAWN[tool]
+elif re.match(r"^mcp__[A-Za-z0-9_.-]+__clink$", tool):
+    kind = "clink"                    # #219: the matcher sees the fully-qualified name
+else:
+    off()
+
+# The identity this payload carries, whichever host wrote it. Recorded on the denial
+# so a child's activity is attributable instead of anonymous.
+who = (payload.get("agent_id") or payload.get("session_id")
+       or payload.get("conversationId") or "master")
+
+blob = json.dumps(payload.get("tool_input") or {}, ensure_ascii=False)
+
+missing = []
+if not re.search(r'objective', blob, re.I):
+    missing.append("objective")
+if not re.search(r'exclude', blob, re.I):
+    missing.append("scope.exclude")
+if not re.search(r'question', blob, re.I):
+    missing.append("questions")
+
+if not missing:
+    off()
+
+reason = ("T4 delegation gate (%s, from %s): this delegation is missing %s. "
+          "A worker told what to look at still expands; one told what it may not "
+          "touch has a boundary you can check afterwards. Shape: "
+          "clink-brainstorm/references/request-v1.md."
+          % (kind, who, ", ".join(missing)))
+
+print(json.dumps({"hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": reason,
+}}, ensure_ascii=False, separators=(",", ":")))
+PY
+exit 0

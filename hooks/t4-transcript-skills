@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-transcript-skills
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Which skills has this session actually invoked? (#184)
+#
+# Seam: a transcript path as $1 -> one invoked NAME per line on stdout, sorted.
+# A pure function over a file. No hook wiring, no state, no side effects.
+#
+# WHAT IT RETURNS, precisely: every name this session invoked as a Skill tool or as
+# a slash command. Slash commands include the harness's own built-ins -- /compact,
+# /goal -- which are not skills. It does NOT filter them, and that is deliberate:
+# the list of what is a skill is the generated routing table (#183), and the caller
+# intersects with it. Filtering here would mean a second, hand-maintained copy of
+# that list, drifting against the generated one. A caller that does not intersect
+# will over-report, so intersect.
+#
+# TWO RECORD TYPES COUNT, and reading one kind is not a partial answer -- it is a
+# wrong one. Measured on a real session: twelve skills appeared as tool-use records
+# and four more ONLY as slash-command records, so a detector reading tool-use alone
+# reports a skill loaded three times as never loaded.
+#
+# COUNTING STARTS AT THE LAST COMPACTION BOUNDARY, not at the start of the file.
+# Compaction appends a boundary rather than starting a new file. A skill the
+# harness carried across is reported as NOT loaded, deliberately: what compaction
+# carries back is truncated, and it may be missing exactly the section under test.
+# Treating a carried skill as loaded is how a whole-file check reports coverage
+# whose content is gone.
+#
+# Record shapes below were read from a real transcript on 2026-08-16, not inferred:
+#   tool use   ->  message.content[] block {"type":"tool_use","name":"Skill",
+#                                           "input":{"skill":"<name>"}}
+#   slash cmd  ->  a user record whose content carries <command-name>/<name></command-name>
+#   boundary   ->  a record with type/subtype "compact_boundary", or isCompactSummary
+# The vendor does not promise transcript stability, so this fails to EMPTY rather
+# than raising when anything about the file surprises it.
+set -uo pipefail
+
+[ -n "${1:-}" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+python - "$1" <<'PY'
+import json, sys, re
+
+path = sys.argv[1]
+
+try:
+    with open(path, encoding="utf-8", errors="replace") as f:
+        lines = f.readlines()
+except Exception:
+    sys.exit(0)                      # missing, moved or unreadable -> empty, never raise
+
+def is_boundary(rec):
+    return (rec.get("type") == "compact_boundary"
+            or rec.get("subtype") == "compact_boundary"
+            or bool(rec.get("isCompactSummary")))
+
+# Parse once. A line that will not parse is skipped, not fatal: a truncated final
+# line is the normal state of a file being appended to while it is read.
+records = []
+for line in lines:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        rec = json.loads(line)
+    except Exception:
+        continue
+    # A line may legitimately parse to something that is not an object -- a bare
+    # list or scalar. Keep only records, or every later .get() is an AttributeError
+    # on a file this is supposed to survive.
+    if isinstance(rec, dict):
+        records.append(rec)
+
+start = 0
+for i, rec in enumerate(records):
+    if is_boundary(rec):
+        start = i + 1                # everything at or before the last boundary is carried
+
+CMD = re.compile(r"<command-name>\s*/?([A-Za-z0-9._-]+)\s*</command-name>")
+
+found = set()
+for rec in records[start:]:
+    msg = rec.get("message") or {}
+    content = msg.get("content")
+
+    blocks = content if isinstance(content, list) else []
+    for b in blocks:
+        if not isinstance(b, dict):
+            continue
+        if b.get("type") == "tool_use" and b.get("name") == "Skill":
+            name = (b.get("input") or {}).get("skill")
+            if name:
+                found.add(str(name))
+
+    # A slash command reaches the transcript as text, in a string content field or
+    # in a text block. Both shapes were observed in the same real session.
+    texts = []
+    if isinstance(content, str):
+        texts.append(content)
+    for b in blocks:
+        if isinstance(b, dict) and isinstance(b.get("text"), str):
+            texts.append(b["text"])
+    for t in texts:
+        for name in CMD.findall(t):
+            found.add(name)
+
+for name in sorted(found):
+    print(name)
+PY

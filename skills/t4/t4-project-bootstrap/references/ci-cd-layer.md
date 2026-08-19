@@ -189,6 +189,36 @@ Private repos on the free plan can't enforce rulesets. Then the fallback is the 
 
 Honest scope: this is weaker than a ruleset — it only binds commands the agent runs through the hook, and a human merging on the web bypasses it entirely. Use it as a stopgap, and say so; don't present it as equivalent.
 
+## When CI cannot run at all — billing, quota, or a disabled Actions plan
+
+**This is a different failure from the one above, and the fallback above makes it worse.** There the ruleset can't be enforced but the workflows still run; here no run starts. A locked billing account fails every job at provisioning — *"the job was not started because your account is locked due to a billing issue"* — so no check ever reports.
+
+**First, turn `requireGreenCI` off.** `gh pr checks` reports non-zero for a PR with no checks exactly as it does for a failing one, so with `true` the gate denies **every merge, forever**. That is a deadlock wearing a guard's clothing, and under `"afk"` it stalls the whole batch. `false` is the honest setting; it says the check is absent rather than pretending it is pending.
+
+### Compensate against what CI actually provided, not against the feeling of losing it
+
+**Name the properties first, because a compensation that maps to none of them is decoration.** A required check gave four things that a local command does not:
+
+| property | why a local run does not have it |
+|---|---|
+| **a clean machine** | your checkout has a warm `node_modules`, a global binary, a cached build, an untracked file |
+| **unconditional execution** | it runs when someone remembers to run it |
+| **the suites that run nowhere else** | e2e, the packaging/installer check, anything deliberately kept out of the fast gate |
+| **a result the author cannot forge** | "I ran it and it passed" is a claim; a check run is an observation |
+
+Six compensations, one per property and two for the gate itself. **The first three are mechanisms — they either run or they don't. Only after them does anything get written down**, because a paragraph in `CLAUDE.md` has never caught a defect:
+
+1. **Give every CI-only suite a home, or mark it unverified — by name.** This is the gap that closes silently, because those suites were never in `verify` by design. In this repo it is `skill-discovery` (`npx skills add . --list`, which `CLAUDE.md` marks CI-only): with no CI it is not *slower*, it **runs nowhere at all**. For each one: fold it into a pre-merge command, run it on a stated cadence and record the date, or write it down as unverified. **"It's in CI" stops being an answer the day CI stops.**
+2. **Widen the ship gate's `verify` to the full suite, and let the gate run it.** `verify` was deliberately the *fast prefix* because CI carried the slow half; there is no slow half now. `t4-gate` runs this command **itself** before `gh pr merge` and denies on failure — which is the one place unconditional execution and an unforgeable result both survive, for anything the agent merges. Keeping it fast now is optimising the wrong quantity.
+3. **Make `pre-push` run the suite, and fix what it says about itself.** Today it runs the three guards and **no tests**, and prints *"the same checks run in CI, where they cannot be bypassed"* — which is **false** the moment CI is down, and it is the sentence doing the work of discouraging `--no-verify`. A guard that misrepresents its own backstop trains people to trust it. Either run the fast suite there — it is the only tier that binds another agent or a human on the clone — or correct the message to say what is really behind it now.
+4. **Verify once from a clean checkout before merge.** `git worktree add` a detached copy of the PR head, install from the lockfile, run `verify` there. This is the property nothing else recovers: a stale dependency, a global binary, or an untracked file makes a broken change pass on the machine that wrote it, and CI was the only participant that had never seen that machine.
+5. **`code-review` and `scrutinize` on the final diff stop being judgment calls.** CI was the only participant that could not be talked round; with it gone, a review that actually reads the diff is the only independent check left. Record both in the `T4-Gates:` trailer, where `check-gate-ledger` refuses silence — `not-run` is legal precisely so the record can stay honest.
+6. **Probe the local gate on a cadence: make it fail on purpose.** With no CI there is no second implementation to disagree with `verify`, so a suite that quietly stops covering something stays green forever and nobody learns. Break one thing, watch the suite go red, put it back. **A green nobody has seen go red is not evidence** — and that check costs a minute.
+
+**Then, and only then, write it down.** Keep the half of the ruleset that needs no check — blocking direct pushes to `main` and requiring a pull request depend on no workflow running, and that is the part that survives a billing lock. Say in `CLAUDE.md` and the open-work ledger that a merged PR here means *"the author ran `verify`"* and not *"CI passed"*, because nothing about the merge distinguishes those. And **file the restoration as an issue, not a memory** — a billing lock is temporary and this configuration is not, so without a tracked item to re-enable the required checks the stopgap becomes permanent and nobody ever decides that it has.
+
+**The ceiling, stated rather than implied: none of this binds a human merging on the web.** That gap is exactly what required checks existed to close and it cannot be closed locally. Say so in the repo's own docs; do not present the compensations as equivalent cover.
+
 ## CD gating
 
 If the repo deploys, the discipline is that **deploy is downstream of the same gate as merge** — `t4-deploy.yml` triggers on `workflow_run` of `T4 verify` completing successfully on `main`, and checks out `workflow_run.head_sha` so it ships the exact commit that passed.

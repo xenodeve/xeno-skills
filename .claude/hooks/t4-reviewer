@@ -1,0 +1,281 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-reviewer
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# The reviewer call (#198): a segment and the declared traces in, verdicts out,
+# written through the state machine's LEGAL TRANSITIONS and nothing else.
+#
+# Seam: `t4-reviewer [--detach] <transcript>` -> rows and findings in
+# .claude/t4-review-state.json. Nothing is returned to the caller. The finding
+# reaches the master later, through delivery -- this half only decides.
+#
+# WHY DETACHED IS A REQUIREMENT AND NOT A PREFERENCE. A hook is a synchronous
+# barrier on all four hosts -- measured at 22 s, 21 s, 24.9 s and a 30 s per-handler
+# cap -- so a model call inside one is paid by the developer on every turn, forever.
+# Detached, its cost to the turn is zero. Capture in the hook, judge here, deliver
+# in the hook.
+#
+# IT READS THE SESSION HISTORY AND THE TRACES. NOTHING ELSE. Both inputs are short
+# and fixed, which is what makes a small model a safe choice here rather than merely
+# a cheap one -- it is never asked to hold a codebase.
+#
+# THAT IS NOT A SANDBOX AND IS NOT CLAIMED AS ONE. What is actually enforced: the
+# payload carries no path into the repository, and the configured command runs from
+# an empty directory, so a relative path resolves nowhere. Whether that command
+# reaches the repo by absolute path is the operator's choice. Saying so beats
+# claiming containment this cannot deliver.
+#
+#   NOT TRUE ON EVERY HOST, recorded because the issue's premise was written before
+#   the four-harness measurement: cursor's transcript records `tool_use` but NOT
+#   `tool_result`, and a command's output arrives instead in the payload of
+#   `afterShellExecution`. On that one host the capturing hook must keep that field,
+#   or the segment reaching this script is missing the evidence half.
+#
+# OFF BY DEFAULT: absent `"reviewer"` in .claude/t4.json this exits silent, having
+# spawned nothing. The switch is the presence of the command, so a repo that has
+# never heard of this layer behaves exactly as before.
+set -uo pipefail
+
+# The verdict payload and the traces are Thai-free today and need not stay that way;
+# Windows python prints cp1252 by default, and one non-ASCII value would turn this
+# into a reviewer that silently answers nothing. Recorded in t4-route.
+export PYTHONIOENCODING=utf-8
+
+detach=0
+if [ "${1:-}" = "--detach" ]; then detach=1; shift; fi
+transcript="${1:-}"
+
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+if [ "$detach" -eq 1 ]; then
+  # Re-exec ourselves without the flag, and return. The child keeps this cwd because
+  # the state file is addressed from it; only the REVIEWER COMMAND is moved out.
+  nohup bash "$HERE/t4-reviewer" "$transcript" >/dev/null 2>&1 &
+  exit 0
+fi
+
+# The command, and the off switch. Read before anything expensive happens.
+command_str="$(python - "$PWD/.claude/t4.json" <<'PY'
+import json, sys
+try:
+    print(json.load(open(sys.argv[1], encoding="utf-8")).get("reviewer") or "")
+except Exception:
+    pass
+PY
+)"
+[ -n "$command_str" ] || exit 0
+
+# The segment. Empty means an idle turn or an unreadable transcript, and both are
+# answered the same way: nothing spawns, so an idle turn costs nothing at all.
+segment="$(bash "$HERE/t4-segment" "$transcript" 2>/dev/null || true)"
+[ -n "$segment" ] || exit 0
+
+seg_file="$(mktemp)"; payload_file="$(mktemp)"; out_file="$(mktemp)"; ops_file="$(mktemp)"
+followed_file="$(mktemp)"; sandbox="$(mktemp -d)"
+trap 'rm -rf "$seg_file" "$payload_file" "$out_file" "$ops_file" "$followed_file" "$sandbox"' EXIT
+printf '%s\n' "$segment" > "$seg_file"
+
+# A native delegation is FOLLOWED INTO ITS OWN TRANSCRIPT rather than written off
+# (#201). Invoked from bash so that `bash` means this bash.
+: > "$followed_file"
+if [ -f "$HERE/t4-follow-delegation" ]; then
+  printf '%s\n' "$segment" | bash "$HERE/t4-follow-delegation" "$transcript" \
+    > "$followed_file" 2>/dev/null || true
+fi
+
+# The payload: the segment, and the rules that HAVE a declared trace. An untraced or
+# out-of-scope rule is not sent, because a reviewer handed a rule with no trace has
+# nothing to match and will invent a verdict -- which is the failure the trace file
+# was built to prevent, reintroduced at the point of use.
+python - "$seg_file" "$PWD/docs/research/rule-traces.md" "$payload_file" "$followed_file" <<'PY'
+import json, re, sys
+
+seg_path, traces_path, out_path, followed_path = sys.argv[1:5]
+
+records = []
+with open(seg_path, encoding="utf-8") as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            records.append(json.loads(line))
+        except Exception:
+            pass
+
+traces = []
+try:
+    with open(traces_path, encoding="utf-8") as f:
+        body = f.read().split("## Traces", 1)[1]
+    for line in body.splitlines():
+        m = re.match(r"^\| `([^`]+)` \| `[^`]+` \| traced \| (.+?) \| (.+?) \|$", line)
+        if m:
+            traces.append({"id": m.group(1), "rule": m.group(2).strip(),
+                           "trace": m.group(3).strip()})
+except Exception:
+    pass
+
+# The delegated half of the evidence, TAGGED WITH WHICH SIDE OF THE BOUNDARY IT CAME
+# FROM (#201). Untagged, a worker's message reads as the master's own, and a rule the
+# master never touched gets judged against it.
+try:
+    with open(followed_path, encoding="utf-8") as f:
+        followed = json.load(f)
+except Exception:
+    followed = {}
+for d in followed.get("followed", []):
+    for r in d.get("records", []):
+        if isinstance(r, dict):
+            r["t4_source"] = "subagent:%s" % d.get("agent")
+            records.append(r)
+
+if not records or not traces:
+    sys.exit(1)                       # nothing to judge -> the caller spawns nothing
+
+with open(out_path, "w", encoding="utf-8", newline="\n") as f:
+    json.dump({"segment": records, "traces": traces}, f, ensure_ascii=False)
+PY
+[ -s "$payload_file" ] || exit 0
+
+# Run it from an empty directory, so a relative path in the command resolves nowhere.
+( cd "$sandbox" && bash -c "$command_str" < "$payload_file" > "$out_file" 2>/dev/null ) || exit 0
+
+# Turn verdicts into transitions. The five verdicts and the three row states are not
+# the same vocabulary, and the mapping is stated here rather than left to the caller:
+#
+#   satisfied -> open then satisfy      (the row closes, no finding)
+#   violated  -> open then violate      (the row closes, a finding is emitted)
+#   partial   -> open as PENDING        (exactly what pending was defined as: a
+#                                        half-seen trace carried across a boundary)
+#   delegated -> open as PENDING, with the delegate named as `source`, because the
+#                rest of the trace is in that worker's transcript and the next
+#                reviewer has to know whose
+#   unknown   -> open as UNKNOWN        (an answer the transcript had not yet been
+#                                        written for; re-evaluated later, never a
+#                                        finding now)
+#
+# No sixth transition is invented for any of them.
+python - "$out_file" "$ops_file" "$PWD/docs/research/rule-traces.md" "$PWD" "$followed_file" <<'PY'
+import hashlib, json, os, re, sys
+
+out_path, ops_path, traces_path, root, followed_path = sys.argv[1:6]
+
+# AN AGENT ID THAT RESOLVES TO NO FILE YIELDS UNKNOWN, NEVER A FINDING (#201). Part of
+# the segment's evidence is unreadable, and nothing here can tell whether the missing
+# half satisfies the rule. A violation reported on the readable half alone is a verdict
+# reached on evidence known to be incomplete.
+try:
+    with open(followed_path, encoding="utf-8") as f:
+        unreadable = json.load(f).get("missing") or []
+except Exception:
+    unreadable = []
+
+# WHICH SKILL EACH RULE BELONGS TO, AND WHETHER THAT SKILL STILL LOOKS THE WAY THE
+# TRACE WAS WRITTEN FOR (#200). This repository edits its own skills constantly, and
+# a reviewer that ignores the version checks version B's declared traces against
+# behaviour produced under version A -- then reports a violation that never happened.
+# The version is the sha of the SKILL.md, published in the trace file; recomputing it
+# here is a `grep`, not a judgement, so the check is deterministic.
+rule_skill, stale, loaded = {}, {}, {}
+try:
+    doc = open(traces_path, encoding="utf-8").read()
+    for skill, ver, rel in re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{12})` \| `([^`]+)` \|$",
+                                      doc, re.M):
+        try:
+            with open(os.path.join(root, rel), "rb") as f:
+                now = hashlib.sha256(f.read()).hexdigest()[:12]
+        except OSError:
+            continue
+        loaded[skill] = now
+        if now != ver:
+            stale[skill] = (ver, now)
+    for line in doc.split("## Traces", 1)[1].splitlines():
+        m = re.match(r"^\| `[^`]+` \| `([^`]+)` \| traced \| (.+?) \| ", line)
+        if m:
+            rule_skill[m.group(2).strip()] = m.group(1)
+except Exception:
+    pass
+
+try:
+    with open(out_path, encoding="utf-8") as f:
+        result = json.load(f)
+    verdicts = result["verdicts"]
+    assert isinstance(verdicts, list)
+except Exception:
+    sys.exit(0)                       # unusable return -> no ops, and so no finding
+
+MAP = {"satisfied": ("active", "satisfy"), "violated": ("active", "violate"),
+       "partial": ("pending", None), "delegated": ("pending", None),
+       "unknown": ("unknown", None)}
+
+ops = []
+for v in verdicts:
+    if not isinstance(v, dict):
+        continue
+    rule, verdict = v.get("rule"), v.get("verdict")
+    if verdict not in MAP or not rule:
+        continue
+    # EVERY ROW CITES THE RECORD IT RESTS ON (#222). A verdict that arrives without
+    # one is DROPPED -- inventing a citation to make the row well-formed would make
+    # the next reviewer, which is memoryless, treat a guess as a checked fact.
+    if v.get("record") is None or not v.get("uuid"):
+        continue
+    where, close = MAP[verdict]
+    op = {"op": "open", "rule": rule, "state": where,
+          "record": v["record"], "uuid": v["uuid"]}
+    skill = rule_skill.get(rule)
+    # A CLINK DELEGATION RESOLVES TO `delegated`, NEVER TO `violated` (#202). What the
+    # worker did in private is not recorded, so a violation attributed across that
+    # boundary is a verdict on evidence that does not exist. This is the same ceiling
+    # the master already has -- it cannot be violated on what it cannot see either --
+    # applied one level down. The row stays pending, sourced, and counted.
+    if str(v.get("source") or "").startswith("clink:") and verdict == "violated":
+        where, close = "pending", None
+        op["state"] = "pending"
+        op["reason"] = ("delegated across the clink boundary: what the worker did in "
+                        "private is not recorded, so this cannot resolve to violated")
+    elif unreadable and verdict == "violated":
+        where, close = "unknown", None
+        op["state"] = "unknown"
+        op["reason"] = ("a delegation's transcript could not be read (%s), so the "
+                        "evidence for this segment is incomplete"
+                        % ", ".join(unreadable[:3]))
+    elif skill in stale:
+        # A MISMATCH RESOLVES TO UNKNOWN AND NEVER TO A FINDING. The verdict may well
+        # be right, but it was reached against a trace written for a different version
+        # of the skill, and there is no way to tell from here which. Reporting it
+        # anyway is a false positive, and a critic that cries wolf gets switched off
+        # along with its true findings. The reason is stated on the row, because an
+        # unknown with no reason is indistinguishable from one nobody looked at.
+        was, now = stale[skill]
+        where, close = "unknown", None
+        op["state"] = "unknown"
+        op["reason"] = ("`%s` was edited after the traces were written: version %s, "
+                        "traces written for %s" % (skill, now, was))
+    # The LOADED version, not the published one -- the row records what the skill
+    # actually looked like in this segment, which is the fact a later reader needs.
+    if skill in loaded:
+        op["version"] = loaded[skill]
+    if v.get("source"):
+        op["source"] = v["source"]
+    ops.append(op)
+    if close:
+        ops.append({"op": close, "rule": rule})
+
+with open(ops_path, "w", encoding="utf-8", newline="\n") as f:
+    for op in ops:
+        f.write(json.dumps(op, ensure_ascii=False, separators=(",", ":")) + "\n")
+PY
+
+# Applied from BASH, one transition at a time, so `bash` means this bash -- Windows
+# python resolves a bare `bash` to WSL's, which fails and returns 1 as though the
+# transition had been refused. An illegal transition is left to fail loudly in the
+# state machine's own exit code rather than being pre-judged here.
+while IFS= read -r op; do
+  [ -n "$op" ] || continue
+  printf '%s' "$op" | bash "$HERE/t4-review-state" >/dev/null 2>&1 || true
+done < "$ops_file"
+exit 0

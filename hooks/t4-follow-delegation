@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-follow-delegation
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Follow a native delegation into its own transcript instead of writing it off (#201).
+#
+# Seam: the master transcript path as $1 + a segment as JSONL on stdin -> one JSON
+# object on stdout:
+#   {"followed":[{"tool_use_id":..,"agent":..,"path":..,"records":[..]}],
+#    "missing":["<tool_use_id>", ...]}
+# Exit code is always 0.
+#
+# THE JOIN IS NOT THE ONE THE ISSUE DESCRIBES, AND THE DIFFERENCE IS MEASURED.
+# #201 says "the agent id appears in the master's own transcript and is the filename,
+# so the join costs a glob". Against a real 39-delegation session the agent id appears
+# ZERO times in the master transcript. What does appear -- four times, same file, same
+# run, which is the control that makes the zero mean something -- is the `toolUseId`
+# carried by the sidecar's own `.meta.json`. All 39 meta files had it.
+#
+# So the join runs the other way:
+#
+#   master: {"type":"tool_use","id":"toolu_...","name":"Agent"}
+#     -> <session>/subagents/agent-*.meta.json where toolUseId == that id
+#       -> the sibling agent-*.jsonl
+#
+# The issue already warns that an earlier draft got the delegation story wrong from a
+# directory listing that did not descend. This was the same error one layer down, and
+# writing the glob it asked for would have found nothing on every session forever
+# while looking exactly like a harness that does not delegate.
+#
+# AN ID THAT RESOLVES TO NOTHING IS REPORTED, NOT GUESSED AT. It goes in `missing`,
+# and one absence does not blind the rest of the segment -- the delegations that DID
+# resolve are still returned.
+set -uo pipefail
+
+master="${1:-}"
+segment="$(cat)"
+[ -n "$master" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+seg_file="$(mktemp)"; trap 'rm -f "$seg_file"' EXIT
+printf '%s\n' "$segment" > "$seg_file"
+
+python - "$master" "$seg_file" <<'PY'
+import json, os, sys
+
+master, seg_path = sys.argv[1], sys.argv[2]
+
+# The four spawn tool names, one per host. Kept identical to t4-delegation-gate's
+# list: Claude Code `Agent`, codex `spawn_agent`, cursor `Task`, agy `invoke_subagent`.
+SPAWN = {"Agent", "spawn_agent", "Task", "invoke_subagent"}
+
+# <project>/<session>.jsonl  ->  <project>/<session>/subagents/
+sub_dir = os.path.join(os.path.dirname(master),
+                       os.path.basename(master)[:-len(".jsonl")]
+                       if master.endswith(".jsonl") else os.path.basename(master),
+                       "subagents")
+
+# tool_use id -> agent id, built from the sidecar metas. Built once: a segment with
+# twenty delegations must not re-read the directory twenty times.
+by_tool_use = {}
+try:
+    for name in os.listdir(sub_dir):
+        if not name.endswith(".meta.json"):
+            continue
+        try:
+            with open(os.path.join(sub_dir, name), encoding="utf-8") as f:
+                meta = json.load(f)
+        except Exception:
+            continue
+        tu = meta.get("toolUseId")
+        if tu:
+            by_tool_use[tu] = name[:-len(".meta.json")]
+except OSError:
+    pass                                  # no sidecar directory -> everything is missing
+
+followed, missing, seen = [], [], set()
+try:
+    with open(seg_path, encoding="utf-8") as f:
+        lines = f.readlines()
+except OSError:
+    lines = []
+
+for line in lines:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        rec = json.loads(line)
+    except Exception:
+        continue
+    content = (rec.get("message") or {}).get("content")
+    if not isinstance(content, list):
+        continue
+    for block in content:
+        # THE TOOL NAME IS THE SIGNAL, NOT THE ID. A Bash record whose id happens to
+        # resolve is not a delegation, and treating the id alone as the signal would
+        # attach a worker's transcript to whatever tool call sorted first.
+        if not isinstance(block, dict) or block.get("type") != "tool_use":
+            continue
+        if block.get("name") not in SPAWN:
+            continue
+        tu = block.get("id")
+        if not tu or tu in seen:
+            continue
+        seen.add(tu)
+        agent = by_tool_use.get(tu)
+        if not agent:
+            missing.append(tu)            # reported; the caller resolves it to unknown
+            continue
+        path = os.path.join(sub_dir, agent + ".jsonl")
+        records = []
+        try:
+            with open(path, encoding="utf-8", errors="replace") as f:
+                for l in f:
+                    l = l.strip()
+                    if not l:
+                        continue
+                    try:
+                        records.append(json.loads(l))
+                    except Exception:
+                        pass
+        except OSError:
+            missing.append(tu)            # a meta with no transcript beside it
+            continue
+        followed.append({"tool_use_id": tu, "agent": agent, "path": path,
+                         "records": records})
+
+print(json.dumps({"followed": followed, "missing": missing},
+                 ensure_ascii=False, separators=(",", ":")))
+PY
+exit 0

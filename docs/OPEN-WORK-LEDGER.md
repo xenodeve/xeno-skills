@@ -89,6 +89,66 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 
 ---
 
+## Track 7 — the compliance reviewer, being built (#176)
+
+**Thirty-four slices implemented 2026-08-16 on PR #235** — 42 commits, one issue each, TDD, tree
+green after every one and idempotent across two consecutive suite runs. Not closed: this repo closes
+with evidence, and the PR is open.
+
+**The ready-for-agent queue on this track is now clear except for what is parked or blocked**, and
+every park below names the thing it needs rather than the fact that it stopped.
+
+| Item | Status | Gate | Next action |
+|---|---|---|---|
+| #185 turn-end wiring · #189 state file · #222 row citations | ✅ | PR #235 | Close on merge. |
+| #184 transcript reader · #183 generated routing table | ✅ | PR #235 | Close on merge. |
+| #186 the gap notice · #190 the route list on a miss | ✅ | PR #235 | **The chain works end to end**: prompt → generated table → what the session actually invoked → speak only about the difference. |
+| #197 segment extraction, hook-written records filtered | ✅ | PR #235 | Close on merge. Unblocks #198, #201, #202. |
+| #207 quoting check · #155 ADR 0001 corrected | ✅ | PR #235 | Close on merge. |
+| #181 rule census · #188 trace file · #195 out-of-scope markers | ✅ | PR #235 | **123 rules: 41 machine / 35 trace / 47 undecidable**, against the inherited 33/68/25. The needs-a-trace bucket is about half what every downstream slice assumed. |
+| #182 stop injecting the family map | ✅ | PR #235 | 8,974 B → 1,368 B per injection; **30,424 B saved across a four-injection session**, measured by the suite. |
+| **#194** write the trace for every in-scope rule | ✅ | PR #235 | **The park was wrong, and the reason is worth keeping.** 17 of the 21 were never hard: the census stores the bolded LABEL as the rule but classifies on label + sentence, so the trace generator was judging four words that said no order while the sentence that classified them said "before". Carrying the full line through: 21 → 9. Five traces written, four reclassified with individual reasons. `untraced` is **0**, and the zero is pinned — the blanket-reason population may not grow to absorb them. |
+| #198 the reviewer call · #200 skill version · #201 follow a delegation · #202 clink boundary · #203 receipts | ✅ | PR #235 | The whole reviewer half. #201 corrected the issue's stated join **by measurement**: against a real 39-delegation session the agent id appears **0** times in the master transcript and the sidecar's `toolUseId` appears **4** — the glob it asked for would have found nothing forever while looking like a harness that does not delegate. |
+| #187 · #192 · #193 the classifier, its counts, its off switch | ✅ | PR #235 | Re-cut and said so: #187 was written for a classifier inside a hook, and a hook is a synchronous barrier on every host. It is a component the detached judge calls, and the suite asserts it is **not** in `hooks.json`. |
+| #191 the router | ✅ | PR #235 | Five untrustworthiness conditions, weakness **derived** rather than listed, both answers unioned. The gap notice now calls it instead of keeping a second matching loop. |
+| **#236 · #84 · #83 · #141** | ✅ | PR #235, **with the developer present** | The four gate defects, done the moment the reviewer `t4-afk` requires was in the room. Each one's stated cause was checked before it was fixed, and **two of the four issues were wrong about their own mechanism**: #236 blamed the `gh` anchor (it is anchored; quotes were never stripped), and the real trigger is one separator character inside quoted prose. |
+| **#241** three divergent gate copies | 🔴 | **NEW — `ready-for-human`** | Found while verifying #236: `hooks/t4-gate`, the plugin cache and the marketplace copy are three different files, and **the one enforcing is not the one `tests/` drives**. The #236 fix was green and the very next commit was still denied by the stale installed copy. Every gate change is inert for the session making it. |
+| **#85 · #171 · #173 · #174 · #175** | 🔴 | **PARKED — still trust boundary** | The remaining `t4-gate` work. #85 is a *design* decision by #129's own ruling ("slice 4 delivers a design decision, not a patch"); #174 is behind #171. |
+| **#196** expiry, cap, logged drop | 🟡 | **PARKED — #178** | The cap and expiry values are a decision the plan reserved to the developer: *a guessed number written as though it were derived is the failure this section exists to prevent.* |
+| #216 · #217 · #219 (#215) · #218 · #221 · #223 · #224 · #225 · #226 · #227 · #228–#232 · #142 · #145 | ✅ | PR #235 | The rest of the queue. |
+| **#199** deliver the finding at the next prompt | 🔴 | **PARKED — #177 and #179** | Both are `ready-for-human`: whether a finding raised on the last turn is carried forward or declared, and whether a small model returns the partial verdict reliably. Neither is the implementer's to answer. |
+| **#174** correct the six Bash-only scope claims | 🔴 | **PARKED — behind #171** | Its own acceptance says "in the same change as the behaviour", and the behaviour is a `t4-gate` edit. |
+| **#168** widen the PreToolUse matcher · **#236** the gate's prose false-deny | 🔴 | **PARKED — trust boundary** | Both change what `t4-gate` sees or denies. Same rule as the five above. |
+| **#156** the thai-token-optimizer write-up | 🔴 | **PARKED — the evidence is not reachable** | Its source is a 2026-08-12 session transcript and two temp files outside the repo. Writing it from here would be a reconstruction, and this repo's own rule is that a reconstructed retrospective is a hypothesis wearing a log's clothing. |
+| **#169 · #170 · #172** | 🔴 | **PARKED — behind #166** | An ADR that is `ready-for-human`. |
+| **#88 · #89 · #90 · #204** | 🔴 | labelled `blocked` | Not this track. |
+
+## Track 8 — the tracker hierarchy, and what it found (#248)
+
+**The rule landed in `a2f1dba`; the five slices that apply it are done and closed** (2026-08-19). PR
+**#259 is merged to `main`** — the only thing this session shipped that did not have to wait for #235.
+
+| Item | Status | Gate | Next action |
+|---|---|---|---|
+| #248 the rule — a sub-issue tree, not prose | 🟡 | PR #235 | All five children closed; the rule itself ships with #235. Close on merge. |
+| #251 · #252 · #253 · #254 the four trees | ✅ | — | **Closed with evidence.** #215→3, #129→4, #165→10, #176→42. Every count read back from `sub_issues_summary`. |
+| #255 a tracking issue per plan | ✅ | merged | **#256** (08-13 compliance plan → #176) and **#257** (08-16 clink contract → #215). Three plans get none, each with its reason in `docs/plans/README.md`, pinned by `tests/skills/test-plan-index.sh`. |
+| #258 the invocation log blocked every push | ✅ | merged | `.gitignore` + an assertion in `tests/guards/test-check-tree-budget.sh`. Found by the guard refusing #259's push. |
+| **#260** the line-ending pins are a glob on one side and a filename list on the other | ✅ | PR #235 | **Fixed in `e7b7c24`, and the issue's own measurement was wrong.** It claimed the CR was in the committed blobs, with counts of 182/163/36 — those are LINE COUNTS: `grep -c $''` matched the empty string. `od -c` on the blobs shows `bash 
+`. Every blob is LF; the CRLF is produced at checkout on the files `.gitattributes` did not pin. So no hook byte changed, and the boundary concern that parked this was smaller than the park argued. `tests/hooks/test-line-ending-pins.sh` asserts the class, not a filename list. |
+| **#246** the ship gate ran a verify command the PR author wrote | ✅ | PR #235 | **Developer chose option 3** — the head's and the local `verify` must be identical, a mismatch is denied and neither runs. `f3f367b`. The exploit reproduces in the suite: before the fix the marker file the head's command would create existed. `/security-review` added a fourth case — the refusal quotes attacker-controlled text, so it is sanitised — and **its first fixture was a false pass**, because `json.dump` cannot carry a raw ESC. `test-gate.sh`: 94 passed, 0 failed. |
+| #244 the bootstrap session has no T4 wiring | ✅ | PR #235 | Implemented in `ed01ed6` — the procedure now opens by invoking `using-t4` and `t4-bro`, with the audit of what else runs pre-wiring. Close on merge. |
+
+**#141 has no parent, deliberately.** #252 reserved the call; #129's own body names #83, #84, #85,
+#126 as its four bypasses, and #141's title says *"the fifth bypass, not in #129"*. A root with no
+parent is the accurate answer, not a gap.
+
+**#165 has no plan file, checked rather than assumed.** Nothing under `docs/plans/` names it and its
+own body names none — so its plan was never written rather than predating the directory. `#255`
+recorded that as `none` instead of inventing one.
+
+**Branch state, 2026-08-19.** `feat/185-turn-end-wiring` is **60 commits, green** — `bash tests/hooks/run-all.sh` → ALL TESTS PASSED, and `main` is merged in (one conflict, `.gitignore`, where both sides had independently added the same ignore rule). **What it still lacks is a review:** `/code-review` and `/scrutinize` have never run on it (#247) and the diff touches **76 enforcement-path files**, which is exactly the condition #141 made the review ask survive `afk` for.
+
 ## Management Plan — phased execution order
 
 **Phase 0 — this bootstrap (#93).** The repo runs the standard it ships; installing the operating

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to skills/t4/t4-project-bootstrap/references/hooks/t4-deliver
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Per-host delivery adapters (#228 Claude Code · #229 codex · #230 cursor · #231 agy).
+#
+# Seam: `t4-deliver <host>` with a PostToolUse-shaped payload on stdin -> that host's
+# delivery JSON, or nothing. One script, four branches: the loop is identical on
+# every host and only the shape of the last step differs, so four near-identical
+# scripts would be four places to fix the same bug.
+#
+# WHY THIS EXISTS AT ALL. Of the 32 slices #177-#208, exactly one named a host other
+# than Claude Code. They were cut from a single-harness architecture; the design
+# moved to four harnesses the next day and nobody re-cut them. These are the four
+# adapters that design assumes.
+#
+# NO MODEL CALL HERE, ON ANY HOST. A hook is a synchronous barrier -- measured at
+# 22 s, 21 s, 24.9 s and a 30 s cap. This reads a verdict that is already written
+# and returns.
+#
+# HOW MUCH OF THIS IS VERIFIED, stated rather than implied. Only Claude Code can be
+# exercised end to end on the machine this was written on. The other three shapes
+# come from the live probes recorded in
+# docs/research/2026-08-14-compliance-hook-surface-across-harnesses.md and are
+# asserted here against fixtures, NOT against a running host. Treat them as [B]:
+# read from a measured payload, not observed being consumed.
+set -uo pipefail
+
+host="${1:-}"
+payload="$(cat)"
+
+[ -f ".claude/t4.json" ] || exit 0
+command -v python >/dev/null 2>&1 || exit 0
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+
+# The verdict is already decided and already ranked (#223). This asks for it; it
+# never judges.
+finding="$(printf '{"op":"next"}' | bash "$HERE/t4-review-state" 2>/dev/null || true)"
+[ -n "$finding" ] || exit 0
+
+python - "$host" "$payload" "$finding" <<'PY'
+import json, sys
+
+host, payload_raw, finding_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    finding = json.loads(finding_raw)
+except Exception:
+    sys.exit(0)
+try:
+    payload = json.loads(payload_raw)
+except Exception:
+    payload = {}
+
+text = ("T4: finding %s on rule `%s`, raised after the turn that earned it. "
+        "The master decides; this is evidence, not a verdict."
+        % (finding.get("finding"), finding.get("rule")))
+
+def out(obj):
+    print(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))
+
+if host == "claude-code":
+    # #228. PostToolBatch fires ONCE PER BATCH where PostToolUse fires once per
+    # call -- three tool calls produced 3 and 1, at ~0.5 s per invocation. But it is
+    # one of the 22 events that exist in the binary and are NOT documented, so it is
+    # an optimisation with a documented fallback and never the only path: a vendor
+    # upgrade that removes it must degrade to slower, not to silent.
+    event = payload.get("hook_event_name") or "PostToolUse"
+    if event not in ("PostToolBatch", "PostToolUse"):
+        sys.exit(0)
+    out({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}})
+
+elif host == "codex":
+    # #229. `{decision:"block"}` on PostToolUse REPLACES the tool result with this
+    # text. That is a stronger channel than appending context: the model does not
+    # read an objection beside the result it asked for, it reads the objection AS
+    # the result. Reserved for a corrective finding; an informational one uses
+    # additionalContext and leaves the result alone.
+    if finding.get("informational"):
+        out({"hookSpecificOutput": {"hookEventName": "PostToolUse",
+                                    "additionalContext": text}})
+    else:
+        out({"decision": "block", "reason": text})
+
+elif host == "cursor":
+    # #230. There is no turn-end event headless -- `stop` never fires under -p,
+    # confirmed with a control -- so nothing here waits for one. The gate, the
+    # evaluator and mid-turn delivery are ONE mechanism on this host: a deny at
+    # beforeShellExecution carries a reason the agent reads mid-turn.
+    out({"permission": "deny", "userMessage": text, "agentMessage": text})
+
+elif host == "agy":
+    # #231. PreInvocation + injectSteps is the richest mid-turn channel of the four.
+    # A MALFORMED injectSteps TERMINATES THE RUN -- the only host here where a bad
+    # payload is fatal rather than ignored -- so the payload is checked before it is
+    # emitted, never after. The key is `userMessage`; variants that appear in the
+    # proto are not accepted by the implementation.
+    step = {"userMessage": text}
+    if not isinstance(step.get("userMessage"), str) or not step["userMessage"].strip():
+        sys.exit(0)                    # refuse locally rather than end the run
+    out({"injectSteps": [step]})
+
+else:
+    sys.exit(0)                        # unknown host -> no opinion
+PY
+exit 0

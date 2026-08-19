@@ -25,7 +25,10 @@ run() { # session_id cwd  (hook reads the repo from its own cwd, like Claude Cod
 echo "Test 1: injects using-t4 content in a T4 repo (fresh session)"
 out="$(run s1 "$TMP/repo")"
 has "$out" '"additionalContext"' "emits additionalContext"
-has "$out" 'Using T4'            "includes using-t4 skill content"
+# The injected content is the compact directive now, not the whole map (#182).
+# What must survive is the instruction to GO AND LOAD the map, not the map itself.
+has "$out" 'Route first'         "includes the route-first directive"
+has "$out" 'using-t4'            "names the skill the agent must invoke"
 has "$out" 'EXTREMELY_IMPORTANT' "wraps in EXTREMELY_IMPORTANT"
 
 echo "Test 2: an immediate second firing is silent (concurrent A+B dedup, within window)"

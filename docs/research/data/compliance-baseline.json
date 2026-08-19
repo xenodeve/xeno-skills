@@ -1,0 +1,9 @@
+{
+  "measured_by": "scripts/measure-baseline.py",
+  "sessions": 12,
+  "user_records": 32176,
+  "routed_turns": 1654,
+  "routed_then_loaded": 636,
+  "routed_then_loaded_rate": 0.3845223700120919,
+  "note": "Optimistic: the routing table is narrow by design, so a prompt needing a skill the table does not associate with it counts as not routed rather than as a miss. false_positive_rate is absent on purpose -- Baseline B has not been run, and unknown does not pass in #224."
+}
