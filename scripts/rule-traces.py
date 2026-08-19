@@ -135,6 +135,9 @@ ARGUED = {
         "states a fact about the tracker's API, not a behaviour performed in any order",
     "7994bc1ca25f":                  # A child has exactly one parent
         "states a constraint the tracker enforces, which no transcript can evidence",
+    "ae4da41e11fb":                  # If you notice something incomplete, mention it
+        "the transcript shows an edit, never the incompleteness the agent DECLINED to "
+        "finish -- a compliant session and one that saw nothing produce identical records",
 }
 
 
