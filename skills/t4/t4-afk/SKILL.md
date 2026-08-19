@@ -83,7 +83,15 @@ For each independent item on the worklist:
 1. **Conventions first.** Read the relevant `CLAUDE.md`/`docs` section and the neighboring code before editing. Match surrounding style; surgical changes only (touch only what the item needs).
 2. **TDD** — red → green → refactor (mandatory, no exceptions AFK).
 3. **Checkpoint per green.** Commit small at each green step; **never leave the tree broken between items** — the next item, and the returning developer, both start from green.
-4. **Run the gates unattended** — `/simplify`, then `/verify` (E2E for any frontend change — unit tests can't see real layout/hydration), `/code-review` + `/scrutinize`, and `/security-review` if a boundary was touched.
+4. **Run the gates unattended, at this item's green** — `/simplify`, then `/verify` (E2E for any frontend change — unit tests can't see real layout/hydration), `/code-review` + `/scrutinize`, and `/security-review` if a boundary was touched.
+
+   **A gate deferred to the end of the batch is a gate that did not run.** Not a lesser version of running it — the same thing as skipping it, because by then the work it was supposed to judge is committed and the next item was built on top of it. Measured: a batch that deferred `/code-review` and `/scrutinize` to a single run against 62 commits found **three defects, all already committed**, one of them written by that same session hours earlier, and two of the three fixes had to be written *after* the branch had merged.
+
+   **Why these two and not the others.** `/verify` leaves a green suite and `/simplify` leaves a diff, so postponing either is visible. `/code-review` and `/scrutinize` **leave nothing** unless the reviewer writes it down — so deferring them costs nothing you can see until something is found, and a deferred gate and a falsely-declared one produce the same record. That is `check-gate-ledger`'s problem seen from the other side.
+
+   **It fails on a change of shape, not on indiscipline**, which is why "be more careful" does not fix it. A batch that opens with tracker items — sub-issue links, label edits, an issue body — is a batch where `code-review=n-a` is *correct* and this step legitimately produces nothing several times in a row. Then the work becomes code, and the loop is no longer where you are. **The cue is the first item that changes a file**, not the start of the batch.
+
+   **So the digest answers per item, not per batch.** "State every gate as ran / not-run / n-a" is satisfied completely by one answer covering fifty commits, which is how a batch reports gates it never ran without saying anything false.
 5. **A gate fails and you can't fix it within this item's scope → revert to last green, park the item, move on.** Do not expand scope to chase a fix; do not commit red. (Reverting an in-flight item uses `git reset --hard` / `git clean` — the `t4-gate` hook permits these **only when** `.claude/t4.json` sets `"afk": true`, so set that for an unattended run; force-push and `branch -D` stay blocked.)
 6. **Reconcile** — update the issue **body** to current state (bilingual), add a ledger row / ship-log line (see `t4-agent-memory`). Close only with evidence.
 
@@ -101,7 +109,7 @@ When the worklist is done or the run bound is hit:
 - Every touched issue reconciled: body current, and **closed-with-evidence** or **parked-with-note** — never silently closed, never finished-but-left-open.
 - Ledger + ship log updated so the next session inherits real state.
 - **One** notification with a digest: done / parked (with the decision each needs) / anything that needs the developer. Notify on batch-done or needs-a-decision — not on routine sub-progress.
-- **The digest enumerates the gates; it does not list them.** State every one of `/simplify`, `/code-review`, `/scrutinize`, `/security-review`, `/verify` as **ran / not-run / n-a**, per item. A digest that enumerates **cannot omit one by writing less**, which is the only property that matters here: a list of what ran, with the skipped ones simply absent, reads as completeness. The same claim goes on the branch as a `T4-Gates:` commit trailer, where `check-gate-ledger` blocks the push if a gate is unstated.
+- **The digest enumerates the gates; it does not list them.** State every one of `/simplify`, `/code-review`, `/scrutinize`, `/security-review`, `/verify` as **ran / not-run / n-a**, **per item, not per batch** — one answer covering fifty commits satisfies the wording completely and says nothing, which is how the gates get deferred without anything false being written (step 4). A digest that enumerates **cannot omit one by writing less**, which is the only property that matters here: a list of what ran, with the skipped ones simply absent, reads as completeness. The same claim goes on the branch as a `T4-Gates:` commit trailer, where `check-gate-ledger` blocks the push if a gate is unstated.
 - **The guard does not force a gate to run** — `not-run` passes. Declaring a skip is allowed; being silent about one is not. A gate you could not pass still parks the item (above); a gate you chose not to run is reported as `not-run` with the reason.
 
 ## Common mistakes (AFK rationalizations)
