@@ -148,6 +148,16 @@ The third is the one to remember: the live tool schema, `~/.claude.json`, `serve
 
 **The cheap tell: name the read you did, then ask what the recommendation assumes that the read did not cover.** In all three cases above the missing read was one command.
 
+**Ask what a number measures before you spend it.** A figure can be accurate, correctly cited, and still be **the wrong quantity** for the decision it is carried into — and that failure looks identical to good evidence, because the number really is right.
+
+**Measured, 2026-08-14.** A cost-per-task figure from Artificial Analysis was used **twice** to argue against a model for a reviewer role. That figure measures a **metered API lane**. The lane in question was the developer's **flat subscription**, where it buys nothing and predicts nothing — and the harness's own default evaluator is the same model on the same lane. **The developer had to say so twice.** The number was not wrong; it described something else.
+
+**The check is one question and it is the same shape as the register above:** *what unit, measured on what, and is that the thing I am deciding about?* Cost per task, tokens, latency, an index score and a quota are five different quantities, and only one of them is ever the one you are spending.
+
+**This is the sibling of the action-verdict rule.** That one is evidence answering the wrong **question**; this one is evidence answering in the wrong **unit**. Both are the rule above being *followed* and still producing a wrong statement, which is why neither is a restatement of it.
+
+**Why it lives here and not in a delegation skill.** `clink-subagents` already carries it as a *routing* rule — *"pick the back-end by latency × intelligence × subscription-quota you'll spend, never by its token count"*. The 2026-08-14 failure was about a **native harness feature** with no `clink` in it, so no delegation skill was loaded and the rule was not in the room. **Asking what a number measures is not specific to delegation.**
+
 **Why it's load-bearing here:** the records layer is an index future agents trust without re-checking (`t4-engineering-records` — validated-only, `file:line`, commit SHAs). One unverified verdict written as fact poisons it, and the cost lands on whoever inherits the repo, not on the session that saved a minute.
 
 ## Skipping a rule requires proof (the burden is on the skip)
