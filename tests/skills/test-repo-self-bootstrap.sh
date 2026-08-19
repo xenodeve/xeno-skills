@@ -34,13 +34,26 @@ has "$REPO_ROOT/.claude/settings.json" "t4-prompt-reminder"  "UserPromptSubmit h
 has "$REPO_ROOT/.claude/settings.json" "t4-gate"             "PreToolUse hook registered"
 
 echo "the repo's own .claude/hooks copies stay byte-identical to the canonical hooks/:"
-for f in t4-session-start t4-prompt-reminder t4-gate run-hook.cmd; do
-  if cmp -s "$REPO_ROOT/hooks/$f" "$REPO_ROOT/.claude/hooks/$f"; then
-    ok ".claude/hooks/$f in sync with hooks/$f"
-  else
+# DERIVED FROM hooks/, NOT LISTED (#268). This loop named four files, written when
+# hooks/ held four; it now holds two dozen, so NINETEEN installed copies were
+# byte-compared by nothing. That is the same shape as the .gitattributes pin that
+# named four filenames and the argv guard that named five variables -- three times in
+# one repo, and each time the list was correct on the day it was written.
+#
+# hooks.json is the PLUGIN manifest and has no .claude/ counterpart, so it is the one
+# exclusion, and it is stated rather than silently skipped.
+# tests/hooks/test-bootstrap-sync.sh already derives its side the same way.
+drifted=0
+for f in $(cd "$REPO_ROOT/hooks" && ls | grep -v '^hooks\.json$'); do
+  if [ ! -f "$REPO_ROOT/.claude/hooks/$f" ]; then
+    bad ".claude/hooks/$f is MISSING — the repo does not carry its own hook"
+    drifted=1
+  elif ! cmp -s "$REPO_ROOT/hooks/$f" "$REPO_ROOT/.claude/hooks/$f"; then
     bad ".claude/hooks/$f DRIFTED from hooks/$f (re-copy)"
+    drifted=1
   fi
 done
+[ "$drifted" -eq 0 ] && ok "every file in hooks/ has a byte-identical .claude/hooks/ copy"
 # The plugin-less session-start fallback is the COMPACT DIRECTIVE now, not a
 # snapshot of the whole using-t4 map (#182). The snapshot was deleted with this
 # change rather than left behind: the acceptance criterion is that the path with no

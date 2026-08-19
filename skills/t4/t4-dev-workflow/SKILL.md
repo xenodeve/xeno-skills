@@ -67,6 +67,26 @@ Most "surprise cases" aren't surprises — they're **sites the plan never knew a
 
 *The high-risk refactor protocol's "Inventory first" is this same step applied to behavior rather than files — do both when a refactor is in scope.*
 
+## Derive the set a guard checks; never list it
+
+**A guard written as a list of names cannot see the member added after it — and it passes, so nothing tells you.** The list is correct on the day it is written, which is exactly why nobody revisits it.
+
+**Measured, three times in one repository on one day**, each one correct when written:
+
+| The guard | Listed | Reality by the time it mattered | What went unseen |
+|---|---|---|---|
+| `.gitattributes` line-ending pins | 4 filenames | 24 hooks | 20 files got the opposite line ending from their own installed copy; two suites red |
+| the argv check in `test-skill-log.sh` | 5 variable names | 8 hooks | `record_json` and `op_json` — **it missed two the day it was written to catch them** |
+| the `.claude/hooks/` sync loop | 4 filenames | 24 hooks | 19 installed copies byte-compared by nothing |
+
+**The fix is the same each time: compute the set instead of writing it down.** A glob (`hooks/*`), a directory read (`ls`), a scan for the shape that creates a member (`x="$(cat)"`). Then a file added tomorrow is covered the day it lands, or the suite goes red naming it.
+
+**The trigger is writing the second name.** The moment a check contains `a b c`, ask: *what adds the next member, and would this see it?* If the answer is "someone edits this line", derive it.
+
+**Two things this does not say.** A **fixture** may name what it uses — a test that copies three hooks into a temp repo is describing its own setup, not claiming coverage. And a derived set needs its **exclusions stated in the file** (`hooks.json` is the plugin manifest and has no installed counterpart), because a silent exclusion is the same defect wearing a glob.
+
+**Why it belongs beside the change-site survey.** The survey is this rule pointed at a change: *enumerate every site before you plan*. This is the survey pointed at the guard that has to keep noticing sites forever. Both fail the same way — the site nobody looked for — and the guard's version fails silently for longer.
+
 ## No verdict before evidence (don't state it as settled until it is)
 
 A confident wrong answer is worse than an uncertain right one, because it ends the investigation. State claims in the register the evidence supports — and never upgrade a claim just because you've repeated it.
