@@ -54,6 +54,14 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 - **Question is purely conceptual/architectural** (answerable without touching a file) → `chat` is fine and faster (no CLI bootstrap tax).
 - If unsure, default to the agentic `clink` call — it can still answer conceptual questions fine, just costs a bit more latency; the reverse (using `chat` when the question needed real files) silently produces a worse-grounded answer with no error to signal it.
 
+**The third state, and it is worse than either: an agentic agent told not to read files is `chat` with worse latency.** Picking the agentic client satisfies the rule above and then `"Do NOT read files; everything you need is below"` undoes it — you pay the CLI bootstrap and get `chat`'s blindness. The skill used to frame this as *which client*, so a reader could satisfy it and still land here.
+
+**Measured, one round, same question, same models, 2026-08-11.** Blind, all three designed a transport-neutral authorization platform and a pre-publication claim checker — **neither can exist in this repository**, because the hook sees one prospective tool call and nothing sees model prose before publication. Then one agent ignored the instruction, read eleven files (351 s, 426k input tokens), **withdrew its own enforcement phase** citing that architectural fact, and produced the cost ranking that replaced the plan. The difference in usefulness was file access and nothing else.
+
+**When the feasibility ceiling and the codebase rule conflict, the codebase rule wins.** *"A read-heavy delegation takes 400–530 s against a real repo; under a 60–120 s transport ceiling that is infeasibility, not latency"* is the reason suppressing reads looks sensible — and the 351 s round above **exceeded the ceiling, was backgrounded, completed anyway, and was the only round worth having.** So handle a long round by **expecting** it, not by blinding the agent: fire it, let it background, take other work.
+
+**If reads genuinely must be suppressed — a purely conceptual question with no repository in it — say so in the prompt as a decision**, in one line, with the reason. A later reader can then tell a deliberate choice from an unexamined default, which is exactly what could not be told here.
+
 ## Why you can't just call `consensus` with all of them
 
 `mcp__pal__consensus`'s `models[]` roster only accepts PAL-configured provider models — it has no concept of a clink CLI agent (they live in a completely separate registry: `clink/registry.py` + `conf/cli_clients/*.json`). There is no single tool call that spans both. Orchestrate manually instead (see below).
