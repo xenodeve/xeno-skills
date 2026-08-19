@@ -26,10 +26,18 @@ You (the orchestrator) are the strongest **agentic** model in this setup — kee
 
 ## When to delegate — and when not to
 
+**The trigger: before the first edit of any task with more than one leaf, name each leaf and record delegate/keep with the reason.**
+
+Not "delegate more" — that exhortation is already in this file and it already failed. On 2026-08-11 an orchestrator implemented a whole clink client — parser, agent, config, discovery, four doc files — and delegated **none** of it, in a repo whose `CLAUDE.md` opens with *"delegation is the default, not the optimisation"*. **The developer had invoked `/clink-subagents` and `/clink-masteragent` in the message immediately before.** Both were loaded and in context.
+
+**So the gap is not knowledge.** The selection step did not run and conclude *keep*; it never ran. Both skills were reference material consulted by whoever remembered to consult them, and awareness was at its maximum. `t4-dev-workflow` had this exact shape and #105 fixed it by giving the change-site survey a moment; this is the same fix.
+
+**The record is one line per leaf** — `leaf → delegate/keep → why`. It costs seconds, it is what makes a *keep* reviewable, and its absence is what made the 2026-08-11 miss invisible until someone read the diff.
+
 **Delegate** a subtask that is:
 - **Self-contained** — fully specifiable in one prompt (the agent has *zero* conversation context).
 - **Verifiable** — you can prove it right afterward (run a test, read the diff, check against a spec). If you can't verify it, don't delegate it. **Verifiable means _observable behaviour_, not checkable-looking**, and the difference is not academic. Measured 2026-08-05: the same model at the same effort (`gpt-5.6-luna`, `high`), the same prompt shape, two leaves dispatched at the same moment. The **code** leaf returned a good test — it asserted on a returned value, so its failures were behavioural. The **prose** leaf (edit a skill document) returned assertions that were each a `grep` for a sentence the worker had made up. A code change has an output you can assert against; **a document's "behaviour" _is_ its prose, so a worker with nothing to observe falls back to inventing the prose and asserting on its own invention** — circular, and it looks exactly like a passing check. Before delegating, name the observation the work will be judged by. If you can't, it isn't a leaf.
-- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). Never delegate something you'd finish correctly in less time. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo. **Past two minutes Claude Code stops blocking on it: the call is moved to a background task, you are handed a task id, and the result arrives as a notification.** So the wait is bounded at ~2 minutes, not at the length of the call — see the rule below, which is about what you do with the rest of it.
+- **Worth the latency** — each clink call is **~20–35s of CLI bootstrap** (a real agentic file-edit loop can be **~50s**). **This is a feasibility gate, not the cost function** — see *Token economics* below, which decides. It rules out a call that cannot complete in time, and it does not answer whether to make one. **Those are floor figures for a small task, not a budget for real work:** on read-heavy delegations against a live repo, `codex` took **401s and 529s**, `cursor` 108s, `antigravity` 55s — measured 2026-07-31 and recorded in `xeno-skills` issue #55, not derived from anything in this repo. Budget minutes for anything that has to read a repo. **Past two minutes Claude Code stops blocking on it: the call is moved to a background task, you are handed a task id, and the result arrives as a notification.** So the wait is bounded at ~2 minutes, not at the length of the call — see the rule below, which is about what you do with the rest of it.
 - **Proven to have run** — *only for a delegation whose result depends on a command having executed*: a test run, a build, a lint, anything whose report is worthless if the tool silently no-opped. **Make the worker return a sentinel it can only produce by running the thing**, and check it came back:
 
   > *"Before anything else, run `<the command>` and paste its FIRST and LAST line verbatim, plus the exit code. If you cannot execute commands, reply exactly `TOOLCHAIN_DEAD` and stop."*
@@ -85,6 +93,19 @@ Measured 2026-07-16 (same tasks, a live repo). The back-ends are **billed differ
 - **A local model** (e.g. Qwen via `claude-9arm` — see the `qwen-agent` skill) is **unlimited and free**: its tokens cost only electricity + latency.
 
 So **"cheaper" = fewer of *your* tokens**, and delegation wins whenever `(what you'd read + reason yourself) > (prompt + result you ingest + verification)`. Big-input / small-output / cheaply-verifiable → delegate. A 2-line edit in a file already in your context → do it yourself; the round-trip costs more of *your* tokens than the edit.
+
+**Tokens are the cost function. Latency is a feasibility gate.** The two are not alternatives and this file used to state the second as the first — `clink-masteragent` already gets it right: *"Under a 60–120s transport ceiling that is **infeasibility, not latency**."*
+
+**Worked, because a formula that is never computed is read as a sentiment.** Both from the 2026-08-11 change:
+
+| leaf | what you'd read + reason | prompt + result you ingest + verify | verdict |
+|---|---|---|---|
+| **a 2-line edit in a file already in your context** | ~0 — the file is already loaded, the change is obvious | prompt + the returned diff + reading it to check | **keep** |
+| **four documentation files, bulk mechanical** | every target file, their current wording, and the edit for each | one prompt, four short diffs, a skim | **delegate** |
+
+**The second row is the case the old wording decided wrongly.** *"Never delegate something you'd finish correctly in less time"* answers **keep** — the writing is quick and each file is easy. The formula answers **delegate**: large input you would have to read, small output you ingest, and verification that is a skim. Those docs were the single largest mechanical leaf in the change, and the orchestrator wrote them itself and offered the latency argument afterwards.
+
+**Read latency only to ask whether the call can complete at all**, then decide on tokens.
 
 **The subagent's *returned* text is *your* tokens.** Constrain it hard ("return ONLY X"):
 - `codex` obeys + is terse (5-bullet summary of an 8k-token file came back ~240 tok; a `NO BUGS FOUND` review, ~15).
