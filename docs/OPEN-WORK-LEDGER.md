@@ -159,10 +159,20 @@ is ALL TESTS PASSED on the merged tree.
 **#176 and #129 stay open** — their trees are not finished, and closing a parent whose children are open
 is what the rollup exists to make visible.
 
-**What the merge did NOT come with, and it is #247's subject.** `/code-review` and `/scrutinize` ran
-**once**, at the end, in `35a4e09`. They found raw control bytes in `hooks/t4-gate` committed the same
-day — bytes the 94-assertion gate suite passed both before and after, which is precisely the gap a
-review covers and a green suite does not. Treat the branch's 54 `scrutinize=ran` trailers as unverified.
+**The review that #247 says the branch never had is now done, in two passes, and both found things.**
+Pass one (`35a4e09`) found **raw control bytes** in `hooks/t4-gate` committed the same day — bytes the
+94-assertion gate suite passed both before *and* after, which is precisely the gap a review covers and a
+green suite does not. Pass one also declared what it had **not** read: ~2,300 lines of unwired component
+logic.
+
+**Pass two read that, and #265 is what was in it** — eight hooks handed an unbounded input to `python`
+through `argv`, which is capped at ~32 KB. Bisected on the one hook that is wired: 32,000 bytes logged,
+33,000 dropped, hook exit 0 either way. In `.invocations.log` that reports the **opposite** of the truth,
+inside the mechanism built to measure truthfully. Fixed in `e3cdde8`; the guard **derives** the check from
+`x="$(cat)"` assignments rather than listing names, which is what caught the last two after the first
+version listed five and missed them.
+
+**Treat the branch's 54 `scrutinize=ran` trailers as unverified regardless** — that is what #247 is for.
 
 ## Management Plan — phased execution order
 
