@@ -51,6 +51,10 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-scope-check-rule (adds a SECOND check to step 1 beside the leading-prompt
+#       audit. Step 1's own wording is kept and the suite asserts it is still there,
+#       so nothing was withdrawn -- the issue is explicit that precision was never
+#       the thing missing.)
 #     test-bro-trigger-rule (gives an existing rule a MOMENT. The register rules are
 #       kept unchanged and this adds a section ahead of them, so nothing was
 #       withdrawn.)
@@ -133,7 +137,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule test-tracker-body-edit-rule test-restore-mechanism-rule test-bro-trigger-rule"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule test-tracker-body-edit-rule test-restore-mechanism-rule test-bro-trigger-rule test-scope-check-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
