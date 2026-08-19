@@ -51,6 +51,10 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-blinded-agentic-rule (names a THIRD state beside chat and agentic. The
+#       chat-vs-agentic rule is kept and the suite asserts it is still there, so
+#       nothing was withdrawn; a `hasnt` here would have to invent the wording it
+#       excludes, which is the #113 defect this file exists to avoid.)
 #     test-surgical-completion-rule (section 3 gained a case it did not reach --
 #       completing something incomplete -- alongside improving and deleting. The
 #       existing bullets are kept, so nothing was withdrawn; it also asserts the
@@ -116,7 +120,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
