@@ -13,6 +13,16 @@ The failure it prevents is not rudeness, it is **an answer nobody finishes readi
 
 **Talk like the colleague at the next desk, not like the documentation.** The developer has full context on the repo and none on the sentence you are about to write.
 
+## The moment this fires
+
+**A rule that applies to every message has no moment at which it fires, and this one was skipped twice in one session because of that.** On 2026-08-14, with this skill already loaded, a long design breakdown went out **in English**. The developer wrote `คุยเป็นภาษาไทย` — twice — and invoked `/t4-bro` a third time. **Two explicit corrections for one rule, in one session**, and the rule was not skipped for a stated reason; it was never applied, which is worse, because there is no decision to review.
+
+**The trigger: the first prose reply after a stretch of tool work.** That is where it went wrong, and it is where it goes wrong — a long analytical answer written straight out of a run of commands, where the last thing you read was English output and the next thing you write inherits it. `using-t4` says re-route at every phase boundary; **tool work → prose is a phase boundary**, and nothing routed here because *"anything the developer reads"* is every message and therefore no trigger at all.
+
+**Concretely, before that reply:** is it Thai? Does every English term in it pass one of the three tests below? If you cannot answer the second in one pass, the reply is too long before it is anything else.
+
+**Adding examples will not fix this one.** The 2026-08-12 session recorded a different `t4-bro` failure — the *shape* rule — and PR #140 fixed it by attaching three worked examples, on the theory that the rule failed because it had none. **This is the second consecutive session in which some part of this skill did not hold, and this time it was the language rule** — the most explicit sentence in the file, with nothing subtle about it. A rule that is unambiguous and still not applied has a trigger problem, not a clarity problem.
+
 ## The necessity test
 
 A term **earns its English only three ways**. If it passes none of them, say it in Thai.
