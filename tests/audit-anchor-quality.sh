@@ -51,6 +51,9 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-restore-mechanism-rule (names the mechanism behind an existing two-word
+#       instruction, "then restore". The mutation rule is kept and the suite asserts
+#       it is still there, so nothing was withdrawn.)
 #     test-tracker-body-edit-rule (adds an EDIT moment and a substitution ban to a
 #       rule that previously spoke only about authoring. The authoring wording is
 #       kept, so nothing was withdrawn; the suite's own negative is structural --
@@ -127,7 +130,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule test-tracker-body-edit-rule"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule test-surgical-completion-rule test-blinded-agentic-rule test-synthesis-steps-rule test-tracker-body-edit-rule test-restore-mechanism-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
