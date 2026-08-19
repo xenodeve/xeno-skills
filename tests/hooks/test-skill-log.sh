@@ -51,6 +51,60 @@ echo ""
 echo "the marker guard holds:"
 [ ! -d "$TMP/plain/Obsidian-probe" ] && ok "no log outside a T4 repo" || bad "it logged without the marker"
 
+
+echo "AN OVERSIZED PAYLOAD IS STILL LOGGED — the argv limit must not eat a record:"
+# MEASURED, NOT SUPPOSED. The payload used to reach python as an ARGV ARGUMENT, and
+# argv is capped at ~32 KB on Windows. Bisected on this machine: a payload of 32,000
+# bytes is logged and one of 33,000 is not. The hook exits 0 either way, so the record
+# is lost with no signal anywhere -- in the file whose entire purpose is to be a
+# reliable DENOMINATOR (#145). An absence there is read as "the skill was not invoked".
+#
+# A Skill PostToolUse payload carries `tool_response`, which for a skill is the skill
+# body, so this is not a hypothetical size.
+#
+# This does NOT explain the four skills missing from the live log: their bodies are
+# 2-6 KB, well under the limit. That remains unknown and is tracked on #145. This
+# assertion covers the failure that IS reproducible.
+big="$TMP/bigrepo"; mkdir -p "$big/.claude" "$big/Obsidian-probe"
+printf '%s' '{"t4":true}' > "$big/.claude/t4.json"
+python - "$TMP/big-payload.json" <<'PYBIG'
+import json, sys
+json.dump({"tool_name": "Skill", "session_id": "big-session",
+           "tool_input": {"skill": "oversized-probe"},
+           "tool_response": "y" * 60000},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PYBIG
+( cd "$big" && bash "$HOOK" < "$TMP/big-payload.json" ) >/dev/null 2>&1
+LOGF="$big/Obsidian-probe/skill-usage/.invocations.log"
+if [ -f "$LOGF" ] && grep -q 'oversized-probe' "$LOGF"; then
+  ok "a 60 KB payload is logged"
+else
+  bad "a 60 KB payload was DROPPED — the argv limit ate the record, silently"
+fi
+
+echo ""
+echo "NO HOOK PASSES UNBOUNDED INPUT THROUGH ARGV — the class, not the instance:"
+# Six hooks had this shape. A list of filenames would not notice the seventh, so the
+# assertion is on the pattern: a captured payload/prompt handed to python as an
+# argument. The fix in every case is a temp file, which t4-reviewer already used.
+# DERIVED, NOT LISTED. The first version of this check named five variables and
+# missed `record_json` and `op_json` for exactly the reason it was written -- a hand
+# list is a judgement that rots. So: find every variable this hook fills FROM STDIN
+# (`x="$(cat)"`), then look for that variable being handed to python as an argument.
+# Whatever a future hook calls its payload, it is caught the day it is written.
+offenders=""
+for f in "$REPO_ROOT"/hooks/t4-*; do
+  case "$f" in *.md) continue;; esac
+  vars="$(grep -oE '^[a-z_]+="\$\(cat\)"' "$f" | sed 's/=.*//')"
+  for v in $vars; do
+    if grep -Eq "python - .*[$]${v}([^A-Za-z0-9_]|$)" "$f"; then
+      offenders="$offenders $(basename "$f"):${v}"
+    fi
+  done
+done
+[ -z "$offenders" ] && ok "no hook hands a captured payload or prompt to python as argv" \
+                    || bad "argv-passed input in:$offenders"
+
 echo ""
 echo "both shipped copies are byte-identical and LF:"
 for d in "$REPO_ROOT/skills/t4/t4-project-bootstrap/references/hooks" "$REPO_ROOT/.claude/hooks"; do

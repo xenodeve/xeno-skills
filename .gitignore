@@ -22,3 +22,4 @@ __pycache__/
 .claude/t4-review-state.json
 .claude/t4-receipt-counts.json
 .claude/t4-canary-disabled
+.claude/t4-classifier-counts.json

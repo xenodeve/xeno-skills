@@ -71,7 +71,8 @@ echo "this repo does not trip its own artifact gate (#258):"
 # Every path the hooks write into the repo at runtime, not just the one that was found
 # the hard way. The invocation log was caught because it BLOCKED a push; these three are
 # the same class and have not been written yet only because their hooks ship dark.
-for RUNTIME in "Obsidian-xeno-skills/skill-usage/.invocations.log"                ".claude/t4-review-state.json"                ".claude/t4-receipt-counts.json"                ".claude/t4-canary-disabled"; do
+for RUNTIME in "Obsidian-xeno-skills/skill-usage/.invocations.log"                ".claude/t4-review-state.json"                ".claude/t4-receipt-counts.json"                ".claude/t4-canary-disabled" \
+               ".claude/t4-classifier-counts.json"; do
   if git -C "$REPO_ROOT" check-ignore -q "$RUNTIME"; then
     ok "$RUNTIME is gitignored, so the guard can never see it"
   else

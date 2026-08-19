@@ -31,14 +31,22 @@ command -v python >/dev/null 2>&1 || { cat >/dev/null; exit 0; }
 # transition cannot arrive that way. Read it here and pass it as an argument.
 op_json="$(cat)"
 
-python - "$PWD/.claude/t4-review-state.json" "$op_json" <<'PY'
+# AND IT GOES THROUGH A FILE, NOT ARGV (#265). argv is capped at ~32 KB on Windows;
+# bisected on this machine, 32,000 bytes is accepted and 33,000 is not, and over the cap
+# python never launches while the hook still exits 0. Six other hooks had the same shape.
+# The suite derives the check from `x="$(cat)"` rather than from a list of names, which
+# is what caught this one -- the first version listed five variables and missed this.
+op_json_file="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/t4-review-state.$$")"
+trap 'rm -f "$op_json_file"' EXIT
+printf %s "$op_json" > "$op_json_file"
+python - "$PWD/.claude/t4-review-state.json" "$op_json_file" <<'PY'
 import json, os, re, sys, tempfile
 
 path = sys.argv[1]
 EMPTY = {"active": [], "pending": [], "unknown": [], "decided": [], "findings": []}
 
 try:
-    op = json.loads(sys.argv[2])
+    op = json.loads(open(sys.argv[2], encoding="utf-8").read())
 except Exception:
     print("t4-review-state: the transition is not JSON", file=sys.stderr)
     sys.exit(2)
