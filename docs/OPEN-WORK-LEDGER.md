@@ -134,7 +134,9 @@ every park below names the thing it needs rather than the fact that it stopped.
 | #251 · #252 · #253 · #254 the four trees | ✅ | — | **Closed with evidence.** #215→3, #129→4, #165→10, #176→42. Every count read back from `sub_issues_summary`. |
 | #255 a tracking issue per plan | ✅ | merged | **#256** (08-13 compliance plan → #176) and **#257** (08-16 clink contract → #215). Three plans get none, each with its reason in `docs/plans/README.md`, pinned by `tests/skills/test-plan-index.sh`. |
 | #258 the invocation log blocked every push | ✅ | merged | `.gitignore` + an assertion in `tests/guards/test-check-tree-budget.sh`. Found by the guard refusing #259's push. |
-| **#260** 20 of 24 hooks are committed CRLF | 🔴 | **PARKED — trust boundary** | `.gitattributes` pins the source side file-by-file (4 entries, written when `hooks/` had 4 files) and the installed side by glob, so every hook added since gets opposite endings on the two sides. Two suites are red at HEAD because of it. The fix rewrites 20 files of the enforcement layer, so it is the developer's 20 seconds, not an unattended commit. |
+| **#260** the line-ending pins are a glob on one side and a filename list on the other | ✅ | PR #235 | **Fixed in `e7b7c24`, and the issue's own measurement was wrong.** It claimed the CR was in the committed blobs, with counts of 182/163/36 — those are LINE COUNTS: `grep -c $''` matched the empty string. `od -c` on the blobs shows `bash 
+`. Every blob is LF; the CRLF is produced at checkout on the files `.gitattributes` did not pin. So no hook byte changed, and the boundary concern that parked this was smaller than the park argued. `tests/hooks/test-line-ending-pins.sh` asserts the class, not a filename list. |
+| **#246** the ship gate ran a verify command the PR author wrote | ✅ | PR #235 | **Developer chose option 3** — the head's and the local `verify` must be identical, a mismatch is denied and neither runs. `f3f367b`. The exploit reproduces in the suite: before the fix the marker file the head's command would create existed. `/security-review` added a fourth case — the refusal quotes attacker-controlled text, so it is sanitised — and **its first fixture was a false pass**, because `json.dump` cannot carry a raw ESC. `test-gate.sh`: 94 passed, 0 failed. |
 | #244 the bootstrap session has no T4 wiring | ✅ | PR #235 | Implemented in `ed01ed6` — the procedure now opens by invoking `using-t4` and `t4-bro`, with the audit of what else runs pre-wiring. Close on merge. |
 
 **#141 has no parent, deliberately.** #252 reserved the call; #129's own body names #83, #84, #85,
@@ -144,6 +146,8 @@ parent is the accurate answer, not a gap.
 **#165 has no plan file, checked rather than assumed.** Nothing under `docs/plans/` names it and its
 own body names none — so its plan was never written rather than predating the directory. `#255`
 recorded that as `none` instead of inventing one.
+
+**Branch state, 2026-08-19.** `feat/185-turn-end-wiring` is **60 commits, green** — `bash tests/hooks/run-all.sh` → ALL TESTS PASSED, and `main` is merged in (one conflict, `.gitignore`, where both sides had independently added the same ignore rule). **What it still lacks is a review:** `/code-review` and `/scrutinize` have never run on it (#247) and the diff touches **76 enforcement-path files**, which is exactly the condition #141 made the review ask survive `afk` for.
 
 ## Management Plan — phased execution order
 
