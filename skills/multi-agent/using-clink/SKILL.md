@@ -27,6 +27,23 @@ It is the one that gets made backwards, and it is expensive in both directions:
 
 Ask what you will have when it returns: **finished work, or a position to weigh.** That answers it.
 
+## Resolve the tool name; the prefix is not part of the tool
+
+**The tool is `mcp__<server>__clink`, and `<server>` is the key the CLIENT registered it under — not the server's own name.** Every example in this family spells it `mcp__pal__clink`, which is *this machine's* instance, not the contract.
+
+**Resolve it before the first call, the same way `t4-project-bootstrap` resolves a binary before declaring it missing:**
+
+```sh
+claude mcp list        # the key on the left of the colon IS the prefix
+# pal: openclink  - ✔ Connected      ->  the tool is mcp__pal__clink
+```
+
+**The trap is that the two names drift apart and nothing complains.** On 2026-08-20 this machine reported `pal: openclink` — the server had been renamed to `openclink` and the registration key was still `pal`. An agent reading the rename and "correcting" the spelling would have called `mcp__openclink__clink`, which resolves to nothing, on every one of the four skills at once. That is `#204`, and it is why `PR #206` cannot be merged by flipping the string: **both spellings are wrong on some machine, so the fix is to stop spelling it.**
+
+**The enforcement layer already does this and is the precedent, not the exception.** `hooks/t4-delegation-gate` matches `^mcp__[A-Za-z0-9_.-]+__clink$` and `hooks/t4-clink-boundary` says in its own comment that the name is *"`mcp__pal__clink` on this machine, and something else on a machine that registered it differently."* The hooks were written to survive the rename; the prose was not.
+
+**So when a `clink` call fails to resolve, that is the first thing to check** — before concluding `clink` is unavailable and routing around it. An unresolvable prefix and an absent server produce the same error and need opposite responses, which is the tool-resolution rule one layer up.
+
 ## Before you delegate at all
 
 Three things decide whether a delegation is worth making, and all three are in `clink-subagents` — read them there rather than from memory:

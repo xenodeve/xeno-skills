@@ -51,6 +51,11 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-clink-prefix-rule (the skill's claim about hooks/t4-delegation-gate
+#       is checked against that file; the rule ADDS a resolution step where the
+#       family had none, so there is no prior wording to retire. Spelling the
+#       prefix as `mcp__pal__clink` is not withdrawn either -- the rule keeps it
+#       as this machine's instance and names it as such.)
 #     test-ci-templates (job names == required-check contexts)
 #     test-survey-rule  (the pipeline is listed in several places and must agree)
 #     test-gate-ledger-rule (the trailer's vocabulary appears in every consumer)
@@ -103,7 +108,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
