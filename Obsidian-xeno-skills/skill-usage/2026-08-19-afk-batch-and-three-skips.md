@@ -69,3 +69,30 @@ it was confirmed independently rather than inferred from the log.
 **No note for 2026-08-17.** The tracker half of that session's report was filed at the time; the local note
 was not, and writing it now would be a reconstruction. This file records only what happened in this
 session.
+
+## What the review found, in two passes, after the batch
+
+The batch ended and the branch still had no `/code-review`. Running it produced the finding this note
+would otherwise not contain, and it is a better argument for the gate than any of the prose is.
+
+**Pass one found raw control bytes in `hooks/t4-gate`** — in code committed hours earlier the same day.
+A generator emitted a `tr` character range as raw bytes instead of the escape text `tr` expects, so the
+script carried NUL, BS, VT, US and DEL, and `bash` cannot hold NUL in a string. **The 94-assertion gate
+suite passed both before and after.** That is the whole case for a review existing next to a suite: a
+behavioural assertion cannot tell a set that works from one that happens to work.
+
+**Root cause, and it is a rule for this environment:** a heredoc here processes backslash escapes *even
+with a quoted delimiter*, so a generator writing an escape into a file emits the byte. Build backslashes
+with `chr(92)`. The same bug then bit the test written to catch the first one, which is how the mechanism
+was identified rather than guessed.
+
+**Pass one also declared what it had not read** — ~2,300 lines of unwired component logic. **Pass two read
+it, and #265 was in there:** eight hooks passed unbounded input through `argv`, capped at ~32 KB. In
+`.invocations.log` a dropped record reads as *"the skill was not invoked"* — the opposite of the truth,
+in the mechanism built to measure truthfully.
+
+**The generalisable part, and it repeated twice in one day:** a guard written as a *list* misses the item
+added after it. The `.gitattributes` pin listed four filenames and twenty hooks arrived; the argv guard
+listed five variable names and missed two. Both were fixed by deriving the set instead — a glob, and a
+scan for `x="$(cat)"`. **When a check enumerates, ask what adds the next member and whether the check
+would see it.**
