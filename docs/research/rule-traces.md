@@ -72,7 +72,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-afk` | `696e98d5b2ef` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `feae5b49c226` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `e650391fa48d` | `skills/t4/t4-bro/SKILL.md` |
-| `t4-dev-workflow` | `c264b2545499` | `skills/t4/t4-dev-workflow/SKILL.md` |
+| `t4-dev-workflow` | `8b776b11170e` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cb5174e5f4f2` | `skills/t4/t4-engineering-records/SKILL.md` |
 | `t4-project-bootstrap` | `31925d889588` | `skills/t4/t4-project-bootstrap/SKILL.md` |
 | `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
