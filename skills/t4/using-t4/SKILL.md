@@ -109,3 +109,7 @@ In a T4 repo:
 ## When NOT to use
 
 A non-T4 project (the bilingual rule, labels, and memory layout are team-specific), or a throwaway prototype with no issues/memory — use the general skills directly.
+
+**And this needs a route, not only a name.** If invoked where there is no `.git`, no `CLAUDE.md`/`AGENTS.md` and no `docs/agents`: **say so with the check that established it**, then hand off to `ask-xeno` and follow its routing. **Session-protocol steps 1 and 4 still apply** — `karpathy-guidelines`, and the session-end report, which is what this rule came from. **Steps 2 and 3 have no referent**: there is no vault, no ledger and no issue, and every row of the map above is T4-specific, so consulting it returns nothing.
+
+**Without that, the honest move and the forbidden one look identical from inside the red-flag table** — *"Small change, skip it"* has a row and *"this genuinely does not apply here"* does not, so an agent that correctly stops has to infer the stop, which the table forbids. This file is injected on **every** session start, including in repos that will never be T4.
