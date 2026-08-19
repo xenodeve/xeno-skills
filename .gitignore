@@ -1,5 +1,10 @@
 # Local Claude permissions — not part of the committed operating layer
 .claude/settings.local.json
+
+# Skill-invocation log written by the local tooling into the committed vault.
+# Keyed by session UUID and machine, so it conflicts on every clone that runs a skill —
+# and as an untracked *.log inside tracked territory it trips .githooks/check-tree-budget
+# on every push (#258).
 Obsidian-xeno-skills/skill-usage/.invocations.log
 
 # Python bytecode. Two .pyc files were committed by this branch -- `rule-traces.py`
