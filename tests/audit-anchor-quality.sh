@@ -51,6 +51,10 @@
 #
 #   STRUCTURAL — asserts two places agree, or that generated artifacts match
 #   their documentation. Nothing was ever withdrawn.
+#     test-prompt-audit-rule (asserts step 1 and the convergence section agree and
+#       reference each other. The rule ADDS a pre-call audit where the skill had
+#       only post-hoc pressure; the convergence section's framing is kept, not
+#       withdrawn, so there is no prior wording to retire.)
 #     test-clink-prefix-rule (the skill's claim about hooks/t4-delegation-gate
 #       is checked against that file; the rule ADDS a resolution step where the
 #       family had none, so there is no prior wording to retire. Spelling the
@@ -108,7 +112,7 @@ done
 NOT_CORRECTIVE="test-anti-sticking-rule test-backgrounded-call-rule test-exemption-rule
 test-offered-skip-rule test-root-cause-rule test-verdict-rule test-delegation-precondition
 test-ci-templates test-survey-rule test-gate-ledger-rule test-bootstrap-wiring-rule
-test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule"
+test-bro-rule test-repo-self-bootstrap test-clink-prefix-rule test-prompt-audit-rule"
 cd "$REPO_ROOT" || exit 0
 
 suites=0; positive_only=0; shadowed=0; loose=0; anchors_total=0
