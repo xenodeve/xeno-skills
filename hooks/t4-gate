@@ -131,8 +131,26 @@ _verify_cmd_from() {
   printf '%s' "$v"
 }
 
+# Renders a verify command for a human to read in a decision message. #246 made this
+# string PR-AUTHOR-CONTROLLED, and the refusal below is the entire value of that check --
+# a maintainer reads the two commands and sees which one changed. So the attacker now
+# writes into the artifact the decision rests on: an ESC sequence repaints or erases the
+# line, and four thousand characters push the explanation out of view. Neither touches
+# the comparison; both degrade the control.
+#
+# _decide already escapes backslash, quote, newline, CR and tab for JSON validity. That
+# was sufficient while this text came from the maintainer's own config and is not
+# sufficient now. Control bytes out, length capped; tab and newline are kept because the
+# JSON escaping handles them and a wrapped command is still readable.
+_display_cmd() {
+  local v
+  v="$(printf '%s' "$1" | tr -d ' --')"
+  [ "${#v}" -gt 300 ] && v="${v:0:300}… (truncated, ${#1} chars)"
+  printf '%s' "${v:-(no verify configured)}"
+}
+
 run_verify() {
-  local vcmd rc
+  local vcmd lcmd rc
 
   # THE EVIDENCE IS BOUND TO THE COMMIT BEING MERGED (#245). This used to run the
   # verify command in the CURRENT WORKING DIRECTORY and never look at the PR at all --
@@ -160,9 +178,36 @@ run_verify() {
       # to notice. Binding the run to the head (above) and then taking its instructions
       # from the working tree would have left exactly that hole open.
       vcmd="$(_verify_cmd_from "$wt/.claude/t4.json")"
+      # #246: AND THE HEAD COMMIT IS EVIDENCE, NOT INSTRUCTIONS. Taking the command from
+      # the head -- which is what the paragraph above argues for, and correctly, as far
+      # as it goes -- hands the author of the pull request a string this hook runs with
+      # the maintainer's credentials at merge time. A download-and-execute one-liner is
+      # ONE LINE of a tracked config file; it does not look wrong in a diff, because the
+      # gate is SUPPOSED to run the repo's verify; and no approval prompt fires, because
+      # this hook is the thing already trusted to run commands on their behalf.
+      #
+      # So both sides are a trust boundary and neither config alone can be believed: the
+      # local one can be edited without committing (#245 slice 2), and the head one is
+      # written by whoever opened the pull request. THE RESOLUTION IS TO REQUIRE THEM TO
+      # AGREE. A changed verify then becomes a visible refusal instead of a silent
+      # execution, and both tampers are refused by the same check.
+      #
+      # This runs BEFORE the command does. A deny after the fact would report the
+      # exploit rather than prevent it.
+      lcmd="$(_verify_cmd_from .claude/t4.json)"
+      if [ "$vcmd" != "$lcmd" ]; then
+        git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
+        deny "T4 gate: the PR head's verify command differs from this repo's, so it was not run. The head commit is evidence, not instructions - a pull request does not get to choose what the ship gate executes on your machine. Reconcile .claude/t4.json between the two, then merge.
+--- local (.claude/t4.json) ---
+$(_display_cmd "$lcmd")
+--- PR head ($head) ---
+$(_display_cmd "$vcmd")"
+      fi
       if [ -z "$vcmd" ]; then
-        # The head configures no verify: nothing to run, and the local file does not
-        # get to volunteer a command on its behalf.
+        # Both configure no verify -- the equality check above already established that
+        # -- so there is nothing to run and nothing to disagree about. A head that
+        # REMOVES verify while the local config still has one is a mismatch and was
+        # denied above; before #246 it returned 0 here and disarmed the gate silently.
         git worktree remove --force "$wt" >/dev/null 2>&1; rm -rf "$wt"
         return 0
       fi

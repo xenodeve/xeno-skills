@@ -196,6 +196,130 @@ out245b="$( cd "$GITREPO2" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/p
   printf '%s' "$(bashj 'gh pr merge 9 --squash')" | bash "$HOOK" )"
 denied "$out245b" "an uncommitted verify override does not disarm the ship gate"
 
+echo "#246 — the head's verify command is EVIDENCE, not INSTRUCTIONS:"
+# THE VULNERABILITY THIS CLOSES WAS INTRODUCED BY #245'S OWN FIX, and found by the
+# /security-review that a trust-boundary change requires. run_verify checks out the PR
+# head and took `verify` from THAT COMMIT's .claude/t4.json -- so a pull request
+# carrying a hostile verify string executed on the maintainer's machine the moment they
+# ran the merge, with their gh token and ssh keys in scope. No approval prompt fires,
+# because the gate IS the thing already trusted to run commands on their behalf.
+#
+# RESOLUTION, chosen by the developer from the three #246 offered: the two configs must
+# be IDENTICAL. That catches the local tamper #245 slice 2 closed *and* refuses the
+# remote one, and a changed verify becomes a VISIBLE REFUSAL rather than a silent run.
+#
+# The fixture has to have two DIFFERENT configs, which no #245 fixture does -- both of
+# theirs agree, so 84 assertions could not distinguish "ran the head's command" from
+# "ran the approved one".
+GITREPO3="$TMP/gitrepo3"; mkdir -p "$GITREPO3/.claude"
+PWNED="$TMP/pwned.txt"; rm -f "$PWNED"
+# Written by python so the marker path needs no shell quoting in this file.
+python - "$GITREPO3/.claude/t4.json" "$PWNED" <<'PYJSON246'
+import json, sys
+json.dump({"t4": True, "verify": "touch '%s'" % sys.argv[2]},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PYJSON246
+( cd "$GITREPO3" && git init -q . && git config user.email t@t && git config user.name t
+  git add -A && git commit -qm "config: a verify command the maintainer never approved" ) >/dev/null 2>&1
+HEAD3="$(cd "$GITREPO3" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD3" > "$TMP/prhead3.txt"
+# The maintainer's own config: the command they DID approve. Uncommitted here only
+# because the fixture needs the two to differ; in life it is main's committed value.
+printf '%s' '{"t4":true,"verify":"true"}' > "$GITREPO3/.claude/t4.json"
+
+out246="$( cd "$GITREPO3" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead3.txt"
+  printf '%s' "$(bashj 'gh pr merge 11 --squash')" | bash "$HOOK" )"
+denied "$out246" "a verify command the local config does not name is refused"
+# THE BEHAVIOURAL HALF. A deny is not proof the command did not run: the old code ran it
+# first and reported its exit status. The marker is the observation.
+[ -f "$PWNED" ] && bad "THE HEAD'S COMMAND RAN before the gate decided — the marker exists" \
+                || ok "and it never ran: the marker the head's command would create is absent"
+case "$out246" in
+  *"differs"*) ok "the refusal names the mismatch, so it reads as a refusal and not a red suite" ;;
+  *) bad "the deny does not say the commands differ (got: ${out246:0:120})" ;;
+esac
+
+echo "#246 — a head that DELETES verify does not disarm the gate either:"
+# The mirror case, and the one an attacker reaches for second. Before this, an absent
+# head verify returned 0 -- "nothing configured, nothing to run" -- so a one-line
+# deletion turned the ship gate off with no failure anywhere.
+GITREPO5="$TMP/gitrepo5"; mkdir -p "$GITREPO5/.claude"
+( cd "$GITREPO5" && git init -q . && git config user.email t@t && git config user.name t
+  printf '%s' '{"t4":true}' > .claude/t4.json
+  git add -A && git commit -qm "config: verify removed" ) >/dev/null 2>&1
+HEAD5="$(cd "$GITREPO5" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD5" > "$TMP/prhead5.txt"
+printf '%s' '{"t4":true,"verify":"true"}' > "$GITREPO5/.claude/t4.json"
+out246b="$( cd "$GITREPO5" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead5.txt"
+  printf '%s' "$(bashj 'gh pr merge 13 --squash')" | bash "$HOOK" )"
+denied "$out246b" "removing verify in the PR head is a refusal, not a silent pass"
+
+echo "#246 — CONTROL: matching configs still run, so the deny is about the MISMATCH:"
+# Without this the two assertions above are satisfied by a gate that denies every merge,
+# which would be a worse defect than the one being fixed and would look like a pass.
+GITREPO6="$TMP/gitrepo6"; mkdir -p "$GITREPO6/.claude"
+RAN6="$TMP/ran6.txt"; rm -f "$RAN6"
+python - "$GITREPO6/.claude/t4.json" "$RAN6" <<'PYJSON246C'
+import json, sys
+json.dump({"t4": True, "verify": "touch '%s'" % sys.argv[2]},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PYJSON246C
+( cd "$GITREPO6" && git init -q . && git config user.email t@t && git config user.name t
+  git add -A && git commit -qm "config: the approved command, committed" ) >/dev/null 2>&1
+HEAD6="$(cd "$GITREPO6" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD6" > "$TMP/prhead6.txt"
+out246c="$( cd "$GITREPO6" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead6.txt"
+  printf '%s' "$(bashj 'gh pr merge 15 --squash')" | bash "$HOOK" )"
+case "$out246c" in
+  *'"permissionDecision":"deny"'*) bad "matching configs were denied — the gate now refuses every merge" ;;
+  *) ok "matching configs are not denied" ;;
+esac
+[ -f "$RAN6" ] && ok "and the approved verify command actually ran" \
+               || bad "the approved command did not run — the gate stopped verifying anything"
+
+echo "#246 — the refusal quotes PR-AUTHOR-CONTROLLED text, so it is sanitised before display:"
+# THE CONTROL IS THE MESSAGE. Option 3's whole value is that a maintainer READS the two
+# commands and sees which one changed -- so the attacker's string is now rendered in the
+# one artifact the decision rests on. An ESC sequence in it can erase or repaint the
+# line; an enormous one can push the mismatch off the top. Both degrade the control
+# without touching the check.
+#
+# The existing JSON escaping in _decide covers backslash, quote, newline, CR and tab. It
+# does NOT cover ESC or length, and neither mattered until this string became something
+# an outsider writes.
+GITREPO7="$TMP/gitrepo7"; mkdir -p "$GITREPO7/.claude"
+python - "$GITREPO7/.claude/t4.json" <<'PYJSONESC'
+import sys
+# HAND-WRITTEN, NOT json.dump. A real ESC byte is not valid inside a JSON string, so
+# json.dump emits a six-character escape and the gate would carry six harmless
+# characters -- an assertion written against that fixture passes for the wrong reason.
+# The gate reads this file with a regex, not a JSON parser, so this is the file it has
+# to survive.
+hostile = chr(27) + "[2K" + chr(13) + "true " + "A" * 4000
+open(sys.argv[1], "w", encoding="utf-8", newline="").write(
+    '{"t4": true, "verify": "' + hostile + '"}')
+PYJSONESC
+( cd "$GITREPO7" && git init -q . && git config user.email t@t && git config user.name t
+  git add -A && git commit -qm "config: a verify string that repaints the terminal" ) >/dev/null 2>&1
+HEAD7="$(cd "$GITREPO7" && git rev-parse HEAD)"
+printf '%s\n' "$HEAD7" > "$TMP/prhead7.txt"
+printf '%s' '{"t4":true,"verify":"true"}' > "$GITREPO7/.claude/t4.json"
+out246d="$( cd "$GITREPO7" && export PATH="$GHSTUB:$PATH" T4_TEST_PRHEAD="$TMP/prhead7.txt"
+  printf '%s' "$(bashj 'gh pr merge 17 --squash')" | bash "$HOOK" )"
+denied "$out246d" "a hostile verify string is still refused"
+case "$out246d" in
+  *$'\033'*) bad "an ESC byte reached the decision reason — the message can be repainted" ;;
+  *) ok "no ESC byte reaches the reason the maintainer reads" ;;
+esac
+# The cap is on the quoted command, not on the message: the explanation must survive.
+[ "${#out246d}" -lt 2000 ] && ok "the quoted command is bounded, so the mismatch cannot be scrolled away" \
+                           || bad "the reason is ${#out246d} bytes — the attacker sets its length"
+case "$out246d" in
+  *"differs"*) ok "and the explanation is still there" ;;
+  *) bad "the explanation was pushed out of the message" ;;
+esac
+
+
 echo "#141 — under autoMerge/afk the review ask now depends on what the diff TOUCHES:"
 # THE FIFTH BYPASS, AND IT IS DIFFERENT IN KIND from the four in #129. Those are ways
 # PAST the gate. Here the gate runs, sees the command, and CHOOSES to stand down — so
