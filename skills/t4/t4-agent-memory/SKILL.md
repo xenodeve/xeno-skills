@@ -70,6 +70,30 @@ At session end, for each rule that did not hold:
 
 Each report names the **skill file**, the rule **in the words the skill uses**, and **what was actually written or done, quoted** — plus whether the rule was skipped outright or followed and still produced the wrong thing.
 
+### What an absence in the log means, and where the denominator starts
+
+**An absence is `unknown`, not `no`, until you have checked that the hook existed.** `t4-skill-log` is a **tracked file**, so a checkout can remove it: a branch cut from a base that predates it runs with no logger and no registration, and the log it does not write is indistinguishable from a session that loaded nothing.
+
+**Measured, on this repository.** Of 52 `Skill` invocations in one session's transcript, the log holds 11. Everything before the hook's install commit is missing for the obvious reason — and **three more are missing from a single contiguous window**, bracketed exactly by two commands:
+
+```
+28843  git switch -c chore/255-plan-tracking-issues main   <- a base without the hook
+28886  simplify        not logged
+28931  code-review     not logged
+28983  scrutinize      not logged
+29219  git switch feat/185-turn-end-wiring                  <- the hook returns
+29784  security-review logged
+```
+
+**Two plausible explanations were offered before this one and both were wrong** — that the logger filtered non-library skills (`security-review` is not in `skills/` and is logged twice), and that the ~32 KB argv cap ate them (every `tool_result` in that window is 110–124 bytes). A gap in a measurement invites a mechanism; check the observer was present before proposing one.
+
+**So before reading a rate out of this file:**
+
+1. `git log --diff-filter=A -- .claude/hooks/t4-skill-log` — the denominator starts there, and nothing earlier counts.
+2. Any window spent on a branch cut from an older base is a hole. **An AFK batch cuts branches constantly**, which is exactly when it opens.
+
+**This is #241's class from the other side** — there, the enforcing copy of a hook was not the tested one; here it was simply absent, and the artifact cannot say so about itself.
+
 ### The Obsidian note
 
 Keep writing `skill-usage/<YYYY-MM-DD>-<slug>.md` in the library's own vault (skeleton in `references/memory-artifacts.md`) **only when the session ran inside `xeno-skills` itself**. There it is the working database you read while changing a skill, next to the code. A session in any other repo files the issue and writes no note — the note would live in a checkout that repo does not have.
