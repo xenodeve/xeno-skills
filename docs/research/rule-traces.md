@@ -69,7 +69,7 @@ cries wolf gets switched off along with its true findings.
 | skill | version | path |
 |---|---|---|
 | `karpathy-guidelines` | `1cf6329e9ec6` | `skills/karpathy-guidelines/SKILL.md` |
-| `t4-afk` | `59cac5e7f646` | `skills/t4/t4-afk/SKILL.md` |
+| `t4-afk` | `696e98d5b2ef` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `57af2053915b` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `96e63e10a251` | `skills/t4/t4-bro/SKILL.md` |
 | `t4-dev-workflow` | `c4606a7ca84c` | `skills/t4/t4-dev-workflow/SKILL.md` |
