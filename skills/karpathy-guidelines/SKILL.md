@@ -47,7 +47,9 @@ When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-The test: Every changed line should trace directly to the user's request — **code, config, docs and lists alike.**
+The test: Every changed line should trace directly to the user's request — **code, config, docs and lists alike** — and **every staged file should trace to a change you made.**
+
+**`git add -A` stages what your tools wrote as readily as what you wrote**, so read the file list and not only the diff. Measured: two `.pyc` files rode a branch for roughly twenty commits, written by an `importlib` import that caches bytecode beside the source. They appeared in no edit, no plan and no test — only in `git status`, which was read as *the files I changed* rather than *the files that changed*. **The line test cannot reach them, because they were never a line.** In review afterwards `git show --stat` renders such a file as `Bin 0 -> 17077 bytes`, which reads as legitimate in a repo that genuinely ships generated artifacts.
 
 **Disclosing an extra change does not authorise it.** Saying so in the PR body makes it visible, not requested; the reviewer now has to reject it rather than never see it. Measured: editing a preset list to add one entry, an agent noticed a second had never been added, added it too, and disclosed it — three separate things the test above forbids, and the disclosure was read as making it acceptable.
 

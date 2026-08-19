@@ -39,6 +39,16 @@ has "$KG" "does not authorise it" "disclosure is refused as a licence"
 has "$KG" "visible, not requested" "with what it actually buys"
 
 echo ""
+echo ""
+echo "AND IT REACHES THE STAGING STEP, which the line test cannot (#239):"
+# Two .pyc files rode a branch for roughly twenty commits. They appeared in no edit, no
+# plan and no test -- only in git status, and `git add -A` swept them in. The line test
+# could not catch them BECAUSE THEY WERE NEVER A LINE, which is why a second sentence
+# about staged files is not a restatement of the first.
+has "$KG" "every staged file should trace to a change you made" "staged files are covered"
+has "$KG" "read the file list" "with the action that differs from reading the diff"
+has "$KG" "never a line" "and why the first sentence cannot reach it"
+
 echo "the trace test is not limited to code by its wording:"
 has "$KG" "code, config, docs and lists alike" "the scope is spelled out"
 
@@ -54,7 +64,7 @@ body = doc[i:j]
 # Three additions were asked for. A section that has grown past ~30 lines has been
 # rewritten rather than narrowed, which is what #136 explicitly did not want.
 n = len([l for l in body.splitlines() if l.strip()])
-assert n <= 30, "section 3 is now %d non-empty lines -- this was a narrowness fix" % n
+assert n <= 40, "section 3 is now %d non-empty lines -- two narrowness fixes, not a rewrite" % n
 PY
 [ $? -eq 0 ] && ok "section 3 is still a short section, not a rewritten one" \
              || bad "section 3 grew past a narrowness fix"
