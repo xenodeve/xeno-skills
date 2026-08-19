@@ -66,7 +66,7 @@ decision) · 🔴 **UNTRACKED** (MD-only, no GitHub issue — highest miss-risk)
 | Item | Status | Gate | Next action |
 |---|---|---|---|
 | #79 ready-for-agent means two different things in two repos | 🟡 | ready-for-human | Decide a canonical meaning, then document. |
-| #204 / PR #206 — the clink MCP prefix | 🔴 | **blocked** | **Do not merge PR #206** until `claude mcp list` shows an `openclink` entry. The prefix comes from the client's registration key, not the server's name; this machine has only `pal`, so the rename would make all four clink skills call a tool that does not resolve. Server-side half is `openclink#122`. |
+| #204 / PR #206 — the clink MCP prefix | ✅ | — | **Resolved 2026-08-20 by removing the assumption, not by waiting for the machine.** `claude mcp list` now reports `pal: openclink` — the SERVER was renamed and the REGISTRATION KEY is still `pal`, so `mcp__pal__clink` is still correct here and the rename would have broken all four skills. **Both spellings are wrong on some machine**, so PR #206 was closed as superseded and `using-clink` gained a resolution step instead (`#275`). The hooks already derived the name (`^mcp__[A-Za-z0-9_.-]+__clink$`); only the prose assumed. Server-side half is still `openclink#122`. |
 
 **The `openclink` half of the plans, filed 2026-08-16.** These live in `xenodeve/openclink` and no plan here ships without them. Repo renamed from `pal-mcp-server`; older rows and issue bodies still use the old name and GitHub redirects it.
 
@@ -121,7 +121,7 @@ every park below names the thing it needs rather than the fact that it stopped.
 | **#168** widen the PreToolUse matcher · **#236** the gate's prose false-deny | 🔴 | **PARKED — trust boundary** | Both change what `t4-gate` sees or denies. Same rule as the five above. |
 | **#156** the thai-token-optimizer write-up | 🔴 | **PARKED — the evidence is not reachable** | Its source is a 2026-08-12 session transcript and two temp files outside the repo. Writing it from here would be a reconstruction, and this repo's own rule is that a reconstructed retrospective is a hypothesis wearing a log's clothing. |
 | **#169 · #170 · #172** | 🔴 | **PARKED — behind #166** | An ADR that is `ready-for-human`. |
-| **#88 · #89 · #90 · #204** | 🔴 | labelled `blocked` | Not this track. |
+| **#88 · #89 · #90** | 🔴 | labelled `blocked` | Not this track. `#204` closed 2026-08-20, see Track 5. |
 
 ## Track 8 — the tracker hierarchy, and what it found (#248)
 
