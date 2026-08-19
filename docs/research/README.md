@@ -42,6 +42,15 @@ this library composes with the ecosystems it sits on top of. One dated file per 
   kills the hook silently while emitting no JSON. **Records a defect in the research run itself:** the
   synthesiser never received the refutation payload, so two refuted claims are stated as fact in the report
   it wrote; the corrections sit above it rather than being merged in. Bears on #149, #155, #143 and #145.
+- [2026-08-11 — OpenCode compatibility survey](2026-08-11-opencode-compatibility-survey.md) — the
+  skills already run in OpenCode **unchanged**: `opencode debug skill` (1.18.15) loads all 14 of ours,
+  resolved from `~/.agents/skills/`, and `CLAUDE.md` is a documented fallback for rules. It enforces
+  the same name-matches-directory and no-nesting constraints that produced #45. Qualifies the premise
+  in `guards-layer.md`: OpenCode has its own blocking `tool.execute.before` hook, so Claude is not the
+  only agent with a native gate — Tier 0.5 still stands for Codex/Gemini/humans. The T4 dispatcher
+  ports on the **compact** leg only (`experimental.session.compacting` → `output.context.push`);
+  there is no session-start injection hook. Bears on #83, #85 and #126. Nothing acted on — no plugin
+  was written or run.
 - [2026-08-04 — xeno-skills × pbakaus/impeccable composition audit](2026-08-04-xeno-vs-impeccable-composition-audit.md)
   — the fourth ecosystem, which the first three audits did not know existed. Refutes the "design/* is
   genuine delta" conclusion, but not the way a grep suggested: impeccable saw those numerics and
