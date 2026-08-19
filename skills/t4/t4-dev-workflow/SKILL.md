@@ -20,6 +20,25 @@ When planning or implementing a feature, follow this order:
 5. **`/to-issues`** — break the PRD into GitHub issues with triage labels (one issue per deliverable).
 6. **`/tdd`** — implement test-first (red → green → refactor).
 
+**Four of the six steps above name a skill the agent is mechanically forbidden from invoking.** `/grill-me`, `/grill-with-docs`, `/to-prd` and `/to-issues` all carry `disable-model-invocation: true`, and the `Skill` tool refuses them:
+
+```
+Skill triage cannot be used with Skill tool due to disable-model-invocation.
+Ask the user to run /triage themselves — it cannot be invoked via the Skill tool.
+Do not replicate this skill's workflow by other means.
+```
+
+**An agent does not see a blocked call — it sees an absent skill.** A flagged skill is filtered out of the available-skills listing before the agent reads it, so there is nothing to distinguish *"not installed"* from *"installed, reserved for the developer."* On 2026-08-18 an agent bootstrapping a repo concluded the second was the first and wrote the files itself, in good faith, reintroducing the duplication `#96` was filed to remove. That is `#242`.
+
+**So: absence from the listing is not evidence of absence.** When a step names one of these and you cannot see it:
+
+1. **Do not conclude it is missing**, and do not say so to the developer — say it is user-invocation-only and that you cannot call it.
+2. **Ask the developer to run it**, naming the exact command and what you will do with the result.
+3. **Do not improvise the output.** The error text forbids replicating the workflow by other means, and the whole reason these steps were delegated to another skill is that this family stopped maintaining a second copy of them.
+4. **If the developer declines or is unavailable, that is a park**, recorded with what is undone — not a silent substitution.
+
+**This is a property of the other skill, not a defect in this one**, which is why the instruction is a hand-off rather than a fix. The audit of which steps are affected, and what to do about the pipeline being unexecutable from step 1, is tracked separately.
+
 **Hard gate: PRD → issues → PR.** Never open a PR without a referenced issue. A PRD becomes issues before code; code maps to an issue before a PR.
 
 ## The hierarchy is a sub-issue tree, not prose
