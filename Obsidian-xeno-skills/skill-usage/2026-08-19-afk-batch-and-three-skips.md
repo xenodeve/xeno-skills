@@ -96,3 +96,34 @@ added after it. The `.gitattributes` pin listed four filenames and twenty hooks 
 listed five variable names and missed two. Both were fixed by deriving the set instead — a glob, and a
 scan for `x="$(cat)"`. **When a check enumerates, ask what adds the next member and whether the check
 would see it.**
+
+## The fourth skip, and it is the one the other three were symptoms of
+
+`t4-afk`'s per-item loop, step 4: *"Run the gates unattended — `/simplify`, then `/verify` …,
+`/code-review` + `/scrutinize`"*. It sits inside a loop that opens *"For each independent item on the
+worklist"*. **The gates are per item.**
+
+`/simplify` did run per item. **`/code-review` and `/scrutinize` ran once, at the very end, against 62
+commits** — and only because the stopping condition would not accept the batch without them. Filed as
+**#270**.
+
+**What the deferral cost, measured.** The one late run found three defects, all already committed:
+raw control bytes in `hooks/t4-gate` (written by this session hours earlier), the argv cap in eight
+hooks (#265), and a guard listing 4 of 24 files (#268). **One of the three is this session's own
+per-item miss**; the other two are inherited from a branch whose 54 commits *declared* the gates ran.
+Two of the three fixes had to be written after the branch merged, so `main` carried them for a period.
+
+**The mechanism, because "be more disciplined" is not one.** The batch opened with tracker operations —
+#251–#254 are sub-issue links with no code, so `code-review=n-a` is correct and step 4 legitimately
+produces nothing. By the time the batch reached code the *habit* was "gates at the reporting boundary",
+and the reporting boundary was the digest.
+
+**And the two that were deferred are the two with no artifact.** `/verify` leaves a green suite;
+`/simplify` leaves a diff. `/code-review` and `/scrutinize` leave nothing unless the reviewer writes it
+down — so deferring them costs nothing visible until something is found. That is the same asymmetry
+`#247` records from the trailer side, which is why a deferred gate and a falsely-declared one produce
+the same artifact: none.
+
+**The generalisable line for the next session:** a rule attached to a loop fires while you are in the
+loop. Once the work changes shape — tracker ops to code, one item to a branch — the loop is not where
+you are any more, and the rule goes quiet without being broken on any single step.
