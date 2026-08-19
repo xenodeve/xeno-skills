@@ -175,6 +175,25 @@ T4-Gates: simplify=ran code-review=ran scrutinize=not-run security-review=n-a ve
 
 *This meta-rule governs every "narrow exception" clause in these skills, including the one below.*
 
+## A red must fail for the reason the test names
+
+**A non-zero exit is not a red.** Read the failure output and check it is the failure the assertion describes — a red you have not read is a green you have not earned.
+
+**Two generators, both measured in this repo, and both produce a red against code that does not exist:**
+
+- **The harness reports the failure, not the code.** Building `check-issue-ref` test-first on 2026-08-11, the red passed against a **missing file**: `sh` exits non-zero when it cannot open a script. Every assertion downstream of "it exited non-zero" was satisfied by the absence of the thing under test.
+- **The path leaks into the assertion.** The second assertion in that same test — *"the message names what's missing"* — matched on the word `issue`, which appears in the interpreter's own error because the script is called `check-issue-ref`. The test was reading its own filename.
+
+**The correction is one rule: assert on something only the implementation can emit.** A returned value, a real flag, a measured number, a file the code writes. Never a word that also appears in a path, an error message, or the test's own text.
+
+**And the same trap runs the other way — an assertion that cannot fail.** On 2026-08-19 a fixture built with `json.dump` was written to prove a control byte is stripped before display; `json.dump` cannot emit a raw ESC, so the fixture could not carry the attack and the assertion passed against a file that never contained it. **A green that was never capable of red is the same defect seen from the other side**, and it is why every rule suite here carries positive controls.
+
+**Make the detector dirty on purpose.** A red nobody has seen go green for the stated reason, and a green nobody has seen go red, are both claims rather than evidence. The probe costs a minute; the alternative is a suite that passes both before and after a defect — which happened here on 2026-08-19, twice, with 94 assertions watching.
+
+**For a delegated red, this is necessary and not sufficient** — a worker can return a red that reproduces perfectly and is still anchored on a sentence it invented. That case, and what to demand instead, is in `clink-masteragent`; it is not restated here.
+
+**No enforcement is added.** Nothing can read an assertion and decide what it is *about*.
+
 ## Root cause before fix (applies to bugs *and* review findings)
 
 **Do not propose a fix, and do not edit, until you can name the root cause with evidence.** The output of diagnosis is a sentence of the shape: *"X fails because `path/file.ts:42` does Y when Z, which I reproduced by ___."* Until you can write that sentence, any fix is a guess dressed as a solution.
