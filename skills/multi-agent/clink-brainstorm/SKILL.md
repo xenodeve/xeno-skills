@@ -54,13 +54,13 @@ If a clink agent and `chat` hit the **same underlying model**, they are NOT inte
 - **Question is purely conceptual/architectural** (answerable without touching a file) → `chat` is fine and faster (no CLI bootstrap tax).
 - If unsure, default to the agentic `clink` call — it can still answer conceptual questions fine, just costs a bit more latency; the reverse (using `chat` when the question needed real files) silently produces a worse-grounded answer with no error to signal it.
 
-**The third state, and it is worse than either: an agentic agent told not to read files is `chat` with worse latency.** Picking the agentic client satisfies the rule above and then `"Do NOT read files; everything you need is below"` undoes it — you pay the CLI bootstrap and get `chat`'s blindness. The skill used to frame this as *which client*, so a reader could satisfy it and still land here.
+**The third state, and it is worse than either: an agentic agent told not to read files is `chat` with worse latency.** Picking the agentic client satisfies the rule above and then `"Do NOT read files; everything you need is below"` undoes it — you pay the CLI bootstrap and get `chat`'s blindness, having followed the rule.
 
-**Measured, one round, same question, same models, 2026-08-11.** Blind, all three designed a transport-neutral authorization platform and a pre-publication claim checker — **neither can exist in this repository**, because the hook sees one prospective tool call and nothing sees model prose before publication. Then one agent ignored the instruction, read eleven files (351 s, 426k input tokens), **withdrew its own enforcement phase** citing that architectural fact, and produced the cost ranking that replaced the plan. The difference in usefulness was file access and nothing else.
+**Measured, one round, same question, same models, 2026-08-11.** Blind, all three designed a transport-neutral authorization platform and a pre-publication claim checker — **neither can exist in this repository**. One agent then ignored the instruction, read eleven files (351 s, 426k input tokens), **withdrew its own enforcement phase** citing that fact, and produced the cost ranking that replaced the plan. The difference was file access and nothing else.
 
 **When the feasibility ceiling and the codebase rule conflict, the codebase rule wins.** *"A read-heavy delegation takes 400–530 s against a real repo; under a 60–120 s transport ceiling that is infeasibility, not latency"* is the reason suppressing reads looks sensible — and the 351 s round above **exceeded the ceiling, was backgrounded, completed anyway, and was the only round worth having.** So handle a long round by **expecting** it, not by blinding the agent: fire it, let it background, take other work.
 
-**If reads genuinely must be suppressed — a purely conceptual question with no repository in it — say so in the prompt as a decision**, in one line, with the reason. A later reader can then tell a deliberate choice from an unexamined default, which is exactly what could not be told here.
+**If reads genuinely must be suppressed — a purely conceptual question with no repository in it — say so in the prompt as a decision**, with the reason. A later reader can then tell a deliberate choice from an unexamined default, which could not be told here.
 
 ## Why you can't just call `consensus` with all of them
 
@@ -95,13 +95,22 @@ output with `return_code: 0`.
    **Audit the prompt before it is sent — convergence measured on a leading question is worthless.** Four questions, answerable in seconds, and a *yes* to any of the first three is a defect in the prompt rather than a risk to note:
 
    - **Does it supply one of the candidate answers as a phrase?** On 2026-08-11 a prompt asked whether a change was *"the right next move, or displacement activity while the mechanism has four known bypasses"*. Three agents on three model families converged on displacement. Under the adversarial round all three reversed, and one wrote back `"self_critique": "I walked into the offered displacement slot"`.
-   - **Does it label one option?** That same prompt attached *Major/security* to the competing option before anyone read it. The panellist that named the cause put it plainly: *"three panellists under that frame 'independently' choosing B is not triangulation."*
-   - **Does it state your own position, or which answer you expect?** Including as a parenthesis, a "note that", or the order the options are listed in.
+   - **Does it label one option?** That prompt attached *Major/security* to the competing option before anyone read it. The panellist who named the cause: *"three panellists under that frame 'independently' choosing B is not triangulation."*
+   - **Does it state your own position, or which answer you expect?** Including the order the options are listed in.
    - **Would a reader who saw only this prompt know which answer you wanted?** If yes, the round measures your framing.
 
-   **When the audit fails: rewrite and re-fire.** The round has not cost anything yet — the audit runs *before* the call, which is the whole point of putting it here rather than in the synthesis. If rewriting is genuinely not possible, **fire it anyway and mark the result `convergence unverified`**, so the synthesis carries the caveat instead of the reader inheriting an unmarked one.
+   **When the audit fails: rewrite and re-fire** — the round has not cost anything yet. If rewriting is genuinely not possible, **fire it anyway and mark the result `convergence unverified`**, so the synthesis carries the caveat instead of the reader inheriting an unmarked one.
 
-   **This is the half the forced adversarial round cannot supply.** That section treats convergence as a property of the *agents* and applies pressure after the fact; it says *"given the same prompt framing"* in passing and then never asks anyone to look at the prompt. Pressure after the fact is how the 2026-08-11 round recovered — at the cost of a full extra round, and only because the reversal happened to be legible.
+   **Both checks run before the call, which is the half the forced adversarial round cannot supply** — see *When agents converge*.
+   **Then scope the terms the answer turns on.** The audit above catches a prompt that supplies an answer; this catches one that supplies none and leaves a word to be filled in. **A neutral prompt can still be under-specified, and that produces convergence just as reliably.**
+
+   **For each term the answer depends on: would two competent readers scope it the same way?** Where they would not, add a sentence saying which reading applies.
+
+   **Measured, 2026-08-13.** A round judged a plan for a review agent whose job was described as *"asks whether the invoked skills' **rules were followed**"*. Three agents on different model families **all resolved that toward outcome** — is the code good — concluded that session history cannot establish outcome, and two refused to build parts of the design. The developer rejected it in one sentence: the reviewer checks **whether the prescribed workflow was followed**; code quality is CI's job. **The panel was not wrong about the question it answered. It answered a different one.**
+
+   **The tell is that there is no tell.** That prompt carried measured constraints, file paths, three named options and a word count — **one noun with two readings inside an otherwise precise brief**, and unanimous agreement on the wrong reading looks exactly like unanimous agreement. So the check is on the **terms**, not on the prompt's overall quality — precision was never the thing missing.
+## Dialing model + effort per call (this PAL fork)
+
 2. **Fire agents in parallel** — put multiple tool calls in a single message (independent calls, no shared state) rather than sequentially. Sequential stacks latencies; parallel is bounded by the slowest single agent. **And a round past two minutes is moved to a background task, at which point it is not a reason to wait** — start synthesising what has already returned, or take other work; the notification will find you. A panel fired in one message pays that block once for the whole round.
    - **Codebase question** (needs real file access — see the `chat` vs agentic split above) — use your agentic clink agents, not `chat`:
      ```
@@ -121,7 +130,6 @@ output with `return_code: 0`.
 4. **Synthesize and present your own recommendation** — don't just paste the raw responses at the user. State what the agents converged on, what they disagreed about, and your own read on which is right and why (you have the full session context they don't).
 5. **Use `continuation_id`** (returned in each clink/chat response) to follow up with the *same* agent in the *same* thread if you want to push back or ask a clarifying question — it preserves that agent's prior context, so you don't have to re-explain the whole question from scratch.
 
-## Dialing model + effort per call (this PAL fork)
 
 The [xenodeve PAL fork](https://github.com/xenodeve/pal-mcp-server) adds two **optional per-call** `clink` params — `model` and `reasoning_effort` — so you can tune each agent's capability *per round* without editing config (which is cached at server start). For brainstorming this is a real lever: match depth to the question, and widen cognitive diversity by routing an agent to a different backend family.
 
@@ -232,7 +240,7 @@ A single round (independent parallel answers) is the default. For a genuinely co
 
 ## When agents converge — forced adversarial round
 
-**The prompt audit in step 1 is this section's other half, and it runs first.** This one treats convergence as a property of the agents and applies pressure after the fact — which works, and cost a full extra round on 2026-08-11. The audit asks whether the prompt supplied the answer before the call is made, when a rewrite is still free.
+**The prompt audit in step 1 is this section's other half, and it runs first.** This one treats convergence as a property of the agents and applies pressure after the fact — which works, and cost a full extra round on 2026-08-11. The audit asks the same question before the call, when a rewrite is still free.
 
 **Convergence is not automatically a validation signal.** Agents trained on similar data, given the same prompt framing, or that are inherently agreeable can all arrive at the same answer for the wrong reasons. When round 1 shows all or most agents agreeing, run one **forced adversarial round** before treating it as confirmed — the goal is to find out if the consensus survives targeted pressure, not just to generate dissent for its own sake.
 
@@ -257,13 +265,13 @@ A single round (independent parallel answers) is the default. For a genuinely co
 
 4. **Stop condition:** if the adversarial round comes back dry (all surface dissent), accept the consensus and say so explicitly. If it finds real dissent, run one normal challenge loop round (step 3 of the challenge loop above) to resolve it — the adversarial round is one pass, not a new loop of its own.
 
-**The synthesis states which loop steps ran.** One line — *round 1 · adversarial round · resolving round · synthesis*, each marked ran or skipped-with-reason. **The resolving round is the only step whose absence looks identical to its completion**, because its output would have been folded into the same synthesis; every other step leaves something behind. Without that line, a skipped step is invisible to the person reading the recommendation.
+**The synthesis states which loop steps ran.** One line — *round 1 · adversarial round · resolving round · synthesis* — each marked ran or skipped-with-reason. **The resolving round is the only step whose absence looks identical to its completion**: its output would have been folded into the same synthesis, and every other step leaves something behind.
 
-**Reversal on different axes is not dissent against a consensus, and it is the case most likely to leave a contradiction standing.** On 2026-08-11 all three panellists reversed — one on architecture, one on sequencing, one on cost. That reads as agreement that round 1 was wrong, and it is not agreement about anything else. Two of them ended in direct contradiction: *"pre-execution interception is the wrong layer"* against *"the matcher change is the cheap, correct fix and should be done first."* They were never made to meet.
+**Reversal on different axes is not dissent against a consensus, and it is the case most likely to leave a contradiction standing** — it reads as agreement that round 1 was wrong and is agreement about nothing else. On 2026-08-11 all three reversed, on architecture, sequencing and cost, and two ended in direct contradiction — *"pre-execution interception is the wrong layer"* against *"the matcher change is the cheap, correct fix and should be done first"* — never made to meet.
 
-**When the orchestrator holds verified evidence the panel could not reach, the resolving round may be waived — on condition the waiver and the evidence are named in the synthesis.** That is what happened above: the contradiction was settled by a fact neither panellist had — a merge through `mcp__github__merge_pull_request` produces no local `git push`, so a pre-push hook can never observe it, verified against the repository afterwards. **The resolution was probably right. It was still a documented step replaced by private judgment, undisclosed.** Naming it costs one sentence and turns a silent substitution into a reviewable one.
+**When the orchestrator holds verified evidence the panel could not reach, the resolving round may be waived — on condition the waiver and the evidence are named in the synthesis.** Above, the contradiction was settled by a fact neither panellist had: a merge through `mcp__github__merge_pull_request` produces no local `git push`, so a pre-push hook can never observe it. **The resolution was probably right. It was still a documented step replaced by private judgment, undisclosed** — and naming it costs one sentence.
 
-**A synthesis that skipped a step and did not say so is the shape `clink-debug` already refuses** — *"'Fixed' after a hunt that never falsified anything is a hypothesis wearing a verdict's clothes."*
+**A synthesis that skipped a step and did not say so is what `clink-debug` already refuses** — *"'Fixed' after a hunt that never falsified anything is a hypothesis wearing a verdict's clothes."*
 
 ### Why this matters
 
