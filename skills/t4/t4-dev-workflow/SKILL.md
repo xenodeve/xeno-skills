@@ -285,6 +285,27 @@ Issue bodies, PRD bodies, and PR descriptions must be **bilingual — English + 
 - **Review-reply comments may be English-only.** Anything a teammate reads to *decide* gets both languages.
 - **Scope: the GitHub tracker.** This rule governs issue / PRD / PR bodies. Governed **agent docs** (`CONTEXT.md`, `DESIGN.md`, `PRODUCT.md`, `docs/agents/*`) have their *own* bilingual convention — `<!-- lang:en/th -->` markers, full mirror (see `t4-project-bootstrap` → governance-docs). Chat, reports, and status updates are single-language (the developer's — Thai); code, commit messages, and inline comments stay English.
 
+## Retarget a stacked PR before merging its parent
+
+**`gh pr merge <parent> --delete-branch` closes every PR whose base is that branch, and the close is not reversible.** Measured on 2026-08-11: three PRs open, `#41` based on `#35`'s branch. Merging `#35` deleted `feat/root-cause-first`, GitHub closed `#41`, and recovery failed twice —
+
+```
+gh pr reopen 41       -> Could not open the pull request
+gh pr edit 41 --base main -> Cannot change the base branch of a closed pull request
+```
+
+**Both failures are the same wall.** A closed PR's base is immutable, so you cannot retarget it, and you cannot reopen it because its base branch no longer exists. The review history, the comments and the CI record are stranded there.
+
+**So the order is fixed, and it is the only part that matters:**
+
+1. **Retarget every child to `main` first** — `gh pr edit <child> --base main`, while the child is still open.
+2. **Then merge the parent.** `--delete-branch` is now safe: nothing points at the branch.
+3. **Then merge the children**, whose diffs now read against `main`.
+
+**If it has already happened:** rebase the child's branch onto `main`, open a **replacement** PR, and reference the closed one in its body. The old PR stays closed — that is not a workaround, it is the only path, and the reference is what keeps its review history findable.
+
+**No hook enforces this.** The gate sees one prospective tool call and cannot know another PR is stacked on the branch this one deletes; discovering that costs a network call the gate has no budget for. It is ordering discipline, and it is written here because the failure is silent, immediate and permanent.
+
 ## Issue lifecycle (Definition-of-Done gate)
 
 - Every code change maps to **one issue you're allowed to work** — authored by us, or labeled `ready-for-agent`.
