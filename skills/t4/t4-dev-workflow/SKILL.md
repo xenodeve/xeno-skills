@@ -132,6 +132,22 @@ A confident wrong answer is worse than an uncertain right one, because it ends t
 
 **Reporting is part of the rule.** If you didn't run it, say you didn't — "tests not run" is a complete, acceptable sentence. Reporting a suite as green without running it is not optimism; it's a false statement about the repo. Same for partial work: name what's unfinished rather than letting "done" cover it.
 
+**The register attaches to the claim; nothing attaches it to the question the evidence answers.** That is the gap this rule had, and it is how the rule can be *followed* and still produce a wrong statement: evidence that verifies **X is true** gets spent on **therefore do Y**, where Y needed a read the evidence never touched.
+
+**Three in one session, 2026-08-17, all with real evidence produced in-session and correctly cited:**
+
+| The claim | The evidence held | The read that would have caught it |
+|---|---|---|
+| *"#175 names no issue"* | `Select-Object -First 14` of the body | the **last** line of the body, which is `Blocked by …` |
+| *"`clink` has a `schema` parameter"* | a prior session's handoff note | the live tool schema — one call |
+| *"#204 should be closed"* | four checks **on our side**, all correct | the **other repository's** tracker and tests |
+
+The third is the one to remember: the live tool schema, `~/.claude.json`, `server.py:1511` and 15 references in `skills/` were all read and all right. Then the other repo turned out to contain a test whose docstring already held that analysis, a plan issue, and a deliberate exclusion. **The mechanism claim was correct and the recommendation was wrong, and the evidence cited did not reach it.**
+
+**So: when a verdict recommends an ACTION rather than asserting a FACT, the artifact requirement extends to the action's own preconditions.** *Close it · ship it · skip it · file it · this supersedes that* are not facts about the mechanism; each has a precondition set of its own. **For anything cross-repo, the other repository's tracker is one of them** — the survey rule above already treats a sibling issue's change inventory as input, and this is that idea pointed one repo over.
+
+**The cheap tell: name the read you did, then ask what the recommendation assumes that the read did not cover.** In all three cases above the missing read was one command.
+
 **Why it's load-bearing here:** the records layer is an index future agents trust without re-checking (`t4-engineering-records` — validated-only, `file:line`, commit SHAs). One unverified verdict written as fact poisons it, and the cost lands on whoever inherits the repo, not on the session that saved a minute.
 
 ## Skipping a rule requires proof (the burden is on the skip)
