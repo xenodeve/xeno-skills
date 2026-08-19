@@ -17,10 +17,10 @@ clink skill's rules govern a delegation that has its own reviewer
 
 | | machine-decidable | needs a trace | undecidable | **total** |
 |---|---|---|---|---|
-| **master** | 43 | 33 | 48 | **124** |
+| **master** | 44 | 34 | 48 | **126** |
 | **native subagent** | 1 | 2 | 1 | **4** |
 | **foreign CLI worker** | 1 | 0 | 0 | **1** |
-| **total** | **45** | **35** | **49** | **129** |
+| **total** | **46** | **36** | **49** | **131** |
 
 **What the foreign row means.** Those rules are listed separately rather than
 folded into undecidable because the distinction is actionable: a foreign trace
@@ -131,6 +131,8 @@ count is therefore a floor, not a total.
 | `t4-dev-workflow` | Tests and fixtures | machine | master |
 | `t4-dev-workflow` | The GitHub MCP surface is gated too | machine | master |
 | `t4-dev-workflow` | The Thai must mirror the English exactly | undecidable | master |
+| `t4-dev-workflow` | The harness reports the failure, not the code. | trace | master |
+| `t4-dev-workflow` | The path leaks into the assertion. | machine | master |
 | `t4-dev-workflow` | The rollup counts DIRECT CHILDREN only. | undecidable | master |
 | `t4-dev-workflow` | Translating code identifiers into Thai. | undecidable | master |
 | `t4-dev-workflow` | `## Blocked by` stays prose, always. | machine | master |

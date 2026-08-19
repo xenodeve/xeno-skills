@@ -16,13 +16,13 @@ not, and a reviewer handed it will invent a verdict.
 
 | State | Count | Meaning |
 |---|---|---|
-| `traced` | 31 | The rule names an order, and the trace states it as observable records |
-| `machine` | 44 | Settled by a script without a transcript |
+| `traced` | 32 | The rule names an order, and the trace states it as observable records |
+| `machine` | 45 | Settled by a script without a transcript |
 | `untraced` | 0 | **Needs a trace; none written yet — work not done, not work impossible** |
 | `out-of-scope` | 53 | **Undecidable from a transcript, marked with its reason** |
 | -- of which reclassified from `trace` | 4 | **Argued one by one, never with the blanket reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **129** | |
+| **total** | **131** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
@@ -30,7 +30,7 @@ rules and nothing for the rest concludes the rest were checked and passed.
 Saying so is the difference between a known limit and a silent one.
 
 **The arithmetic is published so neither half can hide the other.** The census
-classes 35 rules as needing a trace. 31 have one, 4 were read in full, state no
+classes 36 rules as needing a trace. 32 have one, 4 were read in full, state no
 order at all, and were reclassified out of scope with an individual reason, and
 0 are named as owed. `untraced` is the honest half: folding the owed into the
 undecidable would make work-not-done read as work-impossible, which is the same
@@ -72,7 +72,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-afk` | `696e98d5b2ef` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `feae5b49c226` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `96e63e10a251` | `skills/t4/t4-bro/SKILL.md` |
-| `t4-dev-workflow` | `13622b96917a` | `skills/t4/t4-dev-workflow/SKILL.md` |
+| `t4-dev-workflow` | `60c363f2a97b` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cb5174e5f4f2` | `skills/t4/t4-engineering-records/SKILL.md` |
 | `t4-project-bootstrap` | `31925d889588` | `skills/t4/t4-project-bootstrap/SKILL.md` |
 | `using-t4` | `fcca5b42b444` | `skills/t4/using-t4/SKILL.md` |
@@ -148,6 +148,8 @@ cries wolf gets switched off along with its true findings.
 | `t4-dev-workflow/164e952fac69` | `t4-dev-workflow` | machine | Tests and fixtures | settled by a script; no transcript needed |
 | `t4-dev-workflow/20c4cea7a61b` | `t4-dev-workflow` | machine | The GitHub MCP surface is gated too | settled by a script; no transcript needed |
 | `t4-dev-workflow/c5c290d2989b` | `t4-dev-workflow` | out-of-scope | The Thai must mirror the English exactly | asks whether the work was done well; no sequence of messages settles that |
+| `t4-dev-workflow/7f9fa7919fb6` | `t4-dev-workflow` | traced | The harness reports the failure, not the code. | the record for 'The harness reports the failure, not the code.' is the first of its kind in t… |
+| `t4-dev-workflow/79e8899a16ae` | `t4-dev-workflow` | machine | The path leaks into the assertion. | settled by a script; no transcript needed |
 | `t4-dev-workflow/6f24fbd6fc60` | `t4-dev-workflow` | out-of-scope | The rollup counts DIRECT CHILDREN only. | states a fact about the tracker's API, not a behaviour performed in any order |
 | `t4-dev-workflow/0535833b98df` | `t4-dev-workflow` | out-of-scope | Translating code identifiers into Thai. | asks whether the work was done well; no sequence of messages settles that |
 | `t4-dev-workflow/72292a44f688` | `t4-dev-workflow` | machine | `## Blocked by` stays prose, always. | settled by a script; no transcript needed |
