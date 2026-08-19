@@ -257,6 +257,14 @@ A single round (independent parallel answers) is the default. For a genuinely co
 
 4. **Stop condition:** if the adversarial round comes back dry (all surface dissent), accept the consensus and say so explicitly. If it finds real dissent, run one normal challenge loop round (step 3 of the challenge loop above) to resolve it — the adversarial round is one pass, not a new loop of its own.
 
+**The synthesis states which loop steps ran.** One line — *round 1 · adversarial round · resolving round · synthesis*, each marked ran or skipped-with-reason. **The resolving round is the only step whose absence looks identical to its completion**, because its output would have been folded into the same synthesis; every other step leaves something behind. Without that line, a skipped step is invisible to the person reading the recommendation.
+
+**Reversal on different axes is not dissent against a consensus, and it is the case most likely to leave a contradiction standing.** On 2026-08-11 all three panellists reversed — one on architecture, one on sequencing, one on cost. That reads as agreement that round 1 was wrong, and it is not agreement about anything else. Two of them ended in direct contradiction: *"pre-execution interception is the wrong layer"* against *"the matcher change is the cheap, correct fix and should be done first."* They were never made to meet.
+
+**When the orchestrator holds verified evidence the panel could not reach, the resolving round may be waived — on condition the waiver and the evidence are named in the synthesis.** That is what happened above: the contradiction was settled by a fact neither panellist had — a merge through `mcp__github__merge_pull_request` produces no local `git push`, so a pre-push hook can never observe it, verified against the repository afterwards. **The resolution was probably right. It was still a documented step replaced by private judgment, undisclosed.** Naming it costs one sentence and turns a silent substitution into a reviewable one.
+
+**A synthesis that skipped a step and did not say so is the shape `clink-debug` already refuses** — *"'Fixed' after a hunt that never falsified anything is a hypothesis wearing a verdict's clothes."*
+
 ### Why this matters
 
 The cognitive diversity of the agents means their *blind spots are also different* — Codex that agreed on an architecture might have missed the system integration problem that Antigravity would have caught, but didn't catch because it was also going through the same prompt lens as the others in round 1. The adversarial round exploits this by forcing each agent to search specifically in its own strongest domain, rather than a generic "find problems" sweep that any agent might answer generically.
