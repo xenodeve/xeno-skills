@@ -148,6 +148,25 @@ The third is the one to remember: the live tool schema, `~/.claude.json`, `serve
 
 **The cheap tell: name the read you did, then ask what the recommendation assumes that the read did not cover.** In all three cases above the missing read was one command.
 
+**And issuing the action is the same verdict, which is where shell chaining escapes it.** A verdict you
+*state* is read by somebody; **a verdict you *run* is read by nothing.** `gh issue close`, `gh pr merge`, a
+delete — each asserts its precondition by executing, and the precondition is usually **another
+command's output**, in a block that queues the next line before anyone reads the last one.
+
+**Measured, 2026-08-19:** a close fired twice while its PR was unmerged. Both times it sat in the same
+block as a merge that had just printed `Pull Request has merge conflicts`, then `not mergeable` — and
+both times it was joined with `&&` to a *different* command's success, so it ran anyway.
+
+| The block | What it actually asserts |
+|---|---|
+| the merge, then `gh issue close <n> --reason completed && echo closed` | nothing — the close runs whatever the merge printed |
+| `gh pr view <n> --json state` **read**, then `gh issue close <n>` as a separate step | the precondition, checked |
+
+**So when the precondition of an action is another command's output, read that output as its own step.**
+Not the same block, and never chained: `&&` makes the action depend on *a* success rather than *the*
+success, and you will not be there to read the failure before the next line runs. This is the same rule
+as the action's own preconditions, one layer down — the artifact exists, and the shell scrolls it past.
+
 **Ask what a number measures before you spend it.** A figure can be accurate, correctly cited, and still be **the wrong quantity** for the decision it is carried into — and that failure looks identical to good evidence, because the number really is right.
 
 **Measured, 2026-08-14.** A cost-per-task figure from Artificial Analysis was used **twice** to argue against a model for a reviewer role. That figure measures a **metered API lane**. The lane in question was the developer's **flat subscription**, where it buys nothing and predicts nothing — and the harness's own default evaluator is the same model on the same lane. **The developer had to say so twice.** The number was not wrong; it described something else.
