@@ -135,6 +135,10 @@ ARGUED = {
         "states a fact about the tracker's API, not a behaviour performed in any order",
     "7994bc1ca25f":                  # A child has exactly one parent
         "states a constraint the tracker enforces, which no transcript can evidence",
+    "101ff2e1b7b5":                  # Ask only for a gap that changes the artifact
+        "the transcript shows the question that WAS asked and never the one that was "
+        "not; whether an unasked slot would have changed the artifact is knowable only "
+        "from the work that was never done",
     "ae4da41e11fb":                  # If you notice something incomplete, mention it
         "the transcript shows an edit, never the incompleteness the agent DECLINED to "
         "finish -- a compliant session and one that saw nothing produce identical records",
