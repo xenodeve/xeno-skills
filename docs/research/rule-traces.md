@@ -19,10 +19,10 @@ not, and a reviewer handed it will invent a verdict.
 | `traced` | 32 | The rule names an order, and the trace states it as observable records |
 | `machine` | 45 | Settled by a script without a transcript |
 | `untraced` | 0 | **Needs a trace; none written yet — work not done, not work impossible** |
-| `out-of-scope` | 54 | **Undecidable from a transcript, marked with its reason** |
+| `out-of-scope` | 55 | **Undecidable from a transcript, marked with its reason** |
 | -- of which reclassified from `trace` | 4 | **Argued one by one, never with the blanket reason** |
 | `foreign` | 1 | Its trace is produced inside a foreign CLI |
-| **total** | **132** | |
+| **total** | **133** | |
 
 **The out-of-scope count is the size of the blind spot, and it is published on
 purpose.** An unmarked gap reads as coverage: a reader who sees traces for most
@@ -72,10 +72,10 @@ cries wolf gets switched off along with its true findings.
 | `t4-afk` | `696e98d5b2ef` | `skills/t4/t4-afk/SKILL.md` |
 | `t4-agent-memory` | `96036e592fea` | `skills/t4/t4-agent-memory/SKILL.md` |
 | `t4-bro` | `e650391fa48d` | `skills/t4/t4-bro/SKILL.md` |
-| `t4-dev-workflow` | `6396a4b1d831` | `skills/t4/t4-dev-workflow/SKILL.md` |
+| `t4-dev-workflow` | `8ef60e388612` | `skills/t4/t4-dev-workflow/SKILL.md` |
 | `t4-engineering-records` | `cb5174e5f4f2` | `skills/t4/t4-engineering-records/SKILL.md` |
 | `t4-project-bootstrap` | `31925d889588` | `skills/t4/t4-project-bootstrap/SKILL.md` |
-| `using-t4` | `37661fb9fcdc` | `skills/t4/using-t4/SKILL.md` |
+| `using-t4` | `c849cef49296` | `skills/t4/using-t4/SKILL.md` |
 
 ## Traces
 
@@ -201,6 +201,7 @@ cries wolf gets switched off along with its true findings.
 | `t4-project-bootstrap/54dcd15a2200` | `t4-project-bootstrap` | machine | matt pocock | settled by a script; no transcript needed |
 | `t4-project-bootstrap/b225390a8984` | `t4-project-bootstrap` | machine | superpowers | settled by a script; no transcript needed |
 | `using-t4/d12b5b01a05f` | `using-t4` | out-of-scope | Act on what's already decided; don't re-ask. | asks whether the work was done well; no sequence of messages settles that |
+| `using-t4/101ff2e1b7b5` | `using-t4` | out-of-scope | Ask only for a gap that changes the artifact. | the transcript shows the question that WAS asked and never the one that was not; whether an u… |
 | `using-t4/3695106b611c` | `using-t4` | machine | Bilingual is tracker-only, Thai mirrors English exactly | settled by a script; no transcript needed |
 | `using-t4/e9e075221384` | `using-t4` | out-of-scope | Coding behavior follows `karpathy-guidelines` | asks whether the work was done well; no sequence of messages settles that |
 | `using-t4/4e91f99c3f9e` | `using-t4` | machine | Don't state as settled what you haven't verified. | settled by a script; no transcript needed |

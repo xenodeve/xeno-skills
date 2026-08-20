@@ -57,6 +57,53 @@ Three things the API will not tell you, each of which misleads if unknown:
 
 **Not available here, so do not plan around them:** *Issue Types* are organisation-only and 404 on a user account; *Projects v2* needs a `read:project` scope this tooling may not hold. Sub-issues work on a personal repo, which is why they are the mechanism.
 
+## Intake — which gaps in a directive you may ask about, and when
+
+**The developer's prompt is the only input to this repo with no contract.** A delegation carries
+`BrainstormRequest v1`; an issue body carries the bilingual rule; a PR carries the gate. The directive
+that starts the work carries nothing — so a missing element is discovered by **building the wrong
+thing**, which is the most expensive place to find it.
+
+**Measured, 2026-08-20.** The directive was *"is it possible to use CRISPE with xeno-skills"*, and the
+answer went to the **delegation** layer — the request contract, its validator, the panel. The next
+message said the prompt meant was the one between **the developer and the master agent**. One unasked
+slot — **which layer** — cost a whole turn, and the question that prevents it is one line long.
+
+**Map the directive onto the five slots, then ask about at most two of them:**
+
+| CRISPE | What it is here | Askable? |
+|---|---|---|
+| **C — capacity/role** | the stance the work needs: implementer, reviewer, researcher, advisor | **only when the audience decides the artifact's shape** |
+| **I — insight** | context and constraints **not in the repo**: why now, who reads it, what was tried elsewhere | **yes** |
+| **S — statement** | the deliverable, and the one criterion that must hold | **yes** |
+| **P — personality** | already fixed by `CLAUDE.md` — Thai chat, bilingual tracker, English identifiers | **never** |
+| **E — experiment** | whether alternatives are worth generating | **never** — it is a cost call you make |
+
+**Finish this sentence before you ask, or do not ask** — the park test from `t4-afk`, pointed at intake:
+
+> *"I cannot start because the directive does not say ___,*
+> *and the two readings produce materially different work: ___ versus ___."*
+
+**If you cannot name two concrete readings that end in different artifacts**, take the simpler one and
+say which one you took. And a gap the repo already answers is not a gap: `CLAUDE.md`, the tracker, the
+ledger, a standing instruction, or one `rg` — **a read is not a question.**
+
+**You pick the moment, and there is one per directive.** Ask **before the first action that commits** —
+the first edit, the first issue, the first PR — and in one batch, **not a drip**. After the analysis is
+already written under one reading it is too late: the answer then costs a rewrite, which is exactly
+what the measurement above is.
+
+**Under AFK there is no ask.** Pick the reading, state the assumption where the work is reported, and
+put the alternative in the digest (`t4-afk`) — an unattended run cannot obtain an answer, and a batch
+that stalls on a question has stopped being unattended.
+
+**Why this carries a brake and not only a prompt.** `t4-afk` records that the over-asking failure has
+**no natural corrective signal**: a guess produces a visible wrong artifact and somebody says so, while
+an unnecessary question produces a polite list that reads as diligence. So a rule that says *ask more*
+without a ceiling **makes the agent worse** — the two askable slots and the two-readings sentence are
+that ceiling. **This is not `/grill-me`**, which stress-tests a concept that already exists; intake runs
+before there is one.
+
 ## Survey the change sites before writing the plan
 
 Most "surprise cases" aren't surprises — they're **sites the plan never knew about**. They surface mid-implementation, when the cheapest moment to have found them has already passed, and they arrive as scope growth (which under AFK is a 🛑 park). The survey is the step that converts them from surprises into line items.
@@ -270,6 +317,7 @@ The order — no step skipped because the answer "looks obvious":
 
 | Trigger | Skill | Condition |
 |---|---|---|
+| **A new directive from the developer** — the first message of a task, or one that changes its shape | **intake** (above) | Before the first committing action. At most two slots, one batch; under AFK, assume and report |
 | **About to write down what you will change** — a plan, a PRD, an issue body, or the first edit of a multi-file change | **change-site survey** (above) | Every time. Check adjacent issues for an inventory that already exists |
 | Bug / error / stack trace | `/debug-mantra` | Start a debug session every time |
 | Complex debug / perf regression | `/diagnose` | reproduce → minimise → hypothesise → fix |

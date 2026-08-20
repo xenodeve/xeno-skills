@@ -104,6 +104,7 @@ In a T4 repo:
 - **Glossary is load-bearing**; **proceed silently if a governance file is absent**.
 - **Coding behavior follows `karpathy-guidelines`** — simplest thing that works, surgical diffs tracing to the request, verifiable success criteria.
 - **Some rules are machine-enforced** — the `PreToolUse` gate + a git pre-push guard block a PR with no issue, dangerous git, a failed `verify` (`t4-dev-workflow`). They raise the floor, not replace judgment.
+- **Ask only for a gap that changes the artifact.** Map a new directive onto CRISPE: only *insight* and *statement* are askable (role only when the audience shapes the artifact); personality and experiment never are. Ask only when you can name two readings that end in different work — otherwise take the simpler and say so, and under AFK never (`t4-dev-workflow`).
 - **Act on what's already decided; don't re-ask.** If a standing instruction, the tracker, your own earlier recommendation, or a plan that **assigns the decision to you** answers it, *act*. Interrupt only for a genuinely unresolved decision that's the developer's — park + one digest. Re-asking what you can answer is "sticking" (`t4-afk`).
 
 ## When NOT to use
