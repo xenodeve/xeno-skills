@@ -192,8 +192,8 @@ out, `--session-id` fixes the id, `--replay-user-messages` acknowledges an injec
 **#305 is answered — the transport was run, not inferred** (`scripts/probe-stream-transport.py`, claude
 2.1.222, 2026-08-21). `/compact` sent as a user message on the input stream **executes**:
 `status:"compacting"` → `compact_result:"success"`, with `num_turns: 0` and zero usage for that message.
-Injection is acknowledged by `--replay-user-messages`, per-turn `cache_read_input_tokens` is the running
-context size (49,220 → 50,005, then **26,828** after compaction), and the transcript writes
+Injection is acknowledged by `--replay-user-messages`, the running context size is `input + cache_creation + cache_read` **summed** — not `cache_read`
+alone, which fell 50,005 → 26,828 and reads as −46 % when the real change was **50,094 → 45,591, −9 %**, and the transcript writes
 `compact_boundary` followed by `isCompactSummary`. Eight planted facts survived the summary.
 
 **#314 is therefore a build against a measured contract**, and #306 was never blocked. The reopen

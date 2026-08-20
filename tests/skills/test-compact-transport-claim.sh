@@ -36,7 +36,7 @@ has "$FIX" '"status": "compacting"' "the compaction started"
 has "$FIX" '"compact_result": "success"' "and finished — the slash command EXECUTED"
 has "$FIX" '"compact_boundary"' "the transcript boundary a validator anchors freshness on"
 has "$FIX" '"isCompactSummary": true' "and the summary record that follows it"
-has "$FIX" '"cache_read_input_tokens"' "per-result usage, which is the running context size"
+has "$FIX" '"cache_read_input_tokens"' "per-result usage — one of the three fields that SUM to the context size"
 
 echo ""
 echo "THE COMMANDS THE LAYER SENDS ARE ONES THE SESSION ADVERTISES:"
