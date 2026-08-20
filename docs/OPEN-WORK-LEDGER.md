@@ -173,18 +173,24 @@ gate leaves the same record as a falsely-declared one.
 
 ## Track 11 — T4-Compact, planned (2026-08-21) — 🔴 not started
 
-**PRD #304**, plan `docs/plans/2026-08-21-t4-compact.md`, five slices as native sub-issues: **#305**
-(probe the `PreCompact` contract) · **#306** (handoff validity) · **#307** (the gate) · **#308** (the
-skill) · **#309** (restore names a path). Rollup 0/5.
+**PRD #304** (revision 2), plan `docs/plans/2026-08-21-t4-compact.md` + addon
+`2026-08-21-t4-compact-addon-thinking-record.md`, tracking issue **#310**. Six children: **#305** (probe
+the trigger surface) · **#306** (handoff validity + the record-index bijection) · **#307** (the gate) ·
+**#308** (the skill) · **#309** (restore names the handoff and the map) · **#312** (`t4-agent-memory`
+row). Rollup 0/6.
 
-**The concept came from outside this repo** — `C:\AI\docsesearchs\Qwen3.8-27B_Optimization_Research_Docs-CONTEXT-KV-CACHE-T4-COMPACT.md`
-§9 — and **its middle step cannot be built here**: `/compact` is a user command with no tool behind it,
-and the harness owns auto-compaction (`tengu_auto_compact_*` in the shipped binary). So the plan inverts
-it: the layer does not trigger compaction, it makes every compaction arrive at a session that already
-holds a valid handoff. `PreCompact` **can block** — verified from the binary's own error strings.
+**Revision 1 was wrong and the developer caught it.** It rode the harness's auto-compaction, which fires
+only when the window is effectively full — one of four conditions, the emergency one. **Revision 2 moves
+the ceiling instead**: `/autocompact` and `CLAUDE_CODE_AUTO_COMPACT_WINDOW` exist, so *when* compaction
+happens is configurable, and the model never has to press a button it has no tool for (`sdk-tools.d.ts`
+lists every tool input type; there is no `SlashCommand` and no compact).
 
-**#305 is the only unblocked implementation slice** (with #306): everything else depends on a contract
-that a string in a binary does not establish.
+**#305 is the gate on everything else** — whether the window can be lowered mid-session from inside is
+the one fact the design rests on, and a string in a binary does not establish it.
+
+**Condition 3 lost its support, not gained it:** the adjacent project's depth data reads 100 % (30/30) at
+64K and 100 % (10/10) at a 114,406-token prompt, verified by reading that report. It stays a hypothesis,
+and nothing triggers on it.
 
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 
