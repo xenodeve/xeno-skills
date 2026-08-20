@@ -1,0 +1,26 @@
+{"type": "system", "subtype": "init", "model": "claude-haiku-4-5-20251001", "permissionMode": "default", "slash_commands_sample": ["claude-handoff", "handoff", "autocompact", "compact"], "slash_commands_count": 509}
+{"type": "user", "replayed": true, "text": "Remember: the codename is FALCON. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 15148, "cache_read_input_tokens": 25822, "output_tokens": 488}}
+{"type": "user", "replayed": true, "text": "Remember: the port is 8431. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 49220, "cache_read_input_tokens": 0, "output_tokens": 105}}
+{"type": "user", "replayed": true, "text": "Remember: the owner is Xeno. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 459, "cache_read_input_tokens": 49220, "output_tokens": 60}}
+{"type": "user", "replayed": true, "text": "Remember: the branch is feat/probe. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 84, "cache_read_input_tokens": 49679, "output_tokens": 57}}
+{"type": "user", "replayed": true, "text": "Remember: the limit is 42. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 80, "cache_read_input_tokens": 49763, "output_tokens": 56}}
+{"type": "user", "replayed": true, "text": "Remember: the city is Chiang Mai. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 81, "cache_read_input_tokens": 49843, "output_tokens": 58}}
+{"type": "user", "replayed": true, "text": "Remember: the colour is teal. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 81, "cache_read_input_tokens": 49924, "output_tokens": 56}}
+{"type": "user", "replayed": true, "text": "Remember: the animal is otter. Reply with just: ok"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 79, "cache_read_input_tokens": 50005, "output_tokens": 56}}
+{"type": "system", "subtype": "status", "status": "compacting"}
+{"type": "system", "subtype": "status", "status": null, "compact_result": "success"}
+{"type": "user", "replayed": true, "text": "This session is being continued from a previous conversation that ran out of con"}
+{"type": "user", "replayed": true, "text": "<local-command-stdout>Compacted PreCompact [\"C:/nvm4w/nodejs/node.exe\" \"C:/Users"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 0, "usage": {"input_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "output_tokens": 0}}
+{"type": "user", "replayed": true, "text": "Without guessing: what is the codename and the port I told you?"}
+{"type": "result", "subtype": "success", "is_error": false, "num_turns": 1, "usage": {"input_tokens": 10, "cache_creation_input_tokens": 18753, "cache_read_input_tokens": 26828, "output_tokens": 180}}
+{"type": "system", "subtype": "compact_boundary", "isMeta": false, "level": "info", "_source": "transcript"}
+{"type": "user", "isCompactSummary": true, "isVisibleInTranscriptOnly": true, "_source": "transcript"}

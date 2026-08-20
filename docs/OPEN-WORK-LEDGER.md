@@ -189,9 +189,15 @@ out, `--session-id` fixes the id, `--replay-user-messages` acknowledges an injec
 `--resume/--fork-session` gives a reopen fallback. The agent calls it with `Bash`; no tool exists
 (`sdk-tools.d.ts` has no `SlashCommand` and no compact).
 
-**#305 and #306 are unblocked.** The open question is whether a slash command executes over the stream
-transport; if it does not, the layer ends and reopens the session instead — a harder reset, always
-available, including under `DISABLE_COMPACT`.
+**#305 is answered — the transport was run, not inferred** (`scripts/probe-stream-transport.py`, claude
+2.1.222, 2026-08-21). `/compact` sent as a user message on the input stream **executes**:
+`status:"compacting"` → `compact_result:"success"`, with `num_turns: 0` and zero usage for that message.
+Injection is acknowledged by `--replay-user-messages`, per-turn `cache_read_input_tokens` is the running
+context size (49,220 → 50,005, then **26,828** after compaction), and the transcript writes
+`compact_boundary` followed by `isCompactSummary`. Eight planted facts survived the summary.
+
+**#314 is therefore a build against a measured contract**, and #306 was never blocked. The reopen
+fallback stays for `DISABLE_COMPACT` and for a future build that changes the contract.
 
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 
