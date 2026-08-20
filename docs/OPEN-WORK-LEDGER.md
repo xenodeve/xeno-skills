@@ -173,24 +173,25 @@ gate leaves the same record as a falsely-declared one.
 
 ## Track 11 — T4-Compact, planned (2026-08-21) — 🔴 not started
 
-**PRD #304** (revision 2), plan `docs/plans/2026-08-21-t4-compact.md` + addon
-`2026-08-21-t4-compact-addon-thinking-record.md`, tracking issue **#310**. Six children: **#305** (probe
-the trigger surface) · **#306** (handoff validity + the record-index bijection) · **#307** (the gate) ·
-**#308** (the skill) · **#309** (restore names the handoff and the map) · **#312** (`t4-agent-memory`
-row). Rollup 0/6.
+**PRD #304** (revision 3), plan `docs/plans/2026-08-21-t4-compact.md` + the thinking-record addon,
+tracking issue **#310**. Seven children: **#305** (probe the transport) · **#314** (the supervisor
+skeleton) · **#306** (handoff validity + record/index bijection) · **#307** (the `PreCompact` gate) ·
+**#308** (the skill) · **#309** (restore names a path) · **#312** (`t4-agent-memory` row).
 
-**Revision 1 was wrong and the developer caught it.** It rode the harness's auto-compaction, which fires
-only when the window is effectively full — one of four conditions, the emergency one. **Revision 2 moves
-the ceiling instead**: `/autocompact` and `CLAUDE_CODE_AUTO_COMPACT_WINDOW` exist, so *when* compaction
-happens is configurable, and the model never has to press a button it has no tool for (`sdk-tools.d.ts`
-lists every tool input type; there is no `SlashCommand` and no compact).
+**Two revisions were wrong in the same way and the developer caught both.** Revision 1 rode the
+harness's auto-compaction; revision 2 lowered its window. **Both looked for a trigger inside the
+session** — which the design never needed, because the premise *the model cannot compact itself* is the
+reason a layer exists at all.
 
-**#305 is the gate on everything else** — whether the window can be lowered mid-session from inside is
-the one fact the design rests on, and a string in a binary does not establish it.
+**The layer is a supervisor process that owns the session**, verified transport: `-p
+--input-format stream-json` is realtime streaming **input**, `--output-format stream-json` streams events
+out, `--session-id` fixes the id, `--replay-user-messages` acknowledges an injection, and
+`--resume/--fork-session` gives a reopen fallback. The agent calls it with `Bash`; no tool exists
+(`sdk-tools.d.ts` has no `SlashCommand` and no compact).
 
-**Condition 3 lost its support, not gained it:** the adjacent project's depth data reads 100 % (30/30) at
-64K and 100 % (10/10) at a 114,406-token prompt, verified by reading that report. It stays a hypothesis,
-and nothing triggers on it.
+**#305 and #306 are unblocked.** The open question is whether a slash command executes over the stream
+transport; if it does not, the layer ends and reopens the session instead — a harder reset, always
+available, including under `DISABLE_COMPACT`.
 
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 
