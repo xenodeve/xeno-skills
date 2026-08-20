@@ -184,3 +184,15 @@ is why.
   carries a real `hasnt`. Caught in the next commit. **Exempting a suite that does not need the
   exemption is exactly how the audit quietly stops working**, which is #268's subject, committed by
   its author six hours later.
+
+## The one that happened three times
+
+**`gh issue close` on #132 fired twice before its PR merged**, both times chained with `&&` after a
+merge command that had just printed its own failure. The artifact was on screen, three lines up, in the
+same block. **Then filing it did it again** — the record PR said `Closes #297`, and the merge closed an
+issue whose rule had not been written yet.
+
+**Three occurrences, one mechanism, and none of them was a missing check.** Each was a check whose
+output was never read because the next command was already queued. That is why the fix (#299) asserts a
+shape rather than a sentence: the read is its own step, and `&&` between it and the action is the defect.
+

@@ -193,6 +193,17 @@ not applied: a rule that fires on *every* message or *every* delegation has no m
 usable worklist here"* — the seven satisfied by files had been satisfied since August. `verify` timed
 at **186 s, 1,207 passing assertions**.
 
+**And a seventeenth, filed by the session against itself.** #297 — a close that ran twice while its PR
+was unmerged, both times chained with `&&` after the merge command — landed as a rule and a suite
+(#299). **Its own filing repeated the defect:** the record PR carried `Closes #297` and the merge closed
+an issue no rule change had yet answered, so it was reopened with the reason on it and closed again only
+after `gh pr view 299` returned `MERGED`.
+
+**Six `skill-feedback` issues remain open and none is fixable here.** #240 #250 #262 are about skills
+this repo does not ship (`tdd`, `test-driven-development`, `simplify`, `code-review`); #242 and #270
+have their skill halves landed and their remaining halves are enforcement-layer work; #213 is blocked
+on a `agy` binary that does not resolve on this machine.
+
 **Still blocked on evidence this machine cannot reach:** #213 — `agy` resolves nowhere here
 (`command -v`, `where`, and both install roots), so the check that issue names as decisive is not
 runnable. A fourth candidate cause is recorded on it.
