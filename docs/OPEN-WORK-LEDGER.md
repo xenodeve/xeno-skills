@@ -171,6 +171,21 @@ uncovered and found **#265**: eight hooks losing input to the ~32 KB argv cap, s
 branch's 54 `scrutinize=ran` trailers as unverified regardless** — #247, and now #270 for why a deferred
 gate leaves the same record as a falsely-declared one.
 
+## Track 11 — T4-Compact, planned (2026-08-21) — 🔴 not started
+
+**PRD #304**, plan `docs/plans/2026-08-21-t4-compact.md`, five slices as native sub-issues: **#305**
+(probe the `PreCompact` contract) · **#306** (handoff validity) · **#307** (the gate) · **#308** (the
+skill) · **#309** (restore names a path). Rollup 0/5.
+
+**The concept came from outside this repo** — `C:\AI\docsesearchs\Qwen3.8-27B_Optimization_Research_Docs-CONTEXT-KV-CACHE-T4-COMPACT.md`
+§9 — and **its middle step cannot be built here**: `/compact` is a user command with no tool behind it,
+and the harness owns auto-compaction (`tengu_auto_compact_*` in the shipped binary). So the plan inverts
+it: the layer does not trigger compaction, it makes every compaction arrive at a session that already
+holds a valid handoff. `PreCompact` **can block** — verified from the binary's own error strings.
+
+**#305 is the only unblocked implementation slice** (with #306): everything else depends on a contract
+that a string in a binary does not establish.
+
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 
 **#301 closed by PR #302.** `t4-dev-workflow` now carries an **Intake** rule: map a new directive onto
