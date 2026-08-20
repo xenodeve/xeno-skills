@@ -171,6 +171,20 @@ uncovered and found **#265**: eight hooks losing input to the ~32 KB argv cap, s
 branch's 54 `scrutinize=ran` trailers as unverified regardless** — #247, and now #270 for why a deferred
 gate leaves the same record as a falsely-declared one.
 
+## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
+
+**#301 closed by PR #302.** `t4-dev-workflow` now carries an **Intake** rule: map a new directive onto
+the five CRISPE slots, ask about **at most two**, and pick the moment yourself — before the first action
+that commits, one batch, and **never under AFK**.
+
+**What is deliberately not built:** no hook, and none is possible — a transcript shows the question that
+was asked and never the one that was not. The guard is the suite holding the **ceiling** (five rows, two
+askable, personality and experiment refused), not a mechanism that judges a question.
+
+**Open follow-up, none.** The remaining CRISPE slot the repo defers — a validated `role` preset in the
+delegation contract — is a different layer and still unfiled; it is named in `request-v1.md` as earning
+validation "the day it selects a `role` preset".
+
 ## Track 9 — the skill-feedback queue, cleared (2026-08-19/20)
 
 **`ready-for-agent` is 0 and `needs-triage` is 0, and both are true answers rather than empty ones.**

@@ -196,3 +196,13 @@ issue whose rule had not been written yet.
 output was never read because the next command was already queued. That is why the fix (#299) asserts a
 shape rather than a sentence: the read is its own step, and `&&` between it and the action is the defect.
 
+## The gap that had no rule to break (2026-08-20)
+
+**The directive was *"is it possible to use CRISPE with xeno-skills"* and the answer went to the wrong
+layer** — delegation prompts, when what was meant was the prompt between the developer and the master
+agent. **No rule was violated**, which is the point worth recording: the repo governs every input except
+the one that starts the work. That became #301 and shipped as the **Intake** rule in PR #302.
+
+**What it cost:** one full turn of analysis written under the wrong reading. **What would have prevented
+it:** one question, before answering — which is exactly the moment the new rule names.
+
