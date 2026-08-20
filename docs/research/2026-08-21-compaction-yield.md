@@ -120,6 +120,26 @@ other at 128 K, and leaf sizing is the one that has to give:
 project measured a 114,406-token prompt at **10/10 retrieval quality** — the quality holds — but a cold
 prefill at that depth is minutes, so a leaf that fills 128 K pays for it twice.
 
+## On a local worker the economics invert, and the numbers are already measured
+
+Everything above is Claude Code, where each turn re-reads the whole context from cache, so a shorter
+context is cheaper **every turn**. A local worker bills nothing per token; it bills **prefill time**, and
+the adjacent project measured it (`C:\AI\qwen38-tuning\EXPERIMENTS.md` E7, `docs/reports/05`, `09`):
+
+| Behaviour | Measured |
+|---|---|
+| **append-only turns** | **~40 tokens evaluated instead of ~3,900** — the prefix cache is reused; 2.4–3.9 s per turn |
+| **any edit above the append point** (reordering tool schemas, changing one system-prompt sentence) | **0 % of the cache retained** — a full re-prefill, 11–12 s at 4 K |
+| **the same break at depth** | **63 s at 16 K, 248 s at 64 K** (slope 265.5 tok/s, r² 0.968) |
+
+**A compaction is an edit above the append point** — it replaces the conversation with a summary. So on
+a local worker it costs a full re-prefill of whatever remains, and there is **no per-turn saving to
+amortise it against**, because appending was already nearly free.
+
+**Conclusion, and it is the opposite of the Claude Code one:** do not compact a local worker to save
+room. If it is about to overflow, **end the session and start a new one from the handoff** — that pays
+one cold prefill of a small prompt instead of a summarisation pass plus a re-prefill of a large one.
+
 ## What this does NOT measure
 
 **Whether compaction helped.** It measures size before and after — nothing about whether the work
