@@ -143,3 +143,44 @@ population where commits carry several.
 **So the rule's own scope was too narrow on the day it was written.** Not "a guard that enumerates" —
 **any derivation that assumes one match per source.** Re-derived by searching the full commit message
 instead of the subject's tail, which moved the open count 79 → 65 and the rollup to 88%.
+
+## What the batch became, and the one number that matters
+
+The batch did not end at the merge. Once `ready-for-agent` was honest it read **0**, and the work
+that was actually available turned out to be sitting in `ready-for-human` — **twelve `skill-feedback`
+issues whose fix was skill prose plus a test**, each with its measurement already written down by the
+session that hit it.
+
+**Twelve landed**: #130 #131 #132 #133 #135 #136 #137 #138 #209 #210 #211 #233 #237 #238 #239 #249 —
+sixteen, counting the four found on the way. Each got a rule, a suite, and **positive controls that
+were run and shown red**, because a suite nobody has seen fail is the thing #132 is about.
+
+**The number that matters is not the count.** It is that **five of them were rules this session was
+breaking while fixing them**:
+
+| The rule I landed | What I had just done |
+|---|---|
+| #238 a commit message is not a PR body | 16 consecutive English-only PR bodies |
+| #209 the register fires on the first prose reply after tool work | every report this session |
+| #233 an action verdict carries its preconditions | closed #132 twice before its PR merged (#297) |
+| #268 derive the set a guard checks | my own closing pass matched one issue per commit, leaving 14 open |
+| #211 `/handoff` does not discharge the report | the earlier `/handoff` in this session did not pay it |
+
+**That is not irony, it is the mechanism.** These rules exist because they are hard to keep, and the
+session most likely to break one is the session holding it in mind — because holding it in mind is
+not the same as having a moment at which it fires. **Four of the twelve fixes are triggers**, and that
+is why.
+
+## The three guards that caught me, and one I weakened by accident
+
+- **The census guard** refused a new rule that fell into the blanket out-of-scope reason, 47 → 48.
+  Second time it has fired on its own author.
+- **The anchor audit** flagged six positive-only suites. Each was classified `NOT_CORRECTIVE` **with an
+  individual reason**, and after each one I re-checked that finding A still fires on a genuinely
+  positive-only suite — because six exemptions is where a guard stops biting.
+- **The byte budget** on `clink-brainstorm` refused the fourth addition at 46,120 of 45,000. I trimmed
+  **my own prose** back to 44,944 rather than raise the number, and every assertion stayed green.
+- **And I added `test-handoff-discharge-rule` to the exemption list when it did not need one** — it
+  carries a real `hasnt`. Caught in the next commit. **Exempting a suite that does not need the
+  exemption is exactly how the audit quietly stops working**, which is #268's subject, committed by
+  its author six hours later.
