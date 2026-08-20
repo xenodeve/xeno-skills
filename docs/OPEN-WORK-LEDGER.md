@@ -196,6 +196,12 @@ Injection is acknowledged by `--replay-user-messages`, the running context size 
 alone, which fell 50,005 → 26,828 and reads as −46 % when the real change was **50,094 → 45,591, −9 %**, and the transcript writes
 `compact_boundary` followed by `isCompactSummary`. Eight planted facts survived the summary.
 
+**And the yield is measured too, from real work rather than a probe** —
+`docs/research/2026-08-21-compaction-yield.md`, 113 compactions across ten projects. Median **85 %**,
+median context before compacting **719 K**. But there is a **floor of ~70–105 K** and a **dead zone below
+~150 K**, where the median return is **−0 %** and **13 of 113 came back larger**. That is the measured
+threshold the plan's "context is long" trigger was waiting for: do not call the layer below ~150 K.
+
 **#314 is therefore a build against a measured contract**, and #306 was never blocked. The reopen
 fallback stays for `DISABLE_COMPACT` and for a future build that changes the contract.
 
