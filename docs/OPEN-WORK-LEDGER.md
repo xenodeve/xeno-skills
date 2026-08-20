@@ -202,6 +202,13 @@ median context before compacting **719 K**. But there is a **floor of ~70–105 
 ~150 K**, where the median return is **−0 %** and **13 of 113 came back larger**. That is the measured
 threshold the plan's "context is long" trigger was waiting for: do not call the layer below ~150 K.
 
+**The value case is now written down where the work is** — parent §6a and the addon's §5b–§5d: the
+floor is ~100 K of which ~50 K is the summary, so replacing it with a handoff plus a map takes the floor
+to **~55 K**, which on a 128 K worker is **78 % of the window becoming ~43 %**. And the failure it
+prevents has a first-person occurrence: **revisions 1 and 2 re-derived the same wrong answer** because
+the conclusion crossed each boundary and the reasoning that closed the question did not. **The proxy that
+makes it measurable — count the decisions a session re-opens after a boundary — was 2 in that session.**
+
 **#314 is therefore a build against a measured contract**, and #306 was never blocked. The reopen
 fallback stays for `DISABLE_COMPACT` and for a future build that changes the contract.
 
