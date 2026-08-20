@@ -115,10 +115,60 @@ Three costs are known from the adjacent project and should be stated rather than
 
 ---
 
+## 5b. What it is worth, in the numbers that now exist
+
+The parent plan's §6a carries this too; here is the part that belongs to **this** layer.
+
+**The floor is mostly the summary, and the summary is what this replaces.** Measured across 113 real
+compactions (`docs/research/2026-08-21-compaction-yield.md`): the post-compaction floor is **~100 K, of
+which ~50 K is the summary** and ~47 K is the fixed prefix. A handoff plus a one-line-per-record map is
+**~3–5 K**.
+
+| | a `/compact` summary | handoff + map |
+|---|---:|---:|
+| the floor it leaves behind | ~100 K | **~55 K** |
+| share of a **128 K** worker's window | **78 %** | **~43 %** |
+
+**On a 128 K worker that is the difference between unviable and viable** — and the parent plan's other
+measurement is why it matters there: every compaction below 150 K in that corpus returned **−0 %**, so a
+128 K window sits entirely inside the dead zone. **Replacing the summary is the only move that changes
+the floor at all.**
+
+## 5c. The failure it prevents, observed in the session that wrote it
+
+**Twice in one session, the same question was re-opened and answered wrongly the same way.** Revision 1
+of the parent plan rode the harness's auto-compaction; revision 2 lowered the auto-compact window. Both
+were the same mistake — **looking for a compaction trigger inside the session**, which the developer had
+ruled out before revision 1 was written.
+
+**Nothing was lost that a summary is supposed to keep.** The *conclusions* crossed each boundary intact.
+What did not cross was **the reasoning that had closed the question** — and a conclusion with no trace of
+why it was reached does not announce itself as settled. So it was re-derived, from less than the
+predecessor had, and it landed somewhere else.
+
+**That is exactly the mechanism §1 describes**, and it is now a first-person occurrence rather than a
+plausible story: n = 2, in one session, in this repository.
+
+## 5d. The trigger is what decides this, not the artifact
+
+**A map in context that nobody opens costs ~1 K and prevents nothing.** The artifact is the easy half;
+the moment is the hard one, and this repository has already measured that the moment is where these
+designs fail — **four of the sixteen skill fixes landed on 2026-08-19 were triggers**, each for a rule
+that was unambiguous and still did not fire, because a rule that applies constantly has no moment at all.
+
+**The moment here: before re-opening a question that looks settled.** Not "read the map at session
+start", which is the version that quietly stops happening.
+
+**And the proxy that makes it measurable is cheap:** count the decisions a session re-opens after a
+boundary. It needs no harness, no corpus and no paired run — the three things §6 says do not exist. In
+the session that produced this text, that count was **2**.
+
 ## 6. What this addon does **not** claim
 
-**It is not measured that this improves anything.** The parent plan's §4 is careful to mark condition
-3 a hypothesis; the same discipline applies here.
+**The token effect is arithmetic and the quality effect is not measured.** §5b is a calculation on
+measured inputs, and §5c is one observed occurrence — neither is a performance claim. What remains
+unmeasured is whether an instance that reads a summary plus a map **works as well** as one that
+reasoned its way there, and the parent plan's §4 marks condition 3 a hypothesis for the same reason.
 
 - **No benchmark in either repo can currently test it.** The adjacent project's corpus is ten
   self-contained functions, each finished in one turn. It has no cross-turn memory, so it cannot show
