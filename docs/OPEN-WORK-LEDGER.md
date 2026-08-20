@@ -171,6 +171,35 @@ uncovered and found **#265**: eight hooks losing input to the ~32 KB argv cap, s
 branch's 54 `scrutinize=ran` trailers as unverified regardless** — #247, and now #270 for why a deferred
 gate leaves the same record as a falsely-declared one.
 
+## Track 9 — the skill-feedback queue, cleared (2026-08-19/20)
+
+**`ready-for-agent` is 0 and `needs-triage` is 0, and both are true answers rather than empty ones.**
+Every open issue carries a triage role; **none can be started by an agent alone.**
+
+| | |
+|---|---|
+| open issues | 107 → **45** |
+| open PRs | 4 → **0** |
+| `ready-for-agent` | 16 (15 of them false) → **0** |
+| `needs-triage` | 16 → **0** |
+| `ready-for-human` / `blocked` | 33 / 17, each with its blocker named on the issue |
+
+**Sixteen `skill-feedback` issues were fixed as skill prose plus a suite** — #130 #131 #132 #133 #135
+#136 #137 #138 #160 #209 #210 #211 #233 #237 #238 #239 #249 — each with positive controls that were
+**run and shown red**. Four of the fixes are **triggers**, because the rule was unambiguous and still
+not applied: a rule that fires on *every* message or *every* delegation has no moment at all.
+
+**#93 closed.** Its last unmet criterion was *"existing issues triaged so `ready-for-agent` returns a
+usable worklist here"* — the seven satisfied by files had been satisfied since August. `verify` timed
+at **186 s, 1,207 passing assertions**.
+
+**Still blocked on evidence this machine cannot reach:** #213 — `agy` resolves nowhere here
+(`command -v`, `where`, and both install roots), so the check that issue names as decisive is not
+runnable. A fourth candidate cause is recorded on it.
+
+**Everything else open is a decision, an ADR, a PRD, a trust boundary, or something parked behind
+one.** The full list with per-issue reasons is on the issues themselves.
+
 ## Management Plan — phased execution order
 
 **Phase 0 — this bootstrap (#93).** The repo runs the standard it ships; installing the operating
