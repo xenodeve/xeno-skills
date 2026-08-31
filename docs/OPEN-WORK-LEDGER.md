@@ -215,6 +215,20 @@ case was shown RED before the fix and GREEN afterward; the bootstrap copy is byt
 remaining slices are still planned. The reopen fallback stays in the plan for `DISABLE_COMPACT`
 and for a future build that changes the contract.
 
+**Merge parked 2026-08-31 — the blocker is CI, not the code.** PR #342 is `MERGEABLE` and the full
+contract suite passes locally (`tests/hooks/run-all.sh` → **ALL TESTS PASSED**; the branch's own
+`test-handoff-validity.sh` → 9/9). Both PR checks fail in **2 seconds** with the annotation *"The job
+was not started because your account is locked due to a billing issue."* — and the last twelve runs on
+`main` and five other branches fail identically, so **no PR in this repo can reach green CI** until the
+account is unlocked. That is an account action only the owner can take. Nothing further is needed on
+the branch itself.
+
+**And the local red is a lie worth knowing about (#344).** In a shell with `MSYS_NO_PATHCONV=1` /
+`MSYS2_ARG_CONV_EXCL=*` set, `python3` here is a native Windows binary that cannot resolve `/tmp/...`,
+so fixtures are never written and the suite reports a long false failure list — this branch's own test
+reads 1 passed / 8 failed. `unset MSYS_NO_PATHCONV MSYS2_ARG_CONV_EXCL` restores ALL TESTS PASSED.
+Re-derived independently 2026-08-31 rather than inherited.
+
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 
 **#301 closed by PR #302.** `t4-dev-workflow` now carries an **Intake** rule: map a new directive onto
