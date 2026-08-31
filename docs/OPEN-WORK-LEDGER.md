@@ -209,8 +209,11 @@ prevents has a first-person occurrence: **revisions 1 and 2 re-derived the same 
 the conclusion crossed each boundary and the reasoning that closed the question did not. **The proxy that
 makes it measurable — count the decisions a session re-opens after a boundary — was 2 in that session.**
 
-**#314 is therefore a build against a measured contract**, and #306 was never blocked. The reopen
-fallback stays for `DISABLE_COMPACT` and for a future build that changes the contract.
+**#306 is implemented in this branch**: `hooks/t4-handoff-validity` validates the session-keyed,
+non-empty, owned, fresh handoff and the thinking-record index/file bijection. The stale behavioral
+case was shown RED before the fix and GREEN afterward; the bootstrap copy is byte-identical. The
+remaining slices are still planned. The reopen fallback stays in the plan for `DISABLE_COMPACT`
+and for a future build that changes the contract.
 
 ## Track 10 — intake, the first contract on the developer's own prompt (2026-08-20)
 

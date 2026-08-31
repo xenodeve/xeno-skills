@@ -1,5 +1,17 @@
 # DONE — Agent Session Log
 
+## T4-Compact handoff validity — implemented (2026-08-31, #306)
+
+`hooks/t4-handoff-validity` now provides a pure validator for the session-keyed handoff path.
+It rejects empty or incomplete handoffs, stale handoffs older than the latest
+`compact_boundary`/`isCompactSummary`, and handoffs owned by another session. It also enforces
+the `docs/thinking/README.md` ↔ record-file bijection, while `.claude/t4-handoff/` is ignored as
+session runtime state. The canonical hook and bootstrap reference copy are byte-identical.
+
+**Validation:** the stale-handoff behavioral test was RED before the fix and GREEN afterward
+(8 assertions); `test-bootstrap-sync.sh`, `test-line-ending-pins.sh`, and
+`test-wiring-parity.sh` all passed.
+
 > Newest entry on top. One dated `##` heading per shipped unit so an agent can jump to one.
 > When this crosses ~a few hundred lines or a phase closes, move older entries to
 > `DONE-archive-<period>.md` and leave a redirect line here.
