@@ -21,7 +21,7 @@ You are a capable model that does not always think of the unnamed parts of a tas
 | a code change in a repository | `karpathy-guidelines` | `qwen38-code-gate` — brief table for code, six commands, `CODE GATE: n/6` with the RED and GREEN test lines pasted |
 | a document, report or plan | nothing yet | re-read the brief and write the brief table (below) again at the end; every row filled |
 
-**Every row starts with `qwen38-think`**: the assumptions table and the three-flaw check come before the first edit, whatever the task. A task that matches no row: write the brief table, do the work, and say in the report which row was missing.
+**Every row starts with `qwen38-think`**: the assumptions table and the three-flaw check come before the first edit, whatever the task. **Before the first tool call, load `qwen38-claude-code`**: which tool for which want, and the three mistakes the runs made with them (14 tool errors in 9 of 44 runs, all avoidable). A task that matches no row: write the brief table, do the work, and say in the report which row was missing.
 
 ## Four rules, every task
 
