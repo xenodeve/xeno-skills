@@ -46,3 +46,4 @@ skills/t4/t4-project-bootstrap/references/hooks/*  text eol=lf
 # answer and every other machine reports a mismatch it cannot fix without changing the
 # file. using-t4's SKILL.md was already pinned above, for the adjacent byte-budget reason.
 skills/**/SKILL.md  text eol=lf
+skills/qwen38/using-qwen38/hooks/*                 text eol=lf
