@@ -98,6 +98,13 @@ A web-design skill family distilled from the video libraries of Chase AI, Flux A
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — UI and portfolio review via the 30-Second First Impression Test and the LIFT system: instant clarity, visual hierarchy, trust signals, conversion readiness.
 - **[design-psychology](./skills/design/design-psychology/SKILL.md)** — UX and conversion psychology: 3-Brain Persona alignment (Survival/Emotional/Rational), mental-model layout familiarity, MAYA pattern breaks, cognitive chunking (the 3-4 item working-memory rule), and Luxury White Space.
 
+### Qwen3.8-27B (skills a small model will actually follow)
+
+A family for sessions where the model is Qwen3.8-27B (through Claude Code against a local server). The model can do most things and omits what is not written, so these skills enumerate and verify instead of stating principles. Calibrated on the 2026-09-05 runs (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354). They would feel restrictive to Claude or GPT — by design.
+
+- **[using-qwen38](./skills/qwen38/using-qwen38/SKILL.md)** — the router the model loads at session start: task shape → skill to load → gate to finish with, plus the four rules (brief table first, run and paste outputs, never install / search for tools / spawn agents, stop at the report).
+- **[qwen38-skill-style](./skills/qwen38/qwen38-skill-style/SKILL.md)** — the authoring standard for this family: eight rules each with the run behind it, the file shape, and the pre-PR checklist including one with/without pair.
+
 ## Related
 
 **Companion skill ecosystems** — the `t4-*` family is a thin team-specific layer on top of these; `using-t4` routes to them and they're meant to be installed alongside:
