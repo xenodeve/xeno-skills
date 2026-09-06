@@ -37,9 +37,25 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 - **The last message is the report.** Nothing after it is read. It carries the family's lines (`THINK:` first, the gate line, then `CC:` below) and the pasted outputs.
 - **This machine is Windows.** Paths are `C:\…`; the Bash tool is Git Bash and accepts `/c/…` too; `gh`, `npm`, `pip install` and a spellchecker are **not** available to you — one line "`<tool>` is not available; continuing without it", then continue (A-skill-r1 lost two turns to `gh: command not found`).
 
+## When a tool comes back with an error
+
+Every error is a result to read, not a wall to push against. Find the first line of the error in the left column and do the right column **once**; the same call a second time, unchanged, is the failure this table exists for.
+
+| the error says | what it means | do next |
+|---|---|---|
+| `Permission … denied`, `denied by the … auto mode classifier`, `blocked by`, a hook's `deny` | the harness, not you, refused that action — a policy, not a bug | **do not retry it and do not route around it** (no other tool, no subagent, no script that does the same thing). Say in one line what was refused, take the nearest allowed path if one exists (a refused `Agent` → do the work yourself; a refused write outside the work dir → write inside it), else report the gap |
+| `File does not exist` | you typed a path you had not seen | Glob for it; never guess a second path |
+| `String to replace not found` / `No changes to make` | your `old_string` is not what the file holds | re-Read the line, Edit with a longer unique anchor (row above) |
+| Bash `Exit code` ≠ 0 with a traceback or `command not found` | the command failed, or the tool is not there | `command not found` → the missing-tool line, continue. A traceback → the three lines of `qwen38-think` §3 (Observed / Hypothesis / Falsify), then one changed attempt |
+| a failing test in your own test run | a result, not an error — this is what RED looks like | read the assertion; fix the code, not the test (`qwen38-code-gate`) |
+| `timed out` | the command runs longer than the tool allows | run a smaller piece (one test file, one directory); never the same long command again |
+| `API Error`, `500`, `overloaded`, the stream stops | the model server, not your work | wait, retry the **same** step once; if it fails again, end with the report of what is done and `stopped: server error` |
+
+Every error, whatever you did next, counts in the `CC:` line below.
+
 ## Report
 
-Add this line after the `THINK:` line and the gate line:
+Add this line after the `THINK:` line and the gate line (`stopped: …` only when a server error ended the run):
 
 ```
 CC: tool calls <n> · tool errors <e> · asked the developer: no
