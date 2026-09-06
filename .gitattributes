@@ -47,3 +47,8 @@ skills/t4/t4-project-bootstrap/references/hooks/*  text eol=lf
 # file. using-t4's SKILL.md was already pinned above, for the adjacent byte-budget reason.
 skills/**/SKILL.md  text eol=lf
 skills/qwen38/using-qwen38/hooks/*                 text eol=lf
+
+# A data file a test READS line by line. Unpinned, a Windows checkout gives it CRLF and the
+# coverage loop in tests/skills/test-qwen38-claude-code.sh greps for "`Agent`" and fails all
+# 31 tools -- which is how main came to be red on Windows the day #361 merged (#362).
+skills/qwen38/qwen38-claude-code/harness-tools.txt  text eol=lf

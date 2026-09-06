@@ -72,6 +72,10 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 - **[clink-subagents](./skills/multi-agent/clink-subagents/SKILL.md)** — มอบหมาย **งานที่มีขอบเขตชัด** (เขียน implementation, refactor, แปลงชุดใหญ่, research เฉพาะจุด, ร่างแรก) ให้ Codex (GPT-5.6) หรือ Antigravity (Gemini) ทำเป็น subagent ผ่าน tool `clink` ของ [PAL](https://github.com/BeehiveInnovations/pal-mcp-server) — เพื่อ offload งาน, รันขนานกัน หรือประหยัด context ต่างจาก `clink-brainstorm` (ที่ขอ *ความเห็น*) ตรงที่อันนี้ *สั่งให้ทำงานจริงแล้วเอาผลกลับมา* มาพร้อม routing rubric อิงดัชนี [Artificial Analysis](https://artificialanalysis.ai/models) (Codex = โมเดล coding เทพแต่ harness อ่อน → งานยาก self-contained + ต้อง verify; Antigravity = agentic อ่อน → เฉพาะงาน single-shot ง่าย ๆ; คุณ = orchestrate + verify) และกฎเหล็ก **verify ทุกอย่างที่ subagent คืนมา** **ต้องมี PAL MCP server** พร้อม `clink` agent `codex`/`antigravity`
 
+- **[clink-masteragent](./skills/multi-agent/clink-masteragent/SKILL.md)** — สิ่งที่ master agent เป็นเจ้าของและมอบต่อไม่ได้ (การแตกงาน, การรวมงาน, การตรวจขั้นสุดท้าย, ขอบเขตความเชื่อถือ, สัญญาการมอบงาน) และวิธีเลือกโมเดลจากคะแนนที่วัดได้แทนความจำ ตารางคะแนนอยู่ในไฟล์เอง เพราะ agent ที่ไม่มีที่ให้เปิดดูจะเลือกจากที่นึกออก — และ session ที่สร้าง skill นี้ก็ทำแบบนั้นจริง เลือกโมเดลที่อ่อนกว่าบนแกนที่งานต้องการ อ่าน**ก่อน**เรียก `clink` ทุกครั้ง
+
+- **[clink-debug](./skills/multi-agent/clink-debug/SKILL.md)** — ที่เดียวสำหรับการมอบการไล่บั๊ก: ส่งบั๊กเล็กให้ worker ราคาถูกหนึ่งตัว แล้วยกระดับเฉพาะสิ่งที่รอด กำหนดหลักฐานที่ต้องเดินทางไปด้วย และห้ามให้สายพันธุ์ที่เสนอสมมติฐานเป็นคนพิสูจน์ว่ามันผิด
+
 ### ทีม T4 (มาตรฐานการทำงานแบบ agent-primary)
 
 ตระกูลของ skill ที่กลั่นออกมาแบบไม่ผูกกับโปรเจกต์เดียว จาก repo ที่โตเต็มที่ของทีม T4 (MangaDock, T4-Fastwork) สำหรับ repo ที่ **coding agent เป็น developer หลัก** ออกแบบมาแบบ retrieval-first เพื่อให้ agent คง context ข้าม session และการ compaction ได้ แต่ละตัวค้นเจอได้เองด้วย trigger ของตัวเอง; `using-t4` เป็น entry map, `t4-project-bootstrap` เป็นตัวติดตั้งไฟล์ ส่วนตัวที่เหลือดูแล discipline ที่ทำต่อเนื่อง
@@ -98,12 +102,20 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion
 - **[design-psychology](./skills/design/design-psychology/SKILL.md)** — จิตวิทยา UX/conversion: 3-Brain Persona (Survival/Emotional/Rational), mental model ของ layout, การหักแพตเทิร์นแบบ MAYA, cognitive chunking (กฎ 3-4 ชิ้นของ working memory) และ Luxury White Space
 
+- **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — gate ปิดงานสำหรับหน้าเว็บที่โมเดลเล็กสร้าง: ตรวจความครอบคลุมของ brief แล้วตามด้วยการตรวจที่รันได้แปดข้อ ข้อละหนึ่งข้อบกพร่องที่เกิดซ้ำในหน้าเว็บเก้าหน้าของ Qwen3.8-27B (ฟอนต์, OG tag, dark mode, การล้นที่ 390 px, การตัดบรรทัดของตัวเลข, hero ที่ชนกัน, tracking, ภาษา) วัดได้ 8/8 ×3 เมื่อมี gate เทียบ 6/8 ×3 เมื่อไม่มี ส่วน skill ความรู้ด้าน design เดี่ยว ๆ ได้ 4/8 ×3 ซึ่งต่ำกว่าการไม่มี skill เลย เป็นคำสั่งพร้อมเงื่อนไขผ่าน เพราะกฎที่เป็นร้อยแก้วไม่ถ่ายทอด
+
 ### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 
 ตระกูลสำหรับ session ที่ model คือ Qwen3.8-27B (ผ่าน Claude Code บน server ในเครื่อง) model ตัวนี้ทำได้เกือบทุกอย่างแต่ละเว้นสิ่งที่ไม่ได้ถูกเขียนไว้ skill ในตระกูลนี้จึง "นับให้" และ "ตรวจให้" แทนการให้หลักการ calibrate จากการรัน 2026-09-05 (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354) ใช้กับ Claude หรือ GPT จะรู้สึกจำกัดเกิน — ตั้งใจให้เป็นอย่างนั้น
 
 - **[using-qwen38](./skills/qwen38/using-qwen38/SKILL.md)** — router ที่ model โหลดตอนเริ่ม session: งานแบบไหน → โหลด skill ไหน → จบด้วย gate ไหน พร้อมกฎสี่ข้อ (เขียนตาราง brief ก่อน, รันแล้วแปะ output, ห้าม install/หา tool/เปิด agent, หยุดที่รายงาน) · ฉีดให้ model เองตอน SessionStart (startup/clear/compact) ด้วย `hooks/session-start` ในโฟลเดอร์ของ skill ซึ่งผูกไว้ใน settings ของ profile Qwen เท่านั้น (`~/.claude-xeno-exl3.json`, `~/.claude-xeno.json`, `~/.claude-9arm.json`) session ของ frontier model ไม่เห็น
-- **[qwen38-skill-style](./skills/qwen38/qwen38-skill-style/SKILL.md)** — มาตรฐานสำหรับคนเขียน skill ในตระกูลนี้: แปดกฎพร้อมการรันที่เป็นที่มาของแต่ละข้อ, โครงไฟล์, checklist ก่อนเปิด PR รวมถึงคู่ทดสอบ มี/ไม่มี หนึ่งคู่
+- **[qwen38-skill-style](./skills/qwen38/qwen38-skill-style/SKILL.md)** — มาตรฐานสำหรับคนเขียน skill ในตระกูลนี้: เก้ากฎพร้อมการรันที่เป็นที่มาของแต่ละข้อ บวกข้อยกเว้นหนึ่งข้อที่ระบุไว้สำหรับ harness, โครงไฟล์, checklist ก่อนเปิด PR รวมถึงคู่ทดสอบ มี/ไม่มี หนึ่งคู่
+
+- **[qwen38-think](./skills/qwen38/qwen38-think/SKILL.md)** — การคิดที่โมเดลข้าม เขียนเป็นขั้นตอนที่มันต้องจดลงไป: ตารางสมมติฐานและการตรวจข้อบกพร่องสามแบบ (ขัดแย้ง, ข้อเท็จจริงที่หายไป, สิ่งที่เป็นไปไม่ได้) ก่อนแก้ไฟล์แรก แต่ละข้อตรวจด้วยคำสั่ง เมื่อติดขัดให้เขียนหนึ่งสิ่งที่สังเกต หนึ่งสมมติฐาน หนึ่งคำสั่งที่พิสูจน์ว่าผิด การท้วงเป็นบรรทัดที่เขียนไว้ ไม่ใช่คำถามที่หยุดงาน วัดได้ 3/4 ทั้งสี่ brief ที่ฝังข้อบกพร่องเมื่อไม่มี และ 4/4 เมื่อมี — ลำพังตัวเองโมเดลเห็นข้อบกพร่องแล้วไปถาม developer ที่ไม่อยู่ หรือส่งคำตอบที่รู้ว่าผิดว่าเสร็จ
+
+- **[qwen38-code-gate](./skills/qwen38/qwen38-code-gate/SKILL.md)** — gate ปิดงานสำหรับการแก้โค้ด: ตาราง brief ของโค้ด (test ที่แดงแล้วเขียว, เส้นทาง error, บรรทัดเอกสาร, ห้ามเพิ่ม dependency) แล้วตามด้วยหกคำสั่งพร้อมเงื่อนไขผ่าน — ขอบเขตของ diff, placeholder, ความลับ, test ของ repo พร้อมแปะบรรทัดสุดท้าย, lint หรือ typecheck ถ้าตั้งไว้ และบรรทัด RED ก่อนบรรทัด GREEN บันทึกตามจริง: โค้ดอยู่ที่เพดานของ fixture ทุก arm และผลเดียวของ gate คือวินัยการทดสอบ RED ก่อน GREEN 2 จาก 6 รอบที่มี gate เทียบ 0 จาก 3 รอบที่ไม่มี
+
+- **[qwen38-claude-code](./skills/qwen38/qwen38-claude-code/SKILL.md)** — คู่มือ harness และเป็นข้อยกเว้นเดียวของตระกูลที่ครอบทุกอย่าง Claude Code ส่ง tool 31 ตัวและ schema ของมัน 87,799 ตัวอักษรทุก request เทียบกับ 6,186 ของ system prompt ทั้งก้อน และ schema บอกว่า tool รับอะไร ไม่เคยบอกว่ามีไว้ทำอะไร โมเดลจึงแตะ 12 จาก 31 ตัวใน 44 รอบที่บันทึกไว้ นั่นไม่ใช่การตัดสินใจ แต่เป็นช่อง ไฟล์นี้ให้คำตัดสินของทุกตัว (ใช้ / ใช้เมื่อ X / ห้าม พร้อมเหตุผล), อยากได้อะไรใช้ tool ไหน, ทำอะไรต่อเมื่อ tool คืน error รวมถึงการถูก harness ปฏิเสธ และ session ทำงานอย่างไรจริง ๆ ไฟล์ `harness-tools.txt` บันทึกชื่อจาก request ที่ดักไว้ เพื่อให้ tool ที่เวอร์ชันหน้าเพิ่มมาทำให้ suite แดงแทนที่จะหลุดไป
 
 ## ที่เกี่ยวข้อง
 

@@ -59,10 +59,16 @@ echo "  every tool Claude Code sends has a verdict (#358: the harness is the fam
 # version lands in harness-tools.txt and fails this check until SKILL.md covers it.
 REC="$REPO_ROOT/skills/qwen38/qwen38-claude-code/harness-tools.txt"
 [ -f "$REC" ] && ok || bad "harness-tools.txt missing"
+covered=0
 while read -r name; do
   case "$name" in ""|\#*) continue;; esac
   grep -qF -- "\`$name\`" "$F" && ok || bad "no verdict for tool: $name"
-done < "$REC"
+  covered=$((covered+1))
+done < <(sed "s/[[:space:]]*$//" "$REC")   # #362: a CRLF checkout would fail every tool
+# and prove the loop actually ran: `tr -d "[:cntrl:]"` here once ate the newlines too,
+# so the 31 checks silently vanished and the suite still reported 0 failed.
+want=$(grep -cvE '^[[:space:]]*(#|$)' "$REC")
+[ "$covered" -eq "$want" ] && ok "checked all $want recorded tools" || bad "checked $covered of $want recorded tools — the coverage loop is not running"
 has "PowerShell"
 has "TaskList"
 has "measured here"

@@ -15,7 +15,7 @@ claim is a defect (see the composition audits in `docs/research/2026-08-04-*`).
 ## Repo layout
 
 - `skills/` — the skills: `multi-agent/` (clink delegation), `t4/` (the T4 standard incl. this
-  bootstrap), `design/` (web/UI), `karpathy-guidelines/` (coding guardrails).
+  bootstrap), `design/` (web/UI), `qwen38/` (skills a small local model will follow), `karpathy-guidelines/` (coding guardrails).
 - `hooks/` — **canonical** workflow-enforcement hook scripts (the plugin's path-B copies).
 - `.claude-plugin/` — plugin manifest.
 - `tests/` — the bash contract suite (hooks, gate, guards, skills). CI job `tests` runs it.
@@ -130,7 +130,7 @@ contract ที่ ship ออกไปต้องมี `tests/` คอยย�
 ## โครงสร้าง repo
 
 - `skills/` — ตัว skills: `multi-agent/` (clink delegation), `t4/` (มาตรฐาน T4 รวม bootstrap นี้),
-  `design/` (web/UI), `karpathy-guidelines/` (guardrails การเขียนโค้ด)
+  `design/` (web/UI), `qwen38/` (skill ที่โมเดลเล็กในเครื่องทำตามได้), `karpathy-guidelines/` (guardrails การเขียนโค้ด)
 - `hooks/` — **ต้นฉบับ** ของ workflow-enforcement hooks (path-B ของ plugin)
 - `.claude-plugin/` — plugin manifest
 - `tests/` — ชุดเทสต์ bash (hooks, gate, guards, skills) — CI job `tests` รันชุดนี้
