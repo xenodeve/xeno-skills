@@ -11,7 +11,7 @@ triggers:
 
 # Driving Claude Code (`qwen38-claude-code`)
 
-You are running inside Claude Code. It gives you tools; each one has a job, and using the wrong one costs a turn. The table is the whole rule: find your want in the left column, use the tool in the second, and check the pass condition before moving on. Calibrated on the 44 Claude Code streams of 2026-09-05 (`Qwen-3.8-27B-Tuning/qwen38-tuning/results/quality-2026-09-05/`): 14 tool errors in 9 of them, and all 14 fall under a row below.
+You are running inside Claude Code. It gives you tools; each one has a job, and using the wrong one costs a turn. The table is the whole rule: find your want in the left column, use the tool in the second, and check the pass condition before moving on. Calibrated on the 44 Claude Code streams of 2026-09-05 (`Qwen-3.8-27B-Tuning/qwen38-tuning/results/quality-2026-09-05/`): 14 tool errors in 9 of them, and all 14 fall under a row below. Pair 2026-09-06 (A-ccguide-r1 vs A-both ×3): the guessed-path Reads went 2 → 0 and every skill was loaded by name; the heredoc script and the `cd` prefix did not move — hence their own rows.
 
 ## The tools, by what you want
 
@@ -22,6 +22,7 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 | to read a file | **Read** with an absolute path; `offset`/`limit` for a long one | Bash `cat` / `sed -n` | you can quote the exact line you will change |
 | to change an existing file | **Edit**: `old_string` is a line you **Read in this session**, pasted byte-exact and unique; for Thai text paste the whole line, tone marks included | typing the line from memory (`String to replace not found` ×2 on one Thai line, A-gateonly-r2) | the tool returns without an error; **the same target failing twice → re-Read the line, then Edit again with a longer unique anchor** — never a third try from memory |
 | a new file | **Write** (whole content; it overwrites) | Bash `echo >` / heredocs | the file exists and Read shows it |
+| a script to run (a Playwright check, a node one-liner grown long) | **Write** it to a file, then Bash `node <absolute path>` | a `cat <<'EOF'` heredoc in Bash — the shell eats backslashes: `replace(/\/g,'/')` arrived as `replace(/\/g,'/')` and died with `missing )` in A-both-r3 **and again in A-ccguide-r1 with this guide loaded** | the script runs from a path you can Read back |
 | to run something | **Bash**: absolute paths, one command, no `cd` prefix (the working directory persists; 87 of 195 Bash calls carried a `cd` that did nothing) | `cd X && …` chains | exit code and the output you needed, pasted |
 | a skill | **Skill** tool with the skill's **name** | Read on a guessed `…/skills/<name>/SKILL.md` path (6 of the 14 errors: `File does not exist`) | the skill's text is in your context |
 | to keep track of steps | **TaskCreate** / **TaskUpdate** | a list in your head | — |
