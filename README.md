@@ -98,6 +98,13 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion
 - **[design-psychology](./skills/design/design-psychology/SKILL.md)** — จิตวิทยา UX/conversion: 3-Brain Persona (Survival/Emotional/Rational), mental model ของ layout, การหักแพตเทิร์นแบบ MAYA, cognitive chunking (กฎ 3-4 ชิ้นของ working memory) และ Luxury White Space
 
+### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
+
+ตระกูลสำหรับ session ที่ model คือ Qwen3.8-27B (ผ่าน Claude Code บน server ในเครื่อง) model ตัวนี้ทำได้เกือบทุกอย่างแต่ละเว้นสิ่งที่ไม่ได้ถูกเขียนไว้ skill ในตระกูลนี้จึง "นับให้" และ "ตรวจให้" แทนการให้หลักการ calibrate จากการรัน 2026-09-05 (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354) ใช้กับ Claude หรือ GPT จะรู้สึกจำกัดเกิน — ตั้งใจให้เป็นอย่างนั้น
+
+- **[using-qwen38](./skills/qwen38/using-qwen38/SKILL.md)** — router ที่ model โหลดตอนเริ่ม session: งานแบบไหน → โหลด skill ไหน → จบด้วย gate ไหน พร้อมกฎสี่ข้อ (เขียนตาราง brief ก่อน, รันแล้วแปะ output, ห้าม install/หา tool/เปิด agent, หยุดที่รายงาน) · ฉีดให้ model เองตอน SessionStart (startup/clear/compact) ด้วย `hooks/session-start` ในโฟลเดอร์ของ skill ซึ่งผูกไว้ใน settings ของ profile Qwen เท่านั้น (`~/.claude-xeno-exl3.json`, `~/.claude-xeno.json`, `~/.claude-9arm.json`) session ของ frontier model ไม่เห็น
+- **[qwen38-skill-style](./skills/qwen38/qwen38-skill-style/SKILL.md)** — มาตรฐานสำหรับคนเขียน skill ในตระกูลนี้: แปดกฎพร้อมการรันที่เป็นที่มาของแต่ละข้อ, โครงไฟล์, checklist ก่อนเปิด PR รวมถึงคู่ทดสอบ มี/ไม่มี หนึ่งคู่
+
 ## ที่เกี่ยวข้อง
 
 **Companion skill ecosystems** — ตระกูล `t4-*` เป็นชั้นบางๆ เฉพาะทีมที่วางทับสิ่งเหล่านี้; `using-t4` route ไปหาพวกมัน และตั้งใจให้ติดตั้งควบคู่กัน:

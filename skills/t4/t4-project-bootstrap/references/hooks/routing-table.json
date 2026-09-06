@@ -14,6 +14,10 @@
     "design-setup",
     "design-ship-gate",
     "karpathy-guidelines",
+    "qwen38-claude-code",
+    "qwen38-code-gate",
+    "qwen38-skill-style",
+    "qwen38-think",
     "t4-afk",
     "t4-agent-memory",
     "t4-bro",
@@ -22,6 +26,7 @@
     "t4-project-bootstrap",
     "using-clink",
     "using-design",
+    "using-qwen38",
     "using-t4"
   ],
   "routes": [
@@ -188,6 +193,53 @@
       ]
     },
     {
+      "skill": "qwen38-claude-code",
+      "family": false,
+      "path": "skills/qwen38/qwen38-claude-code/SKILL.md",
+      "triggers_en": [
+        "claude",
+        "code",
+        "qwen38",
+        "qwen38-claude-code"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "qwen38-code-gate",
+      "family": false,
+      "path": "skills/qwen38/qwen38-code-gate/SKILL.md",
+      "triggers_en": [
+        "code",
+        "gate",
+        "qwen38",
+        "qwen38-code-gate"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "qwen38-skill-style",
+      "family": false,
+      "path": "skills/qwen38/qwen38-skill-style/SKILL.md",
+      "triggers_en": [
+        "qwen38",
+        "qwen38-skill-style",
+        "skill",
+        "style"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "qwen38-think",
+      "family": false,
+      "path": "skills/qwen38/qwen38-think/SKILL.md",
+      "triggers_en": [
+        "qwen38",
+        "qwen38-think",
+        "think"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "t4-afk",
       "family": false,
       "path": "skills/t4/t4-afk/SKILL.md",
@@ -334,6 +386,17 @@
         "ui",
         "ดีไซน์"
       ]
+    },
+    {
+      "skill": "using-qwen38",
+      "family": true,
+      "path": "skills/qwen38/using-qwen38/SKILL.md",
+      "triggers_en": [
+        "qwen38",
+        "using",
+        "using-qwen38"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "using-t4",

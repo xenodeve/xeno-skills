@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# qwen38 SessionStart hook -- inject the `using-qwen38` router into a Qwen3.8-27B session.
+#
+# Lives inside the skill (skills/qwen38/using-qwen38/hooks/) so the installed copy under
+# ~/.claude/skills/using-qwen38/hooks/session-start travels with the SKILL.md it injects.
+# Wired from the PROFILE settings file of a Qwen session (~/.claude-xeno-exl3.json,
+# ~/.claude-xeno.json, ~/.claude-9arm.json: `"hooks": {"SessionStart": [...]}`), never
+# from the plugin's hooks.json, so a frontier session never sees it. Unlike the T4
+# dispatcher, which only tells the agent to go and read `using-t4`, this injects the
+# whole router: the family's premise is that this model does what is written and omits
+# what is not (using-qwen38, "What this file does not do"), and the router is 3.4 KB.
+#
+# Source: the installed skill first (the copy the session's Skill tool would load), then
+# this checkout's copy. When neither exists the session still gets one line saying so --
+# a missing router must be visible, not silent (2026-09-06).
+# Matcher: startup|clear|compact, so the map survives a compaction.
+set -uo pipefail
+
+input="$(cat)"
+
+skill=""
+for f in "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/using-qwen38/SKILL.md" \
+         "$(dirname "$0")/../SKILL.md"; do
+  if [ -f "$f" ]; then skill="$f"; break; fi
+done
+
+if [ -n "$skill" ]; then
+  # drop the frontmatter (first --- ... --- block)
+  body="$(awk 'BEGIN{fm=0} NR==1 && $0=="---"{fm=1; next} fm==1 && $0=="---"{fm=2; next} fm!=1{print}' "$skill")"
+  content="<EXTREMELY_IMPORTANT>
+You are Qwen3.8-27B running Claude Code. Below is your \`using-qwen38\` map. Every task starts with \`qwen38-think\` and the brief table, loads the skill the map names, and ends with the gate line. The report shape is fixed: \`THINK:\` first.
+
+$body
+</EXTREMELY_IMPORTANT>"
+else
+  content="<EXTREMELY_IMPORTANT>
+You are Qwen3.8-27B running Claude Code, but the \`using-qwen38\` skill is not installed under ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills. Say so in your first reply, then: write the brief table before the first file, run every check and paste its output, never install or search for tools, stop at the report.
+</EXTREMELY_IMPORTANT>"
+fi
+
+# JSON-escape (backslash, quote, newline, tab, carriage return)
+esc="$(printf '%s' "$content" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g' -e 's/\r//g' | awk 'BEGIN{ORS="\\n"} {print}' | sed -e 's/\\n$//')"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$esc"
