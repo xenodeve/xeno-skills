@@ -34,9 +34,9 @@ Edit only the files in the right-hand column. Anything else you think needs chan
 git diff --name-only HEAD
 ```
 
-**2. No placeholders.** Pass: nothing prints.
+**2. No placeholders.** Pass: nothing prints. (The bare-stub half is its own alternative: `^\+` cannot appear in the middle of an alternation, and while it did, `+    pass` never matched and the gate printed a passing `placeholders 0` over a stub-filled diff. Found in review 2026-09-06.)
 ```sh
-git diff HEAD | grep -nE "^\+.*(TODO|FIXME|XXX|NotImplemented|raise NotImplementedError|^\+\s*pass\s*$|^\+\s*\.\.\.\s*$|console\.log\(\"debug|print\(\"debug)"
+git diff HEAD | grep -nE "^\+\s*(pass|\.\.\.)\s*$|^\+.*(TODO|FIXME|XXX|NotImplemented|raise NotImplementedError|console\.log\(\"debug|print\(\"debug)"
 ```
 
 **3. No secrets or machine paths.** Pass: nothing prints.

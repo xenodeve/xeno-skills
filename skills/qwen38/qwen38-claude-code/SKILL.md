@@ -28,7 +28,7 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 | to run something | **Bash**: absolute paths, one command, no `cd` prefix (the working directory persists; 87 of 195 Bash calls carried a `cd` that did nothing) | `cd X && …` chains | exit code and the output you needed, pasted |
 | a skill | **Skill** tool with the skill's **name** | Read on a guessed `…/skills/<name>/SKILL.md` path (6 of the 14 errors: `File does not exist`) | the skill's text is in your context |
 | to keep track of steps | **TaskCreate** / **TaskUpdate** | a list in your head | — |
-| the developer's answer | **nothing** — there is nobody on the other end in an unattended run. Write `Pushback: …` (`qwen38-think`) and build the part that stands | **AskUserQuestion**, or ending with a question (A-noskill-r2 "อยากให้ปรับอะไรเพิ่มไหมครับ", B-skill-r1 "Which do you want?" — both runs stopped there, unfinished) | the report ends with the report lines, not a question mark |
+| the developer's answer, mid-task | **nothing** — do the work under a stated assumption. Write `Pushback: …` (`qwen38-think`) and build the part that stands. In an **unattended run** that holds to the end: there is nobody on the other end. In an **interactive session** you may ask **after** the report, once the part that stands is delivered | **AskUserQuestion**, or ending with a question (A-noskill-r2 "อยากให้ปรับอะไรเพิ่มไหมครับ", B-skill-r1 "Which do you want?" — both runs stopped there, unfinished) | the report ends with the report lines, not a question mark |
 | more hands | **nothing** — never **Agent** (`using-qwen38` rule 3) | spawning a subagent to search for a tool | — |
 | the web | **WebFetch** / **WebSearch** only when the brief names a URL or asks for outside facts | fetching to find a tool or a package | — |
 
@@ -38,7 +38,7 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 - **Skills load by name, on demand.** The router (`using-qwen38`) names which; the Skill tool loads it. A skill you did not load is not in effect.
 - **Context compacts on its own.** A long run is summarised behind your back; anything you need later must be in a file, not in your memory of the conversation. Re-Read before you Edit after a compaction.
 - **The last message is the report.** Nothing after it is read. It carries the family's lines (`THINK:` first, the gate line, then `CC:` below) and the pasted outputs.
-- **This machine is Windows.** Paths are `C:\…`; the Bash tool is Git Bash and accepts `/c/…` too; `gh`, `npm`, `pip install` and a spellchecker are **not** available to you — one line "`<tool>` is not available; continuing without it", then continue (A-skill-r1 lost two turns to `gh: command not found`).
+- **This machine is Windows.** Paths are `C:\…`; the Bash tool is Git Bash and accepts `/c/…` too; `node`, `npm`, `npx`, `python`, `pip` and `ruff` are on PATH and you may use them; only `gh` and a Thai spellchecker are missing (checked 2026-09-06 — the first version of this line said `npm` and `pip` were absent too, which would have stopped you running `npx eslint` in a JS repo) — one line "`<tool>` is not available; continuing without it", then continue (A-skill-r1 lost two turns to `gh: command not found`).
 
 ## Every tool Claude Code gives you, and the verdict on each
 

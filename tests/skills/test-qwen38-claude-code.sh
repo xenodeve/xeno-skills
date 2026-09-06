@@ -72,6 +72,15 @@ has "which is a gap in the runs, not a verdict on the tool"
 has "run_in_background"
 has "you using Claude Code as well as it can be used"
 
+echo "  the tool-availability line is true on this machine (review 2026-09-06: it claimed npm and pip were absent; both are installed, so a literal reader would refuse npx eslint in a JS repo):"
+has "npx"
+hasnt "\`gh\`, \`npm\`, \`pip install\`"
+has "only \`gh\` and a Thai spellchecker"
+
+echo "  the never-ask rule is scoped, so an interactive session is not told to stay silent:"
+has "unattended run"
+has "interactive session"
+
 echo "  boundary and size:"
 has "## What this does not touch"
 # The family caps a SKILL.md at ~6 KB because the router's skills are read at session start.

@@ -36,7 +36,7 @@ skills/qwen38/<name>/*.js|*.sh     the checks, run by path
 tests/skills/test-<name>.sh        anchors from the runs, the no-skip sentences, the boundary
 ```
 
-Length: the whole SKILL.md under ~6 KB. The model reads every skill in the router's table at session start; a long one is paid for on every task.
+Length: the whole SKILL.md under ~6 KB. The model reads every skill in the router's table at session start; a long one is paid for on every task. **The budget is about what the model loads, so it does not bind this file** (an authoring standard, read by whoever writes a skill, never by the model) **nor `qwen38-claude-code`** (loaded on demand, 16 KB, exception below).
 
 ## Checklist before opening the PR
 

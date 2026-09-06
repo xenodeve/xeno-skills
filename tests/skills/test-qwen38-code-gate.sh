@@ -63,6 +63,19 @@ echo "boundary:"
 has "$GATE" "What this does not touch" "the boundary section"
 has "$GATE" "karpathy-guidelines" "design of the change is left to karpathy-guidelines"
 
+echo "check 2 actually catches a stub (review 2026-09-06: the alternation embedded ^\\+ mid-pattern, so '+    pass' never matched and a stub-filled diff reported placeholders 0):"
+TMPD="$(mktemp -d)"
+pat="$(grep -F 'TODO|FIXME' "$GATE" | head -1 | sed -E 's/^.*grep -nE "//; s/"[[:space:]]*$//')"
+if [ -z "$pat" ]; then bad "could not find the placeholder pattern in the skill"; else
+  printf '+    pass\n+    ...\n+ x = 1  # TODO\n' > "$TMPD/stub.diff"
+  n=$(grep -cE "$pat" "$TMPD/stub.diff" 2>/dev/null); n=${n:-0}
+  [ "${n:-0}" -ge 3 ] && ok "the placeholder pattern matches pass, ... and TODO ($n/3)" || bad "the placeholder pattern matched only $n of 3 stub lines"
+  printf '+ def real(a, b):\n+     return a + b\n' > "$TMPD/clean.diff"
+  c=$(grep -cE "$pat" "$TMPD/clean.diff" 2>/dev/null); c=${c:-0}
+  [ "${c:-0}" -eq 0 ] && ok "and does not fire on real code" || bad "the placeholder pattern fired on clean code ($c)"
+fi
+rm -rf "$TMPD"
+
 echo
 echo "qwen38-code-gate: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -31,7 +31,7 @@ Zero rows is allowed only if you write "none — the brief fixes every choice" a
 | **missing fact** — a file, function, endpoint or value the brief names does not exist | e.g. `inventory/report.py` | `ls <path>` · `grep -rn "<name>" .` | yes / no |
 | **impossible ask** — the brief forbids the only way to do what it asks | e.g. "make X O(1) without changing Y" | read the code path; name the line that makes it impossible | yes / no |
 
-**When a flaw is found:** do not stop, do not ask, do not invent the missing thing. Write one line under the table — *"Pushback: the brief says A and B; I build A because …"* / *"Pushback: `inventory/report.py` does not exist; I did not create it; the nearest file is …"* / *"Pushback: not possible as stated because …; I did the possible part: …"* — and build the part that stands. The developer reads the report; a question would only stop the work.
+**When a flaw is found:** do not stop, do not ask, do not invent the missing thing. Write one line under the table — *"Pushback: the brief says A and B; I build A because …"* / *"Pushback: `inventory/report.py` does not exist; I did not create it; the nearest file is …"* / *"Pushback: not possible as stated because …; I did the possible part: …"* — and build the part that stands. The developer reads the report; a question asked **instead of** the work only stops it. In an interactive session you may ask once the report is delivered; in an unattended run there is nobody to answer, so the report is the whole channel.
 
 ## 3. When stuck (a command fails twice, or the output makes no sense)
 
