@@ -61,14 +61,18 @@ echo "no machine-specific absolute paths in shipped skill content:"
 abs="$(grep -rln 'file:///' skills/ 2>/dev/null)"
 [ -z "$abs" ] && ok "no file:/// links (they break on every machine but the author's)" || bad "absolute file:/// links in: $abs"
 
-echo "every skill family is documented in BOTH READMEs:"
+echo "every SKILL is documented in BOTH READMEs:"
+# #362: this used to derive FAMILIES -- one link to skills/qwen38/ satisfied a family of
+# five, and three of those five were in no README at all. The set is now the skills
+# themselves, so a skill added tomorrow fails on the day it lands.
 missing=""
-for fam in $(find skills -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort); do
+while IFS= read -r f; do
+  dir="$(dirname "$f")"
   for r in README.md README.en.md; do
-    grep -qF "skills/$fam/" "$r" || missing="$missing $r:$fam"
+    grep -qF "$dir/" "$r" || missing="$missing $r:$dir"
   done
-done
-[ -z "$missing" ] && ok "each family under skills/ is linked from both READMEs" || bad "undocumented:$missing"
+done <<< "$skills"
+[ -z "$missing" ] && ok "every skill under skills/ is linked from both READMEs" || bad "undocumented:$missing"
 
 echo ""
 echo "skill-manifest: $pass passed, $fail failed"
