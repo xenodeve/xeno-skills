@@ -49,6 +49,7 @@ d:\Github\xeno-skills\skills\design\
 | **📐 `design-rules`** | `/design-rules` | **Micro-UI & Engineering Standards:** Headline Pro tracking hack (`-0.025em`), Major Third (`1.25x`) type scale, 60-30-10 color balance, 8pt grid, dark mode elevation, LIFT composition, and Luxury White Space. *(Kole Jain, Ran Segall, Satori Graphics)* |
 | **🔍 `design-audit`** | `/design-audit` | **30-Second First Impression & Conversion Audit:** Audits portfolios/landing pages for speed, Open Graph tags, unhidden work, WCAG contrast, trust signals, and LIFT composition flow. *(Ran Segall - Flux Academy)* |
 | **🧠 `design-psychology`** | `/design-psychology` | **Behavioral Science & Perceived Value:** Aligns UIs with 3 Brain Personas (Survival/Mental Models, Emotional/MAYA Principle, Rational/3-4 Item Chunking) and "Space is Wealth" luxury positioning. *(Chris McCoy, Ran Segall)* |
+| **🚦 `design-ship-gate`** | `/design-ship-gate` | **Done-Gate for a Small Model:** brief-coverage table, then eight executable checks with pass conditions — font count, Open Graph, dark mode and stat visibility, 390 px overflow, hero collisions, number/unit wrapping, tracking. Calibrated on nine Qwen3.8-27B pages (#353). Run before calling a page finished. |
 
 ---
 
@@ -60,6 +61,7 @@ When building or overhauling a web design, the agent automatically executes acro
 2. **Rule Enforcement (`design-rules`):** Automatically applies `-2%` tracking, 4pt/8pt grid spacing, 4-state buttons, dark mode surface elevation, and 60-30-10 color balance during code generation.
 3. **Psychology Alignment (`design-psychology`):** Ensures macro layout respects Mental Models (Brain #1), incorporates MAYA pattern breaks (Brain #2), and chunks pricing/features into max 3-4 categories (Brain #3).
 4. **Audit & Review (`design-audit`):** Runs the 30-Second First Impression Audit & LIFT Scorecard to verify conversion readiness and visual impact before shipping to production.
+5. **Ship Gate (`design-ship-gate`):** Runs the eight executable checks and pastes their outputs; `GATE: 8/8` with outputs is the only "done".
 
 ---
 

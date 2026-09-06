@@ -12,6 +12,7 @@
     "design-psychology",
     "design-rules",
     "design-setup",
+    "design-ship-gate",
     "karpathy-guidelines",
     "t4-afk",
     "t4-agent-memory",
@@ -158,6 +159,18 @@
         "เริ่มโปรเจกต์ดีไซน์",
         "ตั้งค่าดีไซน์"
       ]
+    },
+    {
+      "skill": "design-ship-gate",
+      "family": false,
+      "path": "skills/design/design-ship-gate/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-ship-gate",
+        "gate",
+        "ship"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "karpathy-guidelines",
