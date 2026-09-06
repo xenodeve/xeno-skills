@@ -42,6 +42,19 @@ has "$GATE" "2 / 9 answered a Thai brief in English" "language: 2 of 9"
 has "$GATE" ".big span{display:block}" "the over-broad selector that split 100B+, verbatim"
 has "$GATE" ".big > span" "and the fix"
 has "$GATE" "-0.03em" "the tracking value that produced \"Goole\""
+
+# review 2026-09-06: the tracking regex stopped at -0.09em, so -0.1em and -1px went unseen.
+# Run the skill's own command against a stylesheet holding one of each.
+TR="$(mktemp -d)"
+printf 'a{letter-spacing:-0.03em}
+b{letter-spacing:-0.1em}
+c{letter-spacing:-1px}
+d{letter-spacing:-0.02em}
+' > "$TR/t.css"
+pat="$(grep -F 'letter-spacing: *-' "$GATE" | head -1 | sed -E 's/^grep -nE "//; s/" "\$P"$//')"
+hit=$(grep -cE "$pat" "$TR/t.css" 2>/dev/null); hit=${hit:-0}
+[ "$hit" -eq 3 ] && ok "the tracking check sees -0.03em, -0.1em and -1px and leaves -0.02em ($hit/3)" || bad "the tracking check saw $hit of 3 tight values"
+rm -rf "$TR"
 has "$GATE" "390" "the mobile width the overflow was measured at"
 
 echo "the brief table comes first and names the unnamed deliverables:"

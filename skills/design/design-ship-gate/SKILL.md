@@ -71,9 +71,9 @@ grep -nE "\.(big|stat|num|n|value)[a-z-]* +span *\{" "$P"
 ```
 Use `.big > span` for a deliberate line break, and put the unit inside the same `nowrap` element as the number.
 
-**8. Nothing under 24 px is tracked tighter than −0.025em.** A wordmark at 22 px with `-0.03em` read "Goole". The command lists every tighter value; grep cannot see the font size, so for each line printed, name the selector's font size in the report. Pass: every printed line is a heading or display number at ≥ 24 px (the tracking hack is for those only); anything smaller goes back to `letter-spacing: 0`.
+**8. Nothing under 24 px is tracked tighter than −0.025em.** A wordmark at 22 px with `-0.03em` read "Goole". The command lists every tighter value, `em` and `px` alike (the first version stopped at `-0.09em`, so `-0.1em` and `-1px` — the tightest values there are — were invisible to the check that exists to find them; review 2026-09-06); grep cannot see the font size, so for each line printed, name the selector's font size in the report. Pass: every printed line is a heading or display number at ≥ 24 px (the tracking hack is for those only); anything smaller goes back to `letter-spacing: 0`.
 ```sh
-grep -nE "letter-spacing: *-0\.0(2[6-9]|[3-9])[0-9]*em" "$P"
+grep -nE "letter-spacing: *-(0\.(0(2[6-9]|[3-9])|[1-9])[0-9]*em|[0-9.]+px)" "$P"
 ```
 
 ## Report
