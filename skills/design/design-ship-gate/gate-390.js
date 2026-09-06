@@ -9,9 +9,22 @@ const { pathToFileURL } = require('url');
   const b = await chromium.launch();
   const pg = await b.newPage({ viewport: { width: 390, height: 844 } });
   await pg.goto(pathToFileURL(file).href);
-  await pg.addStyleTag({ content: 'html,body{overflow-x:visible!important}' });
-  await pg.waitForTimeout(500);
-  const over = await pg.evaluate(() => Math.max(0, document.documentElement.scrollWidth - 390));
-  console.log('overflow:', over);
+  // overflow-y must be freed too: per spec overflow-x:visible computes to auto when the other
+  // axis is not visible, so the rule alone left the scroll container in place (#359).
+  await pg.addStyleTag({ content: 'html,body{overflow-x:visible!important;overflow-y:visible!important}' });
+  await pg.waitForTimeout(1500);
+  const r = await pg.evaluate(() => {
+    const over = Math.max(0, document.documentElement.scrollWidth - 390);
+    // An INNER wrapper with overflow-x hidden does not scroll the page -- it throws the
+    // content away, which is the same defect wearing a different rule and read as 0 before.
+    let clipped = 0;
+    for (const e of document.querySelectorAll('*')) {
+      const ox = getComputedStyle(e).overflowX;
+      if (ox !== 'hidden' && ox !== 'clip') continue;
+      if (e.scrollWidth - e.clientWidth > 1) clipped++;
+    }
+    return { over, clipped };
+  });
+  console.log('overflow:', r.over, 'clipped:', r.clipped);
   await b.close();
 })();

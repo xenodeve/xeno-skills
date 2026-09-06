@@ -13,19 +13,37 @@ const { pathToFileURL } = require('url');
   await pg.waitForTimeout(1500);
   const r = await pg.evaluate(() => {
     const lum = c => { const [r, g, b, a] = c.match(/[\d.]+/g).map(Number); return a === 0 ? null : 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-    const bg = el => { for (let e = el; e; e = e.parentElement) { const l = lum(getComputedStyle(e).backgroundColor); if (l !== null) return l; } return 255; };
+    // The canvas, when nothing paints one. Falling back to white here called light text on a
+    // color-scheme:dark page invisible and dark text on it fine -- wrong in both directions
+    // (tests/skills/fixtures/design-ship-gate/dark-colorscheme.html, #359).
+    const canvas = () => {
+      const cs = getComputedStyle(document.documentElement);
+      const l = lum(cs.backgroundColor);
+      if (l !== null) return l;
+      const scheme = (cs.colorScheme || '').toLowerCase();
+      const dark = scheme.includes('dark') && !scheme.includes('light')
+        ? true
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return dark ? 18 : 255;
+    };
+    const bg = el => { for (let e = el; e; e = e.parentElement) { const l = lum(getComputedStyle(e).backgroundColor); if (l !== null) return l; } return canvas(); };
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), out = [];
     let n;
+    let checked = 0;
     while ((n = w.nextNode())) {
       const t = n.textContent.trim();
-      if (!/^[\d≈~+.,]+[A-Za-z%+]*$/.test(t) || !/\d/.test(t)) continue;
+      // A stat is a SHORT run of text carrying a number. Requiring the whole node to be
+      // numeric skipped `9.4B users` and `$1.2M` -- the ones a reader actually reads (#359).
+      if (!/\d/.test(t) || t.length > 40) continue;
       const e = n.parentElement, s = getComputedStyle(e);
       if (s.display === 'none' || s.visibility === 'hidden' || !e.getClientRects().length) continue;
+      checked++;
       const d = Math.abs(lum(s.color) - bg(e));
       if (d < 60) out.push({ t, d: Math.round(d), sel: e.tagName + '.' + e.className });
     }
-    return out;
+    return { out, checked };
   });
-  console.log('invisible:', r.length, JSON.stringify(r));
+  // the candidate count makes a dead detector visible: `invisible: 0 candidates: 0` is not a pass
+  console.log('invisible:', r.out.length, 'candidates:', r.checked, JSON.stringify(r.out));
   await b.close();
 })();
