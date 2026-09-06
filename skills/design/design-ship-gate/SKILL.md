@@ -50,11 +50,12 @@ grep -cE "prefers-color-scheme|data-theme|\.dark\b|theme-toggle" "$P"
 ```
 
 **4. In dark mode every stat is visible.** The failure was `color: var(--paper)` on a stats band after dark mode was added later — in the dark theme `--paper` went dark too and the numbers vanished. The script reads text nodes, because a stat is written `9.4<span>B</span>` and an element-level test skips it; "invisible" is a luminance distance under 60 to the effective background, which is what the audit saw. Pass: `invisible: 0`.
+Pass: `invisible: 0` **with `candidates:` above zero** — a run that examined nothing prints the same `invisible: 0` as a clean page. A stat is any text node under 40 characters carrying a digit, so `9.4B users` counts; and where no element paints a background the comparison is against the real canvas, not white (both #359).
 ```sh
-node "$G/gate-dark.js" "$P"
+node "$G/gate-dark.js" "$P"   # invisible: 0 candidates: n
 ```
 
-**5. No horizontal overflow at 390 px — with `overflow-x:hidden` removed for the test.** One page hid a 56 px overflow behind that rule. Pass: `overflow: 0`.
+**5. No horizontal overflow at 390 px — with `overflow-x:hidden` removed for the test.** One page hid a 56 px overflow behind that rule. Pass: `overflow: 0` **and** `clipped: 0` — an inner wrapper with `overflow-x: hidden` does not scroll the page, it throws the content away, and reading only the page width called that clean (#359).
 ```sh
 node "$G/gate-390.js" "$P"
 ```
@@ -63,6 +64,8 @@ node "$G/gate-390.js" "$P"
 ```sh
 node "$G/gate-hero.js" "$P"
 ```
+A page with no `h1` prints `colliding: 0` and `note: no h1 found` — the check cannot run, and reporting that as a collision sent the model looking for one to fix (#359).
+
 Known miss: a glass lens (no text of its own) over a tagline that is not the `h1` is not caught — 2 of the 3 audited collisions are. Look at the hero once with your eyes as well.
 
 **7. A number stays on one line with its unit.** `100B+` split into `100` / `B+` because `.big span{display:block}` also matched the unit's `<span>`. Pass: nothing prints (no descendant `span` rule under a numeric block), and `≈5B+/day`-style stats use `white-space:nowrap`.
@@ -79,7 +82,7 @@ grep -nE "letter-spacing: *-(0\.(0(2[6-9]|[3-9])|[1-9])[0-9]*em|[0-9.]+px)" "$P"
 ## Report
 
 ```
-GATE: n/8  (fonts 2 · og 3/3 · dark yes · invisible 0 · overflow 0 · colliding 0 · span-rule none · tracking ok)
+GATE: n/8  (fonts 2 · og 3/3 · dark yes · invisible 0 of n candidates · overflow 0 clipped 0 · colliding 0 · span-rule none · tracking ok)
 brief table: k rows, all filled
 ```
 Paste the command outputs under it. `GATE: 8/8` with no outputs is not a pass.

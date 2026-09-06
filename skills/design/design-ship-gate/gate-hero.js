@@ -15,7 +15,7 @@ const { pathToFileURL } = require('url');
   await pg.waitForTimeout(1500);
   const r = await pg.evaluate(() => {
     const h = document.querySelector('h1');
-    if (!h) return ['no h1'];
+    if (!h) return null;   // a missing h1 is not a collision (#359)
     const hb = h.getBoundingClientRect();
     const positioned = e => { for (let x = e; x && x !== document.body; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'absolute' || p === 'fixed') return true; } return false; };
     const out = new Set();
@@ -32,6 +32,13 @@ const { pathToFileURL } = require('url');
     }
     return [...out];
   });
-  console.log('colliding:', r.length, JSON.stringify(r));
+  if (r === null) {
+    // Reporting this as `colliding: 1 ["no h1"]` turned a missing element into a collision the
+    // model then tried to fix. The page still fails brief coverage; this check simply cannot run.
+    console.log('colliding:', 0, '[]');
+    console.log('note: no h1 found - the collision check did not run');
+  } else {
+    console.log('colliding:', r.length, JSON.stringify(r));
+  }
   await b.close();
 })();
