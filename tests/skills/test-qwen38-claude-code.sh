@@ -70,6 +70,7 @@ has "harness fact"
 has "is not a tool that was wrong for the job"
 has "which is a gap in the runs, not a verdict on the tool"
 has "run_in_background"
+has "you using Claude Code as well as it can be used"
 
 echo "  boundary and size:"
 has "## What this does not touch"

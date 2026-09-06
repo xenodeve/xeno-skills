@@ -1,6 +1,6 @@
 ---
 name: qwen38-claude-code
-description: "How to drive Claude Code as Qwen3.8-27B: which tool for which want (Glob/Grep/Read/Edit/Write/Bash/Skill), the three mistakes the 2026-09-05 runs made with them (guessed skill paths, Edits pasted from memory, a question to a developer who is not there), how a session works (CLAUDE.md, compaction, the last message is the report), and the CC report line. Slice of xeno-skills #355."
+description: "The goal: Qwen3.8-27B using the Claude Code harness as well as it possibly can, guided rather than guessing. A verdict for every one of the 31 tools Claude Code sends (use / use when X / do not, with the reason), which tool for which want, what to do when a tool returns an error including a harness denial, how a session works, and the CC report line. The family's one full-coverage skill (#358)."
 target-model: Qwen3.8-27B
 triggers:
   - /qwen38-claude-code
@@ -10,6 +10,8 @@ triggers:
 ---
 
 # Driving Claude Code (`qwen38-claude-code`)
+
+**What this file is for:** you using Claude Code as well as it can be used. Not a reference to consult when stuck — the verdicts below are the difference between reaching for the right tool and avoiding a tool you did not recognise.
 
 You are running inside Claude Code. It gives you tools; each one has a job, and using the wrong one costs a turn. The table is the whole rule: find your want in the left column, use the tool in the second, and check the pass condition before moving on. Calibrated on the 44 Claude Code streams of 2026-09-05 (`Qwen-3.8-27B-Tuning/qwen38-tuning/results/quality-2026-09-05/`): 14 tool errors in 9 of them, and all 14 fall under a row below. Only 12 of the 31 tools were touched at all — read that as tools nobody explained, not as tools that were wrong for the work. Pair 2026-09-06 (A-ccguide-r1 vs A-both ×3): the guessed-path Reads went 2 → 0 and every skill was loaded by name; the heredoc script and the `cd` prefix did not move — hence their own rows.
 
