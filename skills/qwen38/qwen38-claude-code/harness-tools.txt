@@ -1,0 +1,38 @@
+# The tools Claude Code sends the model, recorded from a real request.
+# claude-cli/2.1.258, POST /v1/messages?beta=true, 2026-09-06, captured by pointing a
+# `claude -p` run at a recording listener. 31 tools, 87,799 characters of JSON schema,
+# against 6,186 characters for the whole system prompt.
+# tests/skills/test-qwen38-claude-code.sh derives its coverage check from this file:
+# a name here with no verdict in SKILL.md fails the suite. Re-record when Claude Code
+# changes version; do not edit by hand.
+Agent
+Bash
+CronCreate
+CronDelete
+CronList
+DesignSync
+Edit
+EnterWorktree
+ExitWorktree
+Glob
+Grep
+ListAgents
+Monitor
+NotebookEdit
+PowerShell
+PushNotification
+Read
+ReportFindings
+ScheduleWakeup
+SendMessage
+Skill
+TaskCreate
+TaskGet
+TaskList
+TaskOutput
+TaskStop
+TaskUpdate
+WebFetch
+WebSearch
+Workflow
+Write

@@ -15,7 +15,7 @@ triggers:
 
 **The model:** capable, literal, and forgetful of what is not written. On 2026-09-05 the same brief went to it nine times without a skill and five times with one (`Qwen-3.8-27B-Tuning/docs/results/11-quality-bench-2026-09-05.md`, xeno-skills #353). Without a skill it omitted the same unnamed deliverables every time and got the named ones right. With a skill shaped as below it ran the checks itself and scored 8/8. With a skill shaped as prose it broke a rule the prose stated (#134: nine pages over the two-font cap with `design-rules` loaded). Each rule here names the run behind it.
 
-## The nine rules
+## The nine rules (and one exception, at the end, for the harness)
 
 1. **Enumerate; do not inspire.** List the deliverables the brief leaves implicit and make the model fill a table against them before it starts. *Evidence:* Open Graph 0 / 3 and dark mode 0 / 3 without the list; 3 / 3 and 3 / 3 with it. Isolated, three reps each (2026-09-05 afternoon): the gate alone 8/8 ×3; the design knowledge alone **4/8 ×3** — a third font every run and nothing counted; none 6/8 ×3.
 2. **A command and a pass condition per rule.** "Two font families at most" transfers as a `grep … | sort -u` and "the list has ≤ 2 entries"; as a sentence it transferred 4 times out of 9, and the knowledge skills alone scored below no skill at all (4/8 ×3 vs 6/8 ×3). The model runs commands it is given — six of them, unprompted, in the 8/8 run.
@@ -49,6 +49,14 @@ Length: the whole SKILL.md under ~6 KB. The model reads every skill in the route
 - [ ] "What this does not touch" exists
 - [ ] the with/without pair is in the issue
 - [ ] the report is the family's shared shape (`THINK:` first, then this skill's line), not a new one
+
+## The one exception: the harness itself
+
+**A skill about Claude Code is written to cover everything, not only a measured gap** (#358, the developer 2026-09-06: *"เราอยากให้ qwen ใช้งาน claude code harness ได้แบบดีที่สุด … ไม่ให้ model ทำการหาเอง"*). Rule 1 still holds — enumerate — but the enumeration is the whole tool surface, and rule 6's "every figure from a run" applies only to the rows that have one; the rest are labelled harness facts.
+
+**Why the usual rule inverts here.** Everywhere else, writing for something the model already does wastes the budget. The harness is the case where **not writing** is what costs: across the 44 bench streams Qwen touched 12 of the 31 tools Claude Code sends, and the reason is not that the other 19 were wrong for the work — it is that a JSON schema says what a tool *accepts* and never what it is *for*, so ignoring it was the safe move. Absence of use is not evidence of a decision. `qwen38-claude-code` therefore carries a verdict per tool and is capped at 16 KB rather than 6.
+
+**This exception does not generalise.** It covers a fixed, externally-defined surface the model is handed whole and cannot discover by trying. A design rule, a code rule or a workflow is not that, and still gets written only where a run showed a gap.
 
 ## What this does not touch
 

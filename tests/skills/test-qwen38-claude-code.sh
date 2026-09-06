@@ -54,9 +54,30 @@ has "CC: tool calls <n> · tool errors <e> · asked the developer: no"
 has "after the \`THINK:\` line and the gate line"
 hasnt "GATE: n/8"
 
+echo "  every tool Claude Code sends has a verdict (#358: the harness is the family's exception):"
+# DERIVED from the recorded request, never a list here: a tool added by a future Claude Code
+# version lands in harness-tools.txt and fails this check until SKILL.md covers it.
+REC="$REPO_ROOT/skills/qwen38/qwen38-claude-code/harness-tools.txt"
+[ -f "$REC" ] && ok || bad "harness-tools.txt missing"
+while read -r name; do
+  case "$name" in ""|\#*) continue;; esac
+  grep -qF -- "\`$name\`" "$F" && ok || bad "no verdict for tool: $name"
+done < "$REC"
+has "PowerShell"
+has "TaskList"
+has "measured here"
+has "harness fact"
+has "is not a tool that was wrong for the job"
+has "which is a gap in the runs, not a verdict on the tool"
+has "run_in_background"
+
 echo "  boundary and size:"
 has "## What this does not touch"
-bytes=$(wc -c < "$F"); [ "$bytes" -le 8000 ] && ok || bad "SKILL.md is $bytes bytes, over the ~6 KB budget"
+# The family caps a SKILL.md at ~6 KB because the router's skills are read at session start.
+# This one is the exception (#358): it is loaded on demand, and Claude Code already spends
+# 87,799 characters of tool schema on every request -- ~15 KB of verdicts against that is the
+# cheap half. The cap still exists so the file cannot grow without someone deciding to.
+bytes=$(wc -c < "$F"); [ "$bytes" -le 16000 ] && ok || bad "SKILL.md is $bytes bytes, over the 16 KB cap this skill was granted in #358"
 
 echo "  the router points at it before the first tool call:"
 grep -qF "qwen38-claude-code" "$ROUTER" && ok || bad "using-qwen38 does not name qwen38-claude-code"
