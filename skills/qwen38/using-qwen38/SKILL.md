@@ -1,6 +1,6 @@
 ---
 name: using-qwen38
-description: "Router for Qwen3.8-27B sessions. Load at session start: it names the skill that owns the task and the gate that ends it, and carries the four rules this model needs stated (write the brief table first, run the checks and paste output, never install or search for tools, stop at the report). Calibrated on 2026-09-05 runs."
+description: "Router for Qwen3.8-27B sessions. Load at session start: it names the skill that owns the task and the gate that ends it, and carries the five rules this model needs stated (write the brief table first from what the domain skill names, run the checks and paste output, never install or search for tools, take the open choices from this brief's own subject rather than from habit, stop at the report). Method, not craft: what a good page or module contains stays with the skill this file points at. Calibrated on 2026-09-05 runs."
 target-model: Qwen3.8-27B
 triggers:
   - /using-qwen38
