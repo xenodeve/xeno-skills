@@ -15,14 +15,15 @@
 <style>
 /* ------------------------------------------------------------------
    Colophon and reasons (R-31)
-   Palette: warm paper + ink is the 60/30/10 base. Red is Google's own
-   brand red, used only at the three moments that need emphasis.
-   Type: Instrument Serif for headings (editorial voice), Roboto for
-   body (Google's own typeface, an identity reason, not a default).
-   Grid: the visible 12 column rule is structural. Every section is
-   placed on it, so the pattern IS the layout (R-07).
-   Glass: one element only. It marks the single place the page asks
-   you to type (R-10).
+   Palette: warm paper plus ink is the 60/30/10 base. Red is Google's own
+   brand red, used only at the moments that need emphasis.
+   Type: Instrument Serif for headings, the editorial voice. Roboto for
+   body, because it is Google's own typeface: an identity reason, not a
+   model default.
+   Grid: the visible 12 column rule is the real structure of the page.
+   Every section is placed on it, so the pattern is the layout.
+   Glass: exactly one element. It marks the only place the page asks you
+   to type.
    ------------------------------------------------------------------ */
 :root{
   --paper:#f4f2ec;
@@ -65,18 +66,18 @@ body{
 }
 .skip:focus{position:static}
 
-/* Major Third scale, 1.25x from 16px (design-rules 1.2) */
+/* Major Third scale, 1.25x from a 16px base. Tight tracking only at 24px and above. */
 h1{font-family:var(--font-display);font-size:3.815rem;line-height:1.12;letter-spacing:-0.025em;margin:0;font-weight:400}
 h2{font-family:var(--font-display);font-size:1.953rem;line-height:1.2;letter-spacing:-0.025em;margin:0 0 12px;font-weight:400}
 h3{font-size:1.25rem;line-height:1.3;margin:0 0 8px;font-weight:700}
 p{margin:0 0 12px}
 .label{font-size:0.875rem;line-height:1.4}
-.rule{border-top:1px solid var(--line)}
+code{font-size:0.875rem;background:var(--paper-2);padding:2px 6px;border-radius:2px}
 
 .shell{max-width:1120px;margin:0 auto;padding:0 24px}
 .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:24px}
 
-/* Masthead: logo left, nav right, the mental model Brain #1 expects */
+/* Masthead: wordmark left, nav right. The mental model most visitors expect. */
 .masthead{
   position:sticky;top:0;z-index:30;background:var(--paper);
   border-bottom:1px solid var(--line);
@@ -100,7 +101,7 @@ nav a:hover{background:var(--paper-2)}
 .iconbtn:active{transform:translateY(1px)}
 .menu-toggle{display:none}
 
-/* The visible grid: hairlines of the 12 columns the page is built on */
+/* The visible grid: hairlines of the 12 columns the page is built on. */
 .gridstrip{
   display:grid;grid-template-columns:repeat(12,1fr);
   border-bottom:1px solid var(--line);height:40px;
@@ -110,8 +111,8 @@ nav a:hover{background:var(--paper-2)}
 
 .hero{padding:40px 0 64px}
 .hero-copy{grid-column:1/9}
-.deck{font-family:var(--font-display);font-size:1.25rem;line-height:1.4;color:var(--ink)}
-.meta{font-size:0.875rem;line-height:1.5;color:var(--ink);margin-top:16px}
+.deck{font-family:var(--font-display);font-size:1.25rem;line-height:1.4}
+.meta{font-size:0.875rem;line-height:1.5;margin-top:16px}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
 .btn{
   display:inline-block;min-height:44px;padding:12px 20px;border-radius:var(--radius);
@@ -123,7 +124,8 @@ nav a:hover{background:var(--paper-2)}
 .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
 .btn.ghost:hover{background:var(--paper-2)}
 
-/* Liquid glass: exactly one element on the page */
+/* Liquid glass, one element only. The shadow lifts only this surface, because
+   it is the surface the visitor is meant to touch. */
 .lens{
   grid-column:9/13;
   background:rgba(255,253,248,0.55);
@@ -131,8 +133,6 @@ nav a:hover{background:var(--paper-2)}
   border-radius:var(--radius);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  /* elevation reason: this is the only element meant to sit above the page plane */
-  shadow:0;
   box-shadow:0 22px 44px rgba(23,21,18,0.16);
   padding:24px;
 }
@@ -156,31 +156,29 @@ nav a:hover{background:var(--paper-2)}
 section{padding:48px 0;border-top:1px solid var(--line)}
 section h2 .tick{color:var(--accent-ink)}
 
-/* Ledger: years in one column, title in the next, note in the last */
+/* Ledger: year in one column, title in the next, note in the last. */
 .ledger-row{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;padding:20px 0;border-bottom:1px solid var(--line)}
 .ledger-row:last-child{border-bottom:0}
 .yr{grid-column:1/3;font-family:var(--font-display);font-size:1.953rem;line-height:1.2;letter-spacing:-0.025em}
 .yr-title{grid-column:3/8;font-weight:700}
 .yr-note{grid-column:8/13}
 
-/* Path of a query: four real stages, not a template three-step list */
+/* Four real stages, not a template three step list. */
 .step{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;padding:20px 0;border-bottom:1px solid var(--line)}
 .step:last-child{border-bottom:0}
 .step-no{grid-column:1/2;font-family:var(--font-display);font-size:1.5625rem;letter-spacing:-0.02em}
 .step-body{grid-column:2/9}
 .step-see{grid-column:9/13;font-size:0.9375rem}
 
-/* Chunked into three, with the strongest claim given the widest column */
+/* Chunked into three. The strongest claim gets the widest column. */
 .wide{grid-column:1/8}
 .narrow{grid-column:8/13}
 .narrow-block{padding:16px 0}
 
 .limits{grid-column:1/8}
 .alternatives{grid-column:8/13}
-.alternatives ul{margin:0;padding-left:18px}
-.alternatives li{margin-bottom:8px}
-.limits ul{margin:0;padding-left:18px}
-.limits li{margin-bottom:8px}
+.alternatives ul,.limits ul{margin:0;padding-left:18px}
+.alternatives li,.limits li{margin-bottom:8px}
 
 .release{padding:64px 0 40px}
 .release h2{font-size:3.052rem;line-height:1.15;letter-spacing:-0.025em;max-width:46ch}
@@ -190,7 +188,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
 .sources{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .sources a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
 .sources a:hover{border-bottom-color:var(--accent-ink);color:var(--accent-ink)}
-.colophon{margin-top:20px;color:var(--ink)}
+.colophon{margin-top:20px}
 
 .reveal{opacity:0;transform:translateY(14px)}
 .revealed{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
@@ -198,8 +196,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
 @media (max-width:1023px){
   .grid12{grid-template-columns:repeat(8,1fr)}
   h1{font-size:3.052rem}
-  .hero-copy{grid-column:1/8}
-  .lens{grid-column:1/8}
+  .hero-copy,.lens{grid-column:1/9}
   .ledger-row,.step{grid-template-columns:repeat(8,1fr)}
   .yr{grid-column:1/2}.yr-title{grid-column:2/5}.yr-note{grid-column:5/9}
   .step-no{grid-column:1/2}.step-body{grid-column:2/7}.step-see{grid-column:7/9}
@@ -251,7 +248,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
     <div class="grid12" style="margin-top:32px">
       <div class="hero-copy">
         <h1>Google คือห้องสมุด<br>ที่จัดบรรทัดให้คำถาม</h1>
-        <p class="deck">ตั้งแต่ 1998 Google ทำสิ่งเดียวซ้ำ ๆ: อ่านหน้าเว็บจำนวนมหาศาล, จัดอันดับด้วยสัญญาณที่วัดได้, แล้วส่งคำตอบเร็วพอจนเราไม่ทันคิด. หน้านี้พา去看ว่าระบบนั้นทำงานอย่างไร, และตรงไหนที่มันไม่ได้ดีเสมอไป.</p>
+        <p class="deck">ตั้งแต่ 1998 Google ทำสิ่งเดียวซ้ำ ๆ: อ่านหน้าเว็บจำนวนมหาศาล, จัดอันดับด้วยสัญญาณที่วัดได้, แล้วส่งคำตอบเร็วพอจนเราไม่ทันคิด. หน้านี้พาไปดูว่าระบบนั้นทำงานอย่างไร, และตรงไหนที่มันไม่ได้ดีเสมอไป.</p>
         <p class="meta">หน้าเดียว, ไฟล์ HTML เดียว, ไม่มี backend. ทุกปีและทุกข้อเท็จจริงในหน้านี้มีแหล่งอ้างอิงอยู่ที่ท้ายหน้า.</p>
         <div class="hero-actions">
           <a class="btn" href="#lens">ลองพิมพ์คำถามเอง</a>
@@ -272,7 +269,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
           <button class="chip" type="button" data-q="PageRank original paper 1998">PageRank ปี 1998</button>
           <button class="chip" type="button" data-q="วิธีใช้ Google Search Console สำหรับเว็บใหม่">Search Console</button>
         </div>
-        <p class="meta" style="margin-top:12px">若无 JavaScript, form นี้ยังทำงาน: มันส่งคำค้นไป google.com ตรง ๆ.</p>
+        <p class="meta" style="margin-top:12px">ถ้าไม่มี JavaScript, form นี้ยังทำงาน: มันส่งคำค้นไป google.com ตรง ๆ.</p>
       </div>
     </div>
   </section>
@@ -281,7 +278,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
     <div class="grid12">
       <div style="grid-column:1/13">
         <h2><span class="tick">01</span> เส้นทางของหนึ่งคำถาม</h2>
-        <p>สี่ขั้นนี้คือสิ่งที่เกิดขึ้นจริงทุกครั้งที่กด Enter. ไม่เวทมนตร์, ไม่ AI ที่คิดแทนคุณ.</p>
+        <p>สี่ขั้นนี้คือสิ่งที่เกิดขึ้นจริงทุกครั้งที่กด Enter. ไม่เวทมนตร์, ไม่มี AI ที่คิดแทนคุณ.</p>
       </div>
       <div class="step">
         <div class="step-no">1</div>
@@ -291,7 +288,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       <div class="step">
         <div class="step-no">2</div>
         <div class="step-body"><h3>จัดอันดับ</h3><p>PageRank ใช้ลิงก์ขาเข้าเป็นสัญญาณความน่าเชื่อถือ, ร่วมกับสัญญาณอื่นเช่นความสดของเนื้อหาและความเร็วของหน้า.</p></div>
-        <div class="step-see">สิ่งที่คุณเห็น: ผลที่เสถียรกว่าสโลแกน</div>
+        <div class="step-see">สิ่งที่คุณเห็น: ผลที่อิงสัญญาณมากกว่าถ้อยคำโฆษณา</div>
       </div>
       <div class="step">
         <div class="step-no">3</div>
@@ -325,7 +322,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       <div class="ledger-row">
         <div class="yr">2005</div>
         <div class="yr-title">Google Maps</div>
-        <div class="yr-note">เปลี่ยนคำว่า "ค้นหา" จากข้อความเป็นสถานที่.</div>
+        <div class="yr-note">เปลี่ยนคำว่า ค้นหา จากข้อความเป็นสถานที่.</div>
       </div>
       <div class="ledger-row">
         <div class="yr">2008</div>
@@ -340,7 +337,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       <div class="ledger-row">
         <div class="yr">2023 ถึง 2024</div>
         <div class="yr-title">คำตอบที่เขียนก่อนลิงก์</div>
-        <div class="yr-note">Google เพิ่มชั้นสรุป generated ที่อยู่เหนือรายการลิงก์, เปลี่ยนวิธีที่คนอ่านผลค้นหา.</div>
+        <div class="yr-note">Google เพิ่มชั้นสรุป generated เหนือรายการลิงก์, เปลี่ยนวิธีที่คนอ่านผลค้นหา.</div>
       </div>
     </div>
   </section>
@@ -348,12 +345,12 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
   <section id="why">
     <div class="grid12">
       <div style="grid-column:1/13">
-        <h2><span class="tick">03</span> ทำไมยังเริ่ม从这里</h2>
+        <h2><span class="tick">03</span> เหตุผลที่ยังเริ่ม从这里ไม่ได้ยาก</h2>
         <p>สามกลุ่มเท่านั้น, เพราะสมองจำพร้อมกันได้ดีที่สุดประมาณสามถึงสี่เรื่อง.</p>
       </div>
       <div class="wide">
         <h3>ความครอบคลุมของดัชนี</h3>
-        <p>จุดแข็งหลักของ Google ไม่ใช่ความ聪明的, แต่คือดัชนีที่กว้างพอและ更新ต่อเนื่องพอจนคำถามเกือบทุกประเภทมีคำตอบ. นั่นทำให้มันเป็นที่เริ่มที่ปลอดภัยเมื่อคุณยังไม่รู้ว่าต้องหาที่ไหน.</p>
+        <p>จุดแข็งหลักของ Google ไม่ใช่ความฉลาด, แต่คือดัชนีที่กว้างพอและอัปเดตต่อเนื่องพอจนคำถามเกือบทุกประเภทมีคำตอบ. นั่นทำให้มันเป็นจุดเริ่มที่ปลอดภัยเมื่อคุณยังไม่รู้ว่าต้องหาที่ไหน.</p>
         <p>เครื่องมือรอบ ๆ มันก็ฟรีและใช้จริง: Scholar สำหรับงานวิชาการ, Trends สำหรับดูความสนใจตามเวลา, Maps สำหรับสถานที่, Search Console สำหรับเจ้าของเว็บ.</p>
       </div>
       <div class="narrow">
@@ -362,7 +359,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
           <p>Structured data และ Core Web Vitals เป็นข้อบังคับในทางปฏิบัติของเว็บทั้งวงการ, ไม่ใช่แค่ของ Google.</p>
         </div>
         <div class="narrow-block">
-          <h3>ความเร็วที่เป็น默认</h3>
+          <h3>ความเร็วที่สม่ำเสมอ</h3>
           <p>ผลค้นหา, autocorrect, และ translation ทำงานในเสี้ยววินาที. ความเร็วนี้คือเหตุผลที่คนเลือกมันก่อนคิด.</p>
         </div>
       </div>
@@ -378,8 +375,8 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       <div class="limits">
         <ul>
           <li>ผลที่คุณเห็นถูกปรับตามประวัติและตำแหน่งของคุณ. สองคนหาคำเดียวกันอาจเห็นคนละหน้า.</li>
-          <li>ผลลัพธ์ sponsored ขึ้นอยู่ด้านบนเสมอ, และแยกไม่总是ง่าย.</li>
-          <li>หน้าแรกเอนไปทางเว็บใหญ่. แหล่งเล็กและชุมชน often อยู่หลัง.</li>
+          <li>ผลลัพธ์ sponsored ขึ้นอยู่ด้านบนเสมอ, และแยกได้ยาก.</li>
+          <li>หน้าแรกเอนไปทางเว็บใหญ่. แหล่งเล็กและชุมชนมักอยู่หลัง.</li>
           <li>ธุรกิจของ Google คือ advertising. เครื่องมือจึงถูกออกแบบให้เก็บความสนใจ, ไม่ใช่ลดเวลาคุณ.</li>
         </ul>
       </div>
@@ -388,8 +385,8 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
         <ul>
           <li>DuckDuckGo: ถ้าต้องการ privacy เป็นอันดับแรก</li>
           <li>Startpage: ผลของ Google โดยไม่เก็บประวัติ</li>
-          <li>Bing: useful เมื่อต้องการภาพและ citation จาก Microsoft ecosystem</li>
-          <li>Ecosia: engine ที่ใช้รายได้ไปปลูกต้นไม้</li>
+          <li>Bing: มีประโยชน์เมื่อต้องการภาพและเอกสารจากระบบของ Microsoft</li>
+          <li>Ecosia: search engine ที่ใช้รายได้ไปปลูกต้นไม้</li>
         </ul>
       </div>
     </div>
@@ -403,18 +400,18 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       </div>
       <div class="step">
         <div class="step-no">1</div>
-        <div class="step-body"><h3>เขียนคำถามเป็นประโยคสั้น</h3><p>"contrast ratio CSS WCAG" อ่านง่ายกว่า "how to check color contrast in css for accessibility best practices".</p></div>
+        <div class="step-body"><h3>เขียนคำถามเป็นประโยคสั้น</h3><p>contrast ratio CSS WCAG อ่านง่ายกว่า how to check color contrast in css for accessibility best practices.</p></div>
         <div class="step-see">ผล: น้อยคำ, ตรงจุด</div>
       </div>
       <div class="step">
         <div class="step-no">2</div>
         <div class="step-body"><h3>ใช้ site: เมื่อรู้แหล่ง</h3><p>พิมพ์ <code>site:web.dev core web vitals</code> เพื่อจำกัดผลในโดเมนเดียว.</p></div>
-        <div class="step-see">ผล: ไม่เสียเวลาอ่าน blog ที่ไม่เกี่ยวข้อง</div>
+        <div class="step-see">ผล: ไม่เสียเวลาอ่านบล็อกที่ไม่เกี่ยวข้อง</div>
       </div>
       <div class="step">
         <div class="step-no">3</div>
-        <div class="step-body"><h3>จำกัดช่วงเวลาเมื่อข่าวสำคัญ</h3><p>Tools แล้วเลือกช่วงวัน.ข้อมูลเก่าถูกกรองออก.</p></div>
-        <div class="step-see">ผล: ไม่อ่าน year 2019 เหมือนมันคือวันนี้</div>
+        <div class="step-body"><h3>จำกัดช่วงเวลาเมื่อข่าวสำคัญ</h3><p>เปิด Tools แล้วเลือกช่วงวัน, ข้อมูลเก่าจะถูกกรองออก.</p></div>
+        <div class="step-see">ผล: ไม่อ่านข้อมูลปี 2019 ราวกับว่าเป็นวันนี้</div>
       </div>
       <div class="step">
         <div class="step-no">4</div>
@@ -517,7 +514,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;font-size:0.875rem;l
       }
     });
   }, { threshold: 0.2 });
-  document.querySelectorAll('section, .step, .ledger-row').forEach(function(el){
+  document.querySelectorAll('.step, .ledger-row, .release').forEach(function(el){
     el.classList.add('reveal');
     observer.observe(el);
   });
