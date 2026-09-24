@@ -81,7 +81,15 @@ grep -nE "letter-spacing: *-(0\.(0(2[6-9]|[3-9])|[1-9])[0-9]*em|[0-9.]+px)" "$P"
 
 **9. Every script the page ships parses.** A Qwen3.8-27B page passed checks 1, 2, 3, 7 and 8 (no Playwright for 4–6) while `js/blob.js` could not load — `Private field '#rippleCursor' must be declared in an enclosing class`, left behind when the model deleted an "unused" field in a self-review edit (#375). An ES module that fails to parse takes every module that imports it down with it, so the page rendered no scene at all, and no grep sees that. A file with `import`/`export` is parsed **as a module**: `node --check file.js` on a `.js` with no `package.json` exits 0 on that very error, so it cannot be the fallback. Pass: nothing prints. A printed line **fails the gate whatever the other checks say** — fix it and re-run all nine. Needs only `node`, so run it first.
 ```sh
-find "$(dirname "$P")" -name node_modules -prune -o \( -name '*.js' -o -name '*.mjs' \) -print | while read -r f; do if grep -qE '^[[:space:]]*(import|export)[[:space:]{*]' "$f"; then node --input-type=module --check < "$f" 2>/dev/null; else node --check "$f" 2>/dev/null; fi || echo "FAIL $f"; done
+find "$(dirname "$P")" -type d -name node_modules -prune -o \
+     -type f \( -name '*.js' -o -name '*.mjs' \) -print |
+while read -r f; do
+  if grep -qE '^[[:space:]]*(import|export)[[:space:]{*]' "$f"; then
+    node --input-type=module --check < "$f" 2>/dev/null     # a module, parsed as one
+  else
+    node --check "$f" 2>/dev/null                           # a classic script
+  fi || echo "FAIL $f"
+done
 ```
 
 ## Report

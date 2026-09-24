@@ -96,7 +96,10 @@ echo "check 9 parses the page's own scripts (#375):"
 # must stay silent on good files and on node_modules.
 has "$GATE" "node --input-type=module --check" "check 9 parses modules as modules"
 cmd9="$(awk '/^\*\*9\. /{f=1} f&&/^```sh/{c=1;next} c&&/^```/{exit} c{print}' "$GATE")"
-if command -v node >/dev/null 2>&1 && [ -n "$cmd9" ]; then
+[ -n "$cmd9" ] && ok "check 9 has a runnable sh block" || bad "check 9 has no sh block to run"
+if ! command -v node >/dev/null 2>&1; then
+  echo "  SKIP: node is not installed here, so check 9 cannot be exercised (the block's presence is still asserted)"
+elif [ -n "$cmd9" ]; then
   PG="$(mktemp -d)"; mkdir -p "$PG/js" "$PG/node_modules"
   printf '<script type="module" src="js/main.js"></script>\n' > "$PG/index.html"
   printf 'import * as T from "three";\nclass A{ #x=1; m(){ return this.#x } }\nexport default A;\n' > "$PG/js/main.js"
@@ -109,8 +112,6 @@ if command -v node >/dev/null 2>&1 && [ -n "$cmd9" ]; then
   echo "$out9" | grep -q "badclassic.js" && ok "names the broken classic script" || bad "missed the broken classic script: $out9"
   echo "$out9" | grep -qE "main.js|/classic.js|dep.js" && bad "flagged a good file or node_modules: $out9" || ok "silent on good files and node_modules"
   rm -rf "$PG"
-else
-  bad "check 9 has no runnable sh block (or node is absent)"
 fi
 has "$GATE" "fails the gate whatever the other checks say" "a parse failure is not outvoted by 8 passes"
 
