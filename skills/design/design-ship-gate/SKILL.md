@@ -1,6 +1,6 @@
 ---
 name: design-ship-gate
-description: "Done-gate for a web page built by a small model. Run it before saying a landing page is finished: brief coverage, then eight executable checks, one per defect that recurred across nine Qwen3.8-27B pages (fonts, OG tags, dark mode, 390 px overflow, number wrapping, hero collisions, tracking, language). Commands and pass conditions, no design theory."
+description: "Done-gate for a web page built by a small model. Run it before saying a landing page is finished: brief coverage, then nine executable checks, one per defect seen in Qwen3.8-27B pages (fonts, OG tags, dark mode, 390 px overflow, number wrapping, hero collisions, tracking, language, a script that does not parse). Commands and pass conditions, no design theory."
 triggers:
   - /design-ship-gate
   - ship gate
@@ -13,7 +13,7 @@ triggers:
 
 # Ship gate (`design-ship-gate`)
 
-**Run this before you say a page is finished.** Read the brief again, then run every check below and paste each command's output. A check you did not run is a check that failed. Fix, re-run, then report `GATE: 8/8` with the outputs.
+**Run this before you say a page is finished.** Read the brief again, then run every check below and paste each command's output. A check you did not run is a check that failed. Fix, re-run, then report `GATE: 9/9` with the outputs. **Run check 9 first**: it needs only `node`, and a page whose script does not parse is not a page.
 
 Why a gate and not more rules: the design rules were loaded and the pages still broke them. Nine pages from one brief, audited with real renders: more than two font families **5 / 9**, no Open Graph tags **6 / 9**, hero elements colliding **3 / 9**, a number split from its unit **3 / 9**. Every one of those was found by a command, never by re-reading the rule.
 
@@ -30,7 +30,7 @@ Before the checks, write this table in your answer and fill every row:
 
 A row with an empty right-hand cell is a missing deliverable, not a stylistic choice. A page in one generic direction (a SaaS card grid for an editorial brief) fails this table before any check runs.
 
-## 1–8. The checks
+## 1–9. The checks
 
 Set `P=index.html` (the page) and `G=<this skill's directory>` (where `gate-dark.js`, `gate-390.js`, `gate-hero.js` live). Node with Playwright is needed for 4–6 (`npm i -D playwright` in the page's folder, or `NODE_PATH` to an existing install); if it is absent say so in the report instead of skipping silently.
 
@@ -79,13 +79,26 @@ Use `.big > span` for a deliberate line break, and put the unit inside the same 
 grep -nE "letter-spacing: *-(0\.(0(2[6-9]|[3-9])|[1-9])[0-9]*em|[0-9.]+px)" "$P"
 ```
 
+**9. Every script the page ships parses.** A Qwen3.8-27B page passed checks 1, 2, 3, 7 and 8 (no Playwright for 4–6) while `js/blob.js` could not load — `Private field '#rippleCursor' must be declared in an enclosing class`, left behind when the model deleted an "unused" field in a self-review edit (#375). An ES module that fails to parse takes every module that imports it down with it, so the page rendered no scene at all, and no grep sees that. A file with `import`/`export` is parsed **as a module**: `node --check file.js` on a `.js` with no `package.json` exits 0 on that very error, so it cannot be the fallback. Pass: nothing prints. A printed line **fails the gate whatever the other checks say** — fix it and re-run all nine. Needs only `node`, so run it first.
+```sh
+find "$(dirname "$P")" -type d -name node_modules -prune -o \
+     -type f \( -name '*.js' -o -name '*.mjs' \) -print |
+while read -r f; do
+  if grep -qE '^[[:space:]]*(import|export)[[:space:]{*]' "$f"; then
+    node --input-type=module --check < "$f" 2>/dev/null     # a module, parsed as one
+  else
+    node --check "$f" 2>/dev/null                           # a classic script
+  fi || echo "FAIL $f"
+done
+```
+
 ## Report
 
 ```
-GATE: n/8  (fonts 2 · og 3/3 · dark yes · invisible 0 of n candidates · overflow 0 clipped 0 · colliding 0 · span-rule none · tracking ok)
+GATE: n/9  (parse 0 failed · fonts 2 · og 3/3 · dark yes · invisible 0 of n candidates · overflow 0 clipped 0 · colliding 0 · span-rule none · tracking ok)
 brief table: k rows, all filled
 ```
-Paste the command outputs under it. `GATE: 8/8` with no outputs is not a pass.
+Paste the command outputs under it. `GATE: 9/9` with no outputs is not a pass.
 
 ## What this does not touch
 

@@ -102,7 +102,7 @@ A web-design skill family distilled from the video libraries of Chase AI, Flux A
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — UI and portfolio review via the 30-Second First Impression Test and the LIFT system: instant clarity, visual hierarchy, trust signals, conversion readiness.
 - **[design-psychology](./skills/design/design-psychology/SKILL.md)** — UX and conversion psychology: 3-Brain Persona alignment (Survival/Emotional/Rational), mental-model layout familiarity, MAYA pattern breaks, cognitive chunking (the 3-4 item working-memory rule), and Luxury White Space.
 
-- **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — the done-gate for a page a small model built: brief coverage, then eight executable checks, one per defect that recurred across nine Qwen3.8-27B pages (fonts, OG tags, dark mode, 390 px overflow, number wrapping, hero collisions, tracking, language). Measured 8/8 ×3 with the gate against 6/8 ×3 without; the design knowledge skills alone scored 4/8 ×3, below no skill at all. Commands and pass conditions, because prose rules did not transfer.
+- **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — the done-gate for a page a small model built: brief coverage, then nine executable checks, one per defect seen in Qwen3.8-27B pages (fonts, OG tags, dark mode, 390 px overflow, number wrapping, hero collisions, tracking, language, and — since #375 — a page script that does not parse). Measured on the first eight checks: 8/8 ×3 with the gate against 6/8 ×3 without; the design knowledge skills alone scored 4/8 ×3, below no skill at all. Commands and pass conditions, because prose rules did not transfer.
 
 ### Qwen3.8-27B (skills a small model will actually follow)
 

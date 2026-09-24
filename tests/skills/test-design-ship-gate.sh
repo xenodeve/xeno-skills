@@ -87,6 +87,34 @@ has "$D/gate-hero.js" "nodeType === 3" "the collision check keys on an element's
 has "$GATE" "Known miss" "the one audited collision the script cannot see is stated, not implied caught"
 has "$GATE" "not to hide it" "the collision fix is to move the text, not hide the check"
 
+echo "check 9 parses the page's own scripts (#375):"
+# A Qwen3.8-27B page passed every runnable check while js/blob.js could not load:
+# "Private field '#rippleCursor' must be declared in an enclosing class". Run the
+# skill's OWN command (extracted, not copied here) against planted files. It must
+# name the broken module, the broken classic script, and a module that `node --check
+# file.js` alone passes (a .js with no package.json exits 0 on that same error), and
+# must stay silent on good files and on node_modules.
+has "$GATE" "node --input-type=module --check" "check 9 parses modules as modules"
+cmd9="$(awk '/^\*\*9\. /{f=1} f&&/^```sh/{c=1;next} c&&/^```/{exit} c{print}' "$GATE")"
+[ -n "$cmd9" ] && ok "check 9 has a runnable sh block" || bad "check 9 has no sh block to run"
+if ! command -v node >/dev/null 2>&1; then
+  echo "  SKIP: node is not installed here, so check 9 cannot be exercised (the block's presence is still asserted)"
+elif [ -n "$cmd9" ]; then
+  PG="$(mktemp -d)"; mkdir -p "$PG/js" "$PG/node_modules"
+  printf '<script type="module" src="js/main.js"></script>\n' > "$PG/index.html"
+  printf 'import * as T from "three";\nclass A{ #x=1; m(){ return this.#x } }\nexport default A;\n' > "$PG/js/main.js"
+  printf 'class B{ m(){ this.#y=0 } }\nexport default B;\n' > "$PG/js/blob.js"
+  printf 'var a = 1;\n' > "$PG/js/classic.js"
+  printf 'var = ;\n' > "$PG/js/badclassic.js"
+  printf 'syntax error here(' > "$PG/node_modules/dep.js"
+  out9="$(cd "$PG" && P="$PG/index.html" bash -c "$cmd9" 2>&1)"
+  echo "$out9" | grep -q "blob.js" && ok "names the module with an undeclared private field" || bad "missed the broken module: $out9"
+  echo "$out9" | grep -q "badclassic.js" && ok "names the broken classic script" || bad "missed the broken classic script: $out9"
+  echo "$out9" | grep -qE "main.js|/classic.js|dep.js" && bad "flagged a good file or node_modules: $out9" || ok "silent on good files and node_modules"
+  rm -rf "$PG"
+fi
+has "$GATE" "fails the gate whatever the other checks say" "a parse failure is not outvoted by 8 passes"
+
 echo "non-scope, stated:"
 has "$GATE" "What this does not touch" "the skill declares its boundary"
 has "$GATE" "not a rate" "the counts are what was seen, not a rate"
