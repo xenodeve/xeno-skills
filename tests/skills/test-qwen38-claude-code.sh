@@ -73,8 +73,26 @@ has "the file still parses"
 has "node --check"
 has "is not a check"
 has "PowerShell"
-has "TaskList"
 has "measured here"
+
+echo "  2.1.281 (#380): no advice for a tool Claude Code stopped sending:"
+# The 2.1.258 file told the model to use TaskCreate/TaskUpdate/TaskList; 2.1.281 sends none
+# of the five, so a literal reader would call a tool that is not there.
+for gone in TaskCreate TaskGet TaskList TaskOutput TaskUpdate; do hasnt "\`$gone\`"; done
+
+echo "  the harness facts no schema states (#380):"
+has "12,288"                      # the output cap, thinking included -- the 43,564-char turn (#377)
+has "thinking included"
+has "shot.js"                     # the screenshot recipe
+[ -f "$(dirname "$F")/shot.js" ] && ok || bad "shot.js does not ship next to the skill"
+has "C:/Users/xenod/.claude/tools/node_modules"   # the one Playwright install, via NODE_PATH
+has "image input is not supported"                # a server without the vision tower
+has "Foreground \`sleep\` is blocked"
+has "localhost"                   # WebFetch cannot reach it; curl can
+has "<system-reminder>"
+has "<pasted_content>"
+has "Read** of that file in this conversation"
+has "parallel"                    # independent calls in one message
 has "harness fact"
 has "is not a tool that was wrong for the job"
 has "which is a gap in the runs, not a verdict on the tool"
@@ -84,7 +102,10 @@ has "you using Claude Code as well as it can be used"
 echo "  the tool-availability line is true on this machine (review 2026-09-06: it claimed npm and pip were absent; both are installed, so a literal reader would refuse npx eslint in a JS repo):"
 has "npx"
 hasnt "\`gh\`, \`npm\`, \`pip install\`"
-has "only \`gh\` and a Thai spellchecker"
+# #380: gh IS installed (C:\Program Files\GitHub CLI\gh.exe), only not on the Bash tool's PATH;
+# "gh is missing" sent the model around a tool it could have called by path.
+hasnt "only \`gh\` and a Thai spellchecker"
+has "GitHub CLI/gh.exe"
 
 echo "  the never-ask rule is scoped, so an interactive session is not told to stay silent:"
 has "unattended run"
@@ -96,7 +117,9 @@ has "## What this does not touch"
 # This one is the exception (#358): it is loaded on demand, and Claude Code already spends
 # 87,799 characters of tool schema on every request -- ~15 KB of verdicts against that is the
 # cheap half. The cap still exists so the file cannot grow without someone deciding to.
-bytes=$(wc -c < "$F"); [ "$bytes" -le 16000 ] && ok || bad "SKILL.md is $bytes bytes, over the 16 KB cap this skill was granted in #358"
+# #380 (2026-09-25): the developer asked for everything the model should know about the
+# harness, and 2.1.281 sends 144,665 characters of schema; the cap moves to 24 KB.
+bytes=$(wc -c < "$F"); [ "$bytes" -le 24000 ] && ok || bad "SKILL.md is $bytes bytes, over the 24 KB cap this skill was granted in #380"
 
 echo "  the router points at it before the first tool call:"
 grep -qF "qwen38-claude-code" "$ROUTER" && ok || bad "using-qwen38 does not name qwen38-claude-code"
