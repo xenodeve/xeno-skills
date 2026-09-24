@@ -33,6 +33,10 @@ Zero rows is allowed only if you write "none — the brief fixes every choice" a
 
 **When a flaw is found:** do not stop, do not ask, do not invent the missing thing. Write one line under the table — *"Pushback: the brief says A and B; I build A because …"* / *"Pushback: `inventory/report.py` does not exist; I did not create it; the nearest file is …"* / *"Pushback: not possible as stated because …; I did the possible part: …"* — and build the part that stands. The developer reads the report; a question asked **instead of** the work only stops it. In an interactive session you may ask once the report is delivered; in an unattended run there is nobody to answer, so the report is the whole channel.
 
+## 2b. Thinking is for decisions, not for code
+
+Decide in thinking — the structure, the file order, the risks — then build with tools. For work that spans files, write the order in one line (`index.html → css → js/scene.js → js/main.js`), then Write the first file. A file drafted in thinking is written twice (the draft, then the `Write`) and lost if the turn is cut: one GSQ turn was a 43,564-character thinking block with the whole page and both shaders in it, hit the output limit and wrote nothing; from the next turn, one file per turn after short thinking, all four files were done in 15 minutes (#377). Check what you built by running the check (`node --check`, the tests, the gate), not by re-reading it in thinking.
+
 ## 3. When stuck (a command fails twice, or the output makes no sense)
 
 Write three lines before the next attempt:

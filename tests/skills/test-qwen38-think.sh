@@ -55,6 +55,14 @@ has "$THINK" "Hypothesis:" "line 2"
 has "$THINK" "Falsify:" "line 3"
 has "$THINK" "never install, never search for an alternative, never spawn an agent" "the escape, restated here"
 
+echo "thinking decides, tools build (#377):"
+# One GSQ turn was a 43,564-char thinking block that drafted index.html, two JS
+# files and both shaders, hit max_tokens and wrote nothing; the next turns wrote
+# one file each after short thinking and finished in 15 minutes.
+has "$THINK" "Thinking is for decisions, not for code" "the rule, in one line"
+has "$THINK" "then Write the first file" "multi-file work: order in one line, then the first Write"
+has "$THINK" "written twice" "why: a draft in thinking is written again and lost if the turn is cut"
+
 echo "the report line and the boundary:"
 has "$THINK" "THINK: assumptions" "the report line"
 has "$THINK" "**first** line of the final report" "the THINK line comes first, before any gate line"

@@ -69,6 +69,9 @@ done < <(sed "s/[[:space:]]*$//" "$REC")   # #362: a CRLF checkout would fail ev
 # so the 31 checks silently vanished and the suite still reported 0 failed.
 want=$(grep -cvE '^[[:space:]]*(#|$)' "$REC")
 [ "$covered" -eq "$want" ] && ok "checked all $want recorded tools" || bad "checked $covered of $want recorded tools — the coverage loop is not running"
+has "the file still parses"
+has "node --check"
+has "is not a check"
 has "PowerShell"
 has "TaskList"
 has "measured here"
