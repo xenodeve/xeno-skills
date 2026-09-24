@@ -102,7 +102,7 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[design-audit](./skills/design/design-audit/SKILL.md)** — กรอบการรีวิว UI/portfolio ด้วย 30-Second First Impression Test และระบบ LIFT: ความชัดในทันที, visual hierarchy, trust signal, ความพร้อมด้าน conversion
 - **[design-psychology](./skills/design/design-psychology/SKILL.md)** — จิตวิทยา UX/conversion: 3-Brain Persona (Survival/Emotional/Rational), mental model ของ layout, การหักแพตเทิร์นแบบ MAYA, cognitive chunking (กฎ 3-4 ชิ้นของ working memory) และ Luxury White Space
 
-- **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — gate ปิดงานสำหรับหน้าเว็บที่โมเดลเล็กสร้าง: ตรวจความครอบคลุมของ brief แล้วตามด้วยการตรวจที่รันได้แปดข้อ ข้อละหนึ่งข้อบกพร่องที่เกิดซ้ำในหน้าเว็บเก้าหน้าของ Qwen3.8-27B (ฟอนต์, OG tag, dark mode, การล้นที่ 390 px, การตัดบรรทัดของตัวเลข, hero ที่ชนกัน, tracking, ภาษา) วัดได้ 8/8 ×3 เมื่อมี gate เทียบ 6/8 ×3 เมื่อไม่มี ส่วน skill ความรู้ด้าน design เดี่ยว ๆ ได้ 4/8 ×3 ซึ่งต่ำกว่าการไม่มี skill เลย เป็นคำสั่งพร้อมเงื่อนไขผ่าน เพราะกฎที่เป็นร้อยแก้วไม่ถ่ายทอด
+- **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — gate ปิดงานสำหรับหน้าเว็บที่โมเดลเล็กสร้าง: ตรวจความครอบคลุมของ brief แล้วตามด้วยการตรวจที่รันได้เก้าข้อ ข้อละหนึ่งข้อบกพร่องที่เจอในหน้าเว็บของ Qwen3.8-27B (ฟอนต์, OG tag, dark mode, การล้นที่ 390 px, การตัดบรรทัดของตัวเลข, hero ที่ชนกัน, tracking, ภาษา และตั้งแต่ #375 คือ script ของหน้าเว็บที่ parse ไม่ผ่าน) ผลวัดจากแปดข้อแรก: 8/8 ×3 เมื่อมี gate เทียบ 6/8 ×3 เมื่อไม่มี ส่วน skill ความรู้ด้าน design เดี่ยว ๆ ได้ 4/8 ×3 ซึ่งต่ำกว่าการไม่มี skill เลย เป็นคำสั่งพร้อมเงื่อนไขผ่าน เพราะกฎที่เป็นร้อยแก้วไม่ถ่ายทอด
 
 ### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 
