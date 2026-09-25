@@ -13,17 +13,21 @@
     "design-rules",
     "design-setup",
     "design-ship-gate",
+    "gsap-scrolltrigger",
     "karpathy-guidelines",
+    "playwright-cli",
     "qwen38-claude-code",
     "qwen38-code-gate",
     "qwen38-skill-style",
     "qwen38-think",
+    "r3f-best-practices",
     "t4-afk",
     "t4-agent-memory",
     "t4-bro",
     "t4-dev-workflow",
     "t4-engineering-records",
     "t4-project-bootstrap",
+    "threejs-animation",
     "using-clink",
     "using-design",
     "using-qwen38",
@@ -178,6 +182,17 @@
       "triggers_th": []
     },
     {
+      "skill": "gsap-scrolltrigger",
+      "family": false,
+      "path": "skills/vendor/gsap-scrolltrigger/SKILL.md",
+      "triggers_en": [
+        "gsap",
+        "gsap-scrolltrigger",
+        "scrolltrigger"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "karpathy-guidelines",
       "family": false,
       "path": "skills/karpathy-guidelines/SKILL.md",
@@ -191,6 +206,17 @@
         "แก้โค้ด",
         "refactor"
       ]
+    },
+    {
+      "skill": "playwright-cli",
+      "family": false,
+      "path": "skills/vendor/playwright-cli/SKILL.md",
+      "triggers_en": [
+        "cli",
+        "playwright",
+        "playwright-cli"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "qwen38-claude-code",
@@ -236,6 +262,18 @@
         "qwen38",
         "qwen38-think",
         "think"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "r3f-best-practices",
+      "family": false,
+      "path": "skills/vendor/r3f-best-practices/SKILL.md",
+      "triggers_en": [
+        "best",
+        "practices",
+        "r3f",
+        "r3f-best-practices"
       ],
       "triggers_th": []
     },
@@ -350,6 +388,17 @@
         "ติดตั้งมาตรฐาน",
         "repo ใหม่"
       ]
+    },
+    {
+      "skill": "threejs-animation",
+      "family": false,
+      "path": "skills/vendor/threejs-animation/SKILL.md",
+      "triggers_en": [
+        "animation",
+        "threejs",
+        "threejs-animation"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "using-clink",
