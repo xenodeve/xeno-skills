@@ -111,6 +111,27 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[threejs-animation](./skills/vendor/threejs-animation/SKILL.md)** — animation ของ Three.js — AnimationMixer, คลิปจาก GLTF, skeletal และ morph target (cloudai-x/threejs-skills, MIT)
 - **[r3f-best-practices](./skills/vendor/r3f-best-practices/SKILL.md)** — React Three Fiber และ ecosystem ของ Poimandres — กฎด้าน performance และการโหลด (emalorenzo/three-agent-skills, MIT)
 
+**ตระกูล anti-slop** (router ใน `skills/anti-slop/` + `skills/vendor/` ก๊อปแบบไม่แก้ พร้อม `UPSTREAM.md`):
+
+- **[using-anti-slop](./skills/anti-slop/using-anti-slop/SKILL.md)** — router: เลือก skill เดียวที่ตรงงาน และลำดับการใช้สำหรับหน้าใหม่ จบที่ `design-ship-gate`
+- **[design-taste-frontend](./skills/vendor/design-taste-frontend/SKILL.md)** — อ่าน brief แล้วส่งหน้าเว็บที่ไม่ดูเป็น template (Leonxlnx/taste-skill, MIT)
+- **[design-taste-frontend-v1](./skills/vendor/design-taste-frontend-v1/SKILL.md)** — taste-skill รุ่นแรก เก็บไว้สำหรับพฤติกรรมเดิม (Leonxlnx/taste-skill, MIT)
+- **[redesign-existing-projects](./skills/vendor/redesign-existing-projects/SKILL.md)** — ตรวจเว็บเดิมหาแพตเทิร์น AI ทั่วไปแล้วยกระดับ (Leonxlnx/taste-skill, MIT)
+- **[stitch-design-taste](./skills/vendor/stitch-design-taste/SKILL.md)** — เขียน DESIGN.md ที่บังคับไม่ให้ดูทั่วไป (Leonxlnx/taste-skill, MIT)
+- **[minimalist-ui](./skills/vendor/minimalist-ui/SKILL.md)** — สไตล์ editorial แบบมินิมอล (Leonxlnx/taste-skill, MIT)
+- **[industrial-brutalist-ui](./skills/vendor/industrial-brutalist-ui/SKILL.md)** — สไตล์ brutalist แบบ Swiss typography (Leonxlnx/taste-skill, MIT)
+- **[brandkit](./skills/vendor/brandkit/SKILL.md)** — บอร์ด brand guideline ระดับพรีเมียม (Leonxlnx/taste-skill, MIT)
+- **[imagegen-frontend-web](./skills/vendor/imagegen-frontend-web/SKILL.md)** — ภาพ mockup ต่อหน้าจอเว็บก่อนเขียนโค้ด (Leonxlnx/taste-skill, MIT)
+- **[imagegen-frontend-mobile](./skills/vendor/imagegen-frontend-mobile/SKILL.md)** — ภาพ mockup ต่อหน้าจอมือถือ (Leonxlnx/taste-skill, MIT)
+- **[hallmark](./skills/vendor/hallmark/SKILL.md)** — สร้าง ตรวจ redesign และดึงดีไซน์จาก URL แบบกัน AI slop (nutlope/hallmark, MIT)
+- **[gridgeist](./skills/vendor/gridgeist/SKILL.md)** — โครงหน้าและลำดับชั้นเฉพาะผลิตภัณฑ์ (ohmiler/gridgeist, MIT)
+- **[web-design-guidelines](./skills/vendor/web-design-guidelines/SKILL.md)** — ตรวจตาม Web Interface Guidelines (vercel-labs/agent-skills, MIT)
+- **[impeccable](./skills/vendor/impeccable/SKILL.md)** — 46 แพตเทิร์น slop ใน 7 ด้าน พร้อมคำสั่ง critique/polish (pbakaus/impeccable, Apache-2.0)
+- **[ui-ux-pro-max](./skills/vendor/ui-ux-pro-max/SKILL.md)** — ฐานข้อมูลสไตล์ ชุดสี และคู่ฟอนต์ที่ค้นได้ (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[design-system](./skills/vendor/design-system/SKILL.md)** — design token สามชั้น (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[ui-styling](./skills/vendor/ui-styling/SKILL.md)** — ลงมือด้วย shadcn/ui + Tailwind (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[brand](./skills/vendor/brand/SKILL.md)** — น้ำเสียงและอัตลักษณ์ของแบรนด์ (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+
 ### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 
 ตระกูลสำหรับ session ที่ model คือ Qwen3.8-27B (ผ่าน Claude Code บน server ในเครื่อง) model ตัวนี้ทำได้เกือบทุกอย่างแต่ละเว้นสิ่งที่ไม่ได้ถูกเขียนไว้ skill ในตระกูลนี้จึง "นับให้" และ "ตรวจให้" แทนการให้หลักการ calibrate จากการรัน 2026-09-05 (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354) ใช้กับ Claude หรือ GPT จะรู้สึกจำกัดเกิน — ตั้งใจให้เป็นอย่างนั้น

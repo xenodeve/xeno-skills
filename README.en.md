@@ -111,6 +111,27 @@ A web-design skill family distilled from the video libraries of Chase AI, Flux A
 - **[threejs-animation](./skills/vendor/threejs-animation/SKILL.md)** — Three.js animation — AnimationMixer, GLTF clips, skeletal and morph targets (cloudai-x/threejs-skills, MIT)
 - **[r3f-best-practices](./skills/vendor/r3f-best-practices/SKILL.md)** — React Three Fiber and the Poimandres ecosystem — performance and loading rules (emalorenzo/three-agent-skills, MIT)
 
+**Anti-slop family** (`skills/anti-slop/` router + `skills/vendor/`, vendored verbatim with `UPSTREAM.md`):
+
+- **[using-anti-slop](./skills/anti-slop/using-anti-slop/SKILL.md)** — the router: picks the one skill for the task and the chain for a new page, ending at `design-ship-gate`
+- **[design-taste-frontend](./skills/vendor/design-taste-frontend/SKILL.md)** — reads the brief and ships an interface that does not look templated (Leonxlnx/taste-skill, MIT)
+- **[design-taste-frontend-v1](./skills/vendor/design-taste-frontend-v1/SKILL.md)** — the original taste-skill, kept for exact old behaviour (Leonxlnx/taste-skill, MIT)
+- **[redesign-existing-projects](./skills/vendor/redesign-existing-projects/SKILL.md)** — audits an existing site for generic AI patterns and upgrades it (Leonxlnx/taste-skill, MIT)
+- **[stitch-design-taste](./skills/vendor/stitch-design-taste/SKILL.md)** — writes an anti-generic DESIGN.md (Leonxlnx/taste-skill, MIT)
+- **[minimalist-ui](./skills/vendor/minimalist-ui/SKILL.md)** — editorial minimal style (Leonxlnx/taste-skill, MIT)
+- **[industrial-brutalist-ui](./skills/vendor/industrial-brutalist-ui/SKILL.md)** — Swiss-type industrial brutalist style (Leonxlnx/taste-skill, MIT)
+- **[brandkit](./skills/vendor/brandkit/SKILL.md)** — premium brand-guidelines boards (Leonxlnx/taste-skill, MIT)
+- **[imagegen-frontend-web](./skills/vendor/imagegen-frontend-web/SKILL.md)** — one mockup image per web screen before code (Leonxlnx/taste-skill, MIT)
+- **[imagegen-frontend-mobile](./skills/vendor/imagegen-frontend-mobile/SKILL.md)** — one mockup image per mobile screen (Leonxlnx/taste-skill, MIT)
+- **[hallmark](./skills/vendor/hallmark/SKILL.md)** — anti-AI-slop build, audit, redesign, and design extraction from a URL (nutlope/hallmark, MIT)
+- **[gridgeist](./skills/vendor/gridgeist/SKILL.md)** — product-specific page structure and hierarchy (ohmiler/gridgeist, MIT)
+- **[web-design-guidelines](./skills/vendor/web-design-guidelines/SKILL.md)** — review against the Web Interface Guidelines (vercel-labs/agent-skills, MIT)
+- **[impeccable](./skills/vendor/impeccable/SKILL.md)** — 46 anti-slop patterns across 7 dimensions; critique and polish commands (pbakaus/impeccable, Apache-2.0)
+- **[ui-ux-pro-max](./skills/vendor/ui-ux-pro-max/SKILL.md)** — searchable styles, palettes, and font pairings (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[design-system](./skills/vendor/design-system/SKILL.md)** — three-layer design tokens (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[ui-styling](./skills/vendor/ui-styling/SKILL.md)** — shadcn/ui + Tailwind implementation (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[brand](./skills/vendor/brand/SKILL.md)** — brand voice and visual identity (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+
 ### Qwen3.8-27B (skills a small model will actually follow)
 
 A family for sessions where the model is Qwen3.8-27B (through Claude Code against a local server). The model can do most things and omits what is not written, so these skills enumerate and verify instead of stating principles. Calibrated on the 2026-09-05 runs (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354). They would feel restrictive to Claude or GPT — by design.

@@ -4,6 +4,8 @@
   "note": "Generated. Do not hand-edit -- regenerate. Thai terms live in the generator.",
   "skills": [
     "ask-xeno",
+    "brand",
+    "brandkit",
     "clink-brainstorm",
     "clink-debug",
     "clink-masteragent",
@@ -13,14 +15,26 @@
     "design-rules",
     "design-setup",
     "design-ship-gate",
+    "design-system",
+    "design-taste-frontend",
+    "design-taste-frontend-v1",
+    "gridgeist",
     "gsap-scrolltrigger",
+    "hallmark",
+    "imagegen-frontend-mobile",
+    "imagegen-frontend-web",
+    "impeccable",
+    "industrial-brutalist-ui",
     "karpathy-guidelines",
+    "minimalist-ui",
     "playwright-cli",
     "qwen38-claude-code",
     "qwen38-code-gate",
     "qwen38-skill-style",
     "qwen38-think",
     "r3f-best-practices",
+    "redesign-existing-projects",
+    "stitch-design-taste",
     "t4-afk",
     "t4-agent-memory",
     "t4-bro",
@@ -28,10 +42,14 @@
     "t4-engineering-records",
     "t4-project-bootstrap",
     "threejs-animation",
+    "ui-styling",
+    "ui-ux-pro-max",
+    "using-anti-slop",
     "using-clink",
     "using-design",
     "using-qwen38",
-    "using-t4"
+    "using-t4",
+    "web-design-guidelines"
   ],
   "routes": [
     {
@@ -51,6 +69,24 @@
         "ใช้สกิลอะไร",
         "ไม่รู้จะใช้อะไร"
       ]
+    },
+    {
+      "skill": "brand",
+      "family": false,
+      "path": "skills/vendor/brand/SKILL.md",
+      "triggers_en": [
+        "brand"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "brandkit",
+      "family": false,
+      "path": "skills/vendor/brandkit/SKILL.md",
+      "triggers_en": [
+        "brandkit"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "clink-brainstorm",
@@ -182,6 +218,50 @@
       "triggers_th": []
     },
     {
+      "skill": "design-system",
+      "family": false,
+      "path": "skills/vendor/design-system/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-system",
+        "system"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "design-taste-frontend",
+      "family": false,
+      "path": "skills/vendor/design-taste-frontend/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-taste-frontend",
+        "frontend",
+        "taste"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "design-taste-frontend-v1",
+      "family": false,
+      "path": "skills/vendor/design-taste-frontend-v1/SKILL.md",
+      "triggers_en": [
+        "design",
+        "design-taste-frontend-v1",
+        "frontend",
+        "taste"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "gridgeist",
+      "family": false,
+      "path": "skills/vendor/gridgeist/SKILL.md",
+      "triggers_en": [
+        "gridgeist"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "gsap-scrolltrigger",
       "family": false,
       "path": "skills/vendor/gsap-scrolltrigger/SKILL.md",
@@ -189,6 +269,59 @@
         "gsap",
         "gsap-scrolltrigger",
         "scrolltrigger"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "hallmark",
+      "family": false,
+      "path": "skills/vendor/hallmark/SKILL.md",
+      "triggers_en": [
+        "hallmark"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "imagegen-frontend-mobile",
+      "family": false,
+      "path": "skills/vendor/imagegen-frontend-mobile/SKILL.md",
+      "triggers_en": [
+        "frontend",
+        "imagegen",
+        "imagegen-frontend-mobile",
+        "mobile"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "imagegen-frontend-web",
+      "family": false,
+      "path": "skills/vendor/imagegen-frontend-web/SKILL.md",
+      "triggers_en": [
+        "frontend",
+        "imagegen",
+        "imagegen-frontend-web",
+        "web"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "impeccable",
+      "family": false,
+      "path": "skills/vendor/impeccable/SKILL.md",
+      "triggers_en": [
+        "impeccable"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "industrial-brutalist-ui",
+      "family": false,
+      "path": "skills/vendor/industrial-brutalist-ui/SKILL.md",
+      "triggers_en": [
+        "brutalist",
+        "industrial",
+        "industrial-brutalist-ui"
       ],
       "triggers_th": []
     },
@@ -206,6 +339,16 @@
         "แก้โค้ด",
         "refactor"
       ]
+    },
+    {
+      "skill": "minimalist-ui",
+      "family": false,
+      "path": "skills/vendor/minimalist-ui/SKILL.md",
+      "triggers_en": [
+        "minimalist",
+        "minimalist-ui"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "playwright-cli",
@@ -274,6 +417,30 @@
         "practices",
         "r3f",
         "r3f-best-practices"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "redesign-existing-projects",
+      "family": false,
+      "path": "skills/vendor/redesign-existing-projects/SKILL.md",
+      "triggers_en": [
+        "existing",
+        "projects",
+        "redesign",
+        "redesign-existing-projects"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "stitch-design-taste",
+      "family": false,
+      "path": "skills/vendor/stitch-design-taste/SKILL.md",
+      "triggers_en": [
+        "design",
+        "stitch",
+        "stitch-design-taste",
+        "taste"
       ],
       "triggers_th": []
     },
@@ -401,6 +568,47 @@
       "triggers_th": []
     },
     {
+      "skill": "ui-styling",
+      "family": false,
+      "path": "skills/vendor/ui-styling/SKILL.md",
+      "triggers_en": [
+        "styling",
+        "ui-styling"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "ui-ux-pro-max",
+      "family": false,
+      "path": "skills/vendor/ui-ux-pro-max/SKILL.md",
+      "triggers_en": [
+        "max",
+        "pro",
+        "ui-ux-pro-max"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "using-anti-slop",
+      "family": true,
+      "path": "skills/anti-slop/using-anti-slop/SKILL.md",
+      "triggers_en": [
+        "anti",
+        "anti-slop",
+        "audit my ui",
+        "design system",
+        "doesn't look ai-generated",
+        "less generic",
+        "make it premium",
+        "pick a style",
+        "redesign this",
+        "slop",
+        "using",
+        "using-anti-slop"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "using-clink",
       "family": true,
       "path": "skills/multi-agent/using-clink/SKILL.md",
@@ -463,6 +671,18 @@
         "เริ่มงาน",
         "สกิลไหน"
       ]
+    },
+    {
+      "skill": "web-design-guidelines",
+      "family": false,
+      "path": "skills/vendor/web-design-guidelines/SKILL.md",
+      "triggers_en": [
+        "design",
+        "guidelines",
+        "web",
+        "web-design-guidelines"
+      ],
+      "triggers_th": []
     }
   ],
   "phases": {
