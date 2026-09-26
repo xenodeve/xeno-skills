@@ -131,6 +131,35 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[design-system](./skills/vendor/design-system/SKILL.md)** — design token สามชั้น (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
 - **[ui-styling](./skills/vendor/ui-styling/SKILL.md)** — ลงมือด้วย shadcn/ui + Tailwind (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
 - **[brand](./skills/vendor/brand/SKILL.md)** — น้ำเสียงและอัตลักษณ์ของแบรนด์ (nextlevelbuilder/ui-ux-pro-max-skill, MIT)
+- **[frontend-design](./skills/vendor/frontend-design/SKILL.md)** — Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one (anthropics/skills, Apache-2.0)
+- **[theme-factory](./skills/vendor/theme-factory/SKILL.md)** — Toolkit for styling artifacts with a theme (anthropics/skills, Apache-2.0)
+- **[high-end-visual-design](./skills/vendor/high-end-visual-design/SKILL.md)** — Teaches the AI to design like a high-end agency (Leonxlnx/taste-skill, MIT)
+- **[gpt-taste](./skills/vendor/gpt-taste/SKILL.md)** — Elite UX/UI & Advanced GSAP Motion Engineer (Leonxlnx/taste-skill, MIT)
+- **[image-to-code](./skills/vendor/image-to-code/SKILL.md)** — Elite website image-to-code skill for Codex (Leonxlnx/taste-skill, MIT)
+
+**ตระกูล web3d** (router ใน `skills/web3d/` + `skills/vendor/` ก๊อปแบบไม่แก้ พร้อม `UPSTREAM.md`):
+
+- **[using-web3d](./skills/web3d/using-web3d/SKILL.md)** — router: 3D engine, 2D canvas, motion, scroll และการเปลี่ยนหน้า เลือก skill เดียวต่องาน เริ่มจากเครื่องมือที่เบาที่สุด
+- **[web3d-integration-patterns](./skills/vendor/web3d-integration-patterns/SKILL.md)** — Meta-skill for combining Three.js, GSAP ScrollTrigger, React Three Fiber, Motion, and React Spring for complex (freshtechbro/claudedesignskills, MIT)
+- **[modern-web-design](./skills/vendor/modern-web-design/SKILL.md)** — Modern web design trends, principles, and implementation patterns for 2024-2025 (freshtechbro/claudedesignskills, MIT)
+- **[threejs-webgl](./skills/vendor/threejs-webgl/SKILL.md)** — Comprehensive skill for Three.js 3D web development (freshtechbro/claudedesignskills, MIT)
+- **[react-three-fiber](./skills/vendor/react-three-fiber/SKILL.md)** — Build declarative 3D scenes with React Three Fiber (R3F) - a React renderer for Three.js (freshtechbro/claudedesignskills, MIT)
+- **[babylonjs-engine](./skills/vendor/babylonjs-engine/SKILL.md)** — Comprehensive skill for Babylon.js 3D web rendering engine (freshtechbro/claudedesignskills, MIT)
+- **[playcanvas-engine](./skills/vendor/playcanvas-engine/SKILL.md)** — Lightweight WebGL/WebGPU game engine with entity-component architecture and visual editor integration (freshtechbro/claudedesignskills, MIT)
+- **[aframe-webxr](./skills/vendor/aframe-webxr/SKILL.md)** — Declarative web framework for building browser-based 3D, VR, and AR experiences using HTML and entity-componen (freshtechbro/claudedesignskills, MIT)
+- **[lightweight-3d-effects](./skills/vendor/lightweight-3d-effects/SKILL.md)** — Lightweight 3D effects for decorative elements and micro-interactions using Zdog, Vanta.js, and Vanilla-Tilt.j (freshtechbro/claudedesignskills, MIT)
+- **[pixijs-2d](./skills/vendor/pixijs-2d/SKILL.md)** — Fast, lightweight 2D rendering engine for creating interactive graphics, particle effects, and canvas-based ap (freshtechbro/claudedesignskills, MIT)
+- **[motion-framer](./skills/vendor/motion-framer/SKILL.md)** — Modern animation library for React and JavaScript (freshtechbro/claudedesignskills, MIT)
+- **[animejs](./skills/vendor/animejs/SKILL.md)** — Versatile JavaScript animation engine for DOM, CSS, SVG, and JavaScript objects (freshtechbro/claudedesignskills, MIT)
+- **[react-spring-physics](./skills/vendor/react-spring-physics/SKILL.md)** — Physics-based animation library combining React Spring (spring dynamics, gesture integration, 60fps animations (freshtechbro/claudedesignskills, MIT)
+- **[animated-component-libraries](./skills/vendor/animated-component-libraries/SKILL.md)** — Pre-built animated React component collections combining Magic UI (150+ TypeScript/Tailwind/Motion components) (freshtechbro/claudedesignskills, MIT)
+- **[lottie-animations](./skills/vendor/lottie-animations/SKILL.md)** — After Effects animation rendering for web and React applications (freshtechbro/claudedesignskills, MIT)
+- **[rive-interactive](./skills/vendor/rive-interactive/SKILL.md)** — State machine-based vector animation with runtime interactivity and web integration (freshtechbro/claudedesignskills, MIT)
+- **[locomotive-scroll](./skills/vendor/locomotive-scroll/SKILL.md)** — Comprehensive skill for Locomotive Scroll smooth scrolling library with parallax effects, viewport detection,  (freshtechbro/claudedesignskills, MIT)
+- **[scroll-reveal-libraries](./skills/vendor/scroll-reveal-libraries/SKILL.md)** — Simple scroll-triggered reveal animations using AOS (Animate On Scroll) (freshtechbro/claudedesignskills, MIT)
+- **[barba-js](./skills/vendor/barba-js/SKILL.md)** — Page transitions library for creating fluid, smooth transitions between website pages (freshtechbro/claudedesignskills, MIT)
+- **[spline-interactive](./skills/vendor/spline-interactive/SKILL.md)** — Browser-based 3D design tool with visual editor, animation, and web export (freshtechbro/claudedesignskills, MIT)
+- **[threejs-agents-model-optimizer](./skills/vendor/threejs-agents-model-optimizer/SKILL.md)** —  (Impertio-Studio/Three.js-Claude-Skill-Package, MIT)
 
 ### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 

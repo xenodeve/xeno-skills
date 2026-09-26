@@ -16,7 +16,8 @@ grep -qE '^name: using-anti-slop$' "$R" && ok || bad "router frontmatter name is
 
 want="design-taste-frontend design-taste-frontend-v1 redesign-existing-projects stitch-design-taste
 minimalist-ui industrial-brutalist-ui brandkit imagegen-frontend-web imagegen-frontend-mobile
-hallmark gridgeist web-design-guidelines impeccable ui-ux-pro-max design-system ui-styling brand"
+hallmark gridgeist web-design-guidelines impeccable ui-ux-pro-max design-system ui-styling brand
+frontend-design theme-factory high-end-visual-design gpt-taste image-to-code"
 for s in $want; do
   d="$V/$s"
   [ -f "$d/SKILL.md" ] && ok || bad "$s: SKILL.md missing"

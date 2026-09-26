@@ -11,7 +11,7 @@ description: The top of this library. Ask it which family your task belongs to, 
 |---|---|
 | **Working in a T4 repo** — building a feature, filing an issue or PR, recording a decision, picking up where a session left off, running unattended, or writing anything the developer reads | **`using-t4`** |
 | **Handing work to another agent** — executing a scoped subtask, convening a panel for judgment, or hunting a bug across agents | **`using-clink`** |
-| **Designing a web UI** — prototyping, micro-UI rules, auditing, layout reasoning | **`using-design`**; not AI-templated: **`using-anti-slop`** |
+| **Designing a web UI** — prototyping, micro-UI rules, auditing, layout reasoning | **`using-design`**; anti-slop **`using-anti-slop`**; 3D/motion **`using-web3d`** |
 | **Writing code, in any repo** | **`karpathy-guidelines`** — simplest thing that works, surgical diffs, verifiable success criteria |
 | **Running as Qwen3.8-27B** — the session's model is the local Qwen, through Claude Code | **`using-qwen38`** — the map from task to skill to gate (`qwen38-think` first, `qwen38-claude-code` before the first tool call, then `design-ship-gate` or `qwen38-code-gate`), and the four rules that model needs written down |
 | **Writing a skill for Qwen3.8-27B** — a skill a small, literal model will follow | **`qwen38-skill-style`** — enumerate, command + pass condition, fixed done-report, one with/without pair |

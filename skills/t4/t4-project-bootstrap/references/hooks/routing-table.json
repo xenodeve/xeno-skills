@@ -3,7 +3,12 @@
   "source": "skills/**/SKILL.md frontmatter",
   "note": "Generated. Do not hand-edit -- regenerate. Thai terms live in the generator.",
   "skills": [
+    "aframe-webxr",
+    "animated-component-libraries",
+    "animejs",
     "ask-xeno",
+    "babylonjs-engine",
+    "barba-js",
     "brand",
     "brandkit",
     "clink-brainstorm",
@@ -18,22 +23,38 @@
     "design-system",
     "design-taste-frontend",
     "design-taste-frontend-v1",
+    "frontend-design",
+    "gpt-taste",
     "gridgeist",
     "gsap-scrolltrigger",
     "hallmark",
+    "high-end-visual-design",
+    "image-to-code",
     "imagegen-frontend-mobile",
     "imagegen-frontend-web",
     "impeccable",
     "industrial-brutalist-ui",
     "karpathy-guidelines",
+    "lightweight-3d-effects",
+    "locomotive-scroll",
+    "lottie-animations",
     "minimalist-ui",
+    "modern-web-design",
+    "motion-framer",
+    "pixijs-2d",
+    "playcanvas-engine",
     "playwright-cli",
     "qwen38-claude-code",
     "qwen38-code-gate",
     "qwen38-skill-style",
     "qwen38-think",
     "r3f-best-practices",
+    "react-spring-physics",
+    "react-three-fiber",
     "redesign-existing-projects",
+    "rive-interactive",
+    "scroll-reveal-libraries",
+    "spline-interactive",
     "stitch-design-taste",
     "t4-afk",
     "t4-agent-memory",
@@ -41,7 +62,10 @@
     "t4-dev-workflow",
     "t4-engineering-records",
     "t4-project-bootstrap",
+    "theme-factory",
+    "threejs-agents-model-optimizer",
     "threejs-animation",
+    "threejs-webgl",
     "ui-styling",
     "ui-ux-pro-max",
     "using-anti-slop",
@@ -49,9 +73,43 @@
     "using-design",
     "using-qwen38",
     "using-t4",
-    "web-design-guidelines"
+    "using-web3d",
+    "web-design-guidelines",
+    "web3d-integration-patterns"
   ],
   "routes": [
+    {
+      "skill": "aframe-webxr",
+      "family": false,
+      "path": "skills/vendor/aframe-webxr/SKILL.md",
+      "triggers_en": [
+        "aframe",
+        "aframe-webxr",
+        "webxr"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "animated-component-libraries",
+      "family": false,
+      "path": "skills/vendor/animated-component-libraries/SKILL.md",
+      "triggers_en": [
+        "animated",
+        "animated-component-libraries",
+        "component",
+        "libraries"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "animejs",
+      "family": false,
+      "path": "skills/vendor/animejs/SKILL.md",
+      "triggers_en": [
+        "animejs"
+      ],
+      "triggers_th": []
+    },
     {
       "skill": "ask-xeno",
       "family": true,
@@ -69,6 +127,27 @@
         "ใช้สกิลอะไร",
         "ไม่รู้จะใช้อะไร"
       ]
+    },
+    {
+      "skill": "babylonjs-engine",
+      "family": false,
+      "path": "skills/vendor/babylonjs-engine/SKILL.md",
+      "triggers_en": [
+        "babylonjs",
+        "babylonjs-engine",
+        "engine"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "barba-js",
+      "family": false,
+      "path": "skills/vendor/barba-js/SKILL.md",
+      "triggers_en": [
+        "barba",
+        "barba-js"
+      ],
+      "triggers_th": []
     },
     {
       "skill": "brand",
@@ -253,6 +332,28 @@
       "triggers_th": []
     },
     {
+      "skill": "frontend-design",
+      "family": false,
+      "path": "skills/vendor/frontend-design/SKILL.md",
+      "triggers_en": [
+        "design",
+        "frontend",
+        "frontend-design"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "gpt-taste",
+      "family": false,
+      "path": "skills/vendor/gpt-taste/SKILL.md",
+      "triggers_en": [
+        "gpt",
+        "gpt-taste",
+        "taste"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "gridgeist",
       "family": false,
       "path": "skills/vendor/gridgeist/SKILL.md",
@@ -278,6 +379,30 @@
       "path": "skills/vendor/hallmark/SKILL.md",
       "triggers_en": [
         "hallmark"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "high-end-visual-design",
+      "family": false,
+      "path": "skills/vendor/high-end-visual-design/SKILL.md",
+      "triggers_en": [
+        "design",
+        "end",
+        "high",
+        "high-end-visual-design",
+        "visual"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "image-to-code",
+      "family": false,
+      "path": "skills/vendor/image-to-code/SKILL.md",
+      "triggers_en": [
+        "code",
+        "image",
+        "image-to-code"
       ],
       "triggers_th": []
     },
@@ -341,12 +466,89 @@
       ]
     },
     {
+      "skill": "lightweight-3d-effects",
+      "family": false,
+      "path": "skills/vendor/lightweight-3d-effects/SKILL.md",
+      "triggers_en": [
+        "effects",
+        "lightweight",
+        "lightweight-3d-effects"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "locomotive-scroll",
+      "family": false,
+      "path": "skills/vendor/locomotive-scroll/SKILL.md",
+      "triggers_en": [
+        "locomotive",
+        "locomotive-scroll",
+        "scroll"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "lottie-animations",
+      "family": false,
+      "path": "skills/vendor/lottie-animations/SKILL.md",
+      "triggers_en": [
+        "animations",
+        "lottie",
+        "lottie-animations"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "minimalist-ui",
       "family": false,
       "path": "skills/vendor/minimalist-ui/SKILL.md",
       "triggers_en": [
         "minimalist",
         "minimalist-ui"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "modern-web-design",
+      "family": false,
+      "path": "skills/vendor/modern-web-design/SKILL.md",
+      "triggers_en": [
+        "design",
+        "modern",
+        "modern-web-design",
+        "web"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "motion-framer",
+      "family": false,
+      "path": "skills/vendor/motion-framer/SKILL.md",
+      "triggers_en": [
+        "framer",
+        "motion",
+        "motion-framer"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "pixijs-2d",
+      "family": false,
+      "path": "skills/vendor/pixijs-2d/SKILL.md",
+      "triggers_en": [
+        "pixijs",
+        "pixijs-2d"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "playcanvas-engine",
+      "family": false,
+      "path": "skills/vendor/playcanvas-engine/SKILL.md",
+      "triggers_en": [
+        "engine",
+        "playcanvas",
+        "playcanvas-engine"
       ],
       "triggers_th": []
     },
@@ -421,6 +623,30 @@
       "triggers_th": []
     },
     {
+      "skill": "react-spring-physics",
+      "family": false,
+      "path": "skills/vendor/react-spring-physics/SKILL.md",
+      "triggers_en": [
+        "physics",
+        "react",
+        "react-spring-physics",
+        "spring"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "react-three-fiber",
+      "family": false,
+      "path": "skills/vendor/react-three-fiber/SKILL.md",
+      "triggers_en": [
+        "fiber",
+        "react",
+        "react-three-fiber",
+        "three"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "redesign-existing-projects",
       "family": false,
       "path": "skills/vendor/redesign-existing-projects/SKILL.md",
@@ -429,6 +655,40 @@
         "projects",
         "redesign",
         "redesign-existing-projects"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "rive-interactive",
+      "family": false,
+      "path": "skills/vendor/rive-interactive/SKILL.md",
+      "triggers_en": [
+        "interactive",
+        "rive",
+        "rive-interactive"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "scroll-reveal-libraries",
+      "family": false,
+      "path": "skills/vendor/scroll-reveal-libraries/SKILL.md",
+      "triggers_en": [
+        "libraries",
+        "reveal",
+        "scroll",
+        "scroll-reveal-libraries"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "spline-interactive",
+      "family": false,
+      "path": "skills/vendor/spline-interactive/SKILL.md",
+      "triggers_en": [
+        "interactive",
+        "spline",
+        "spline-interactive"
       ],
       "triggers_th": []
     },
@@ -557,6 +817,30 @@
       ]
     },
     {
+      "skill": "theme-factory",
+      "family": false,
+      "path": "skills/vendor/theme-factory/SKILL.md",
+      "triggers_en": [
+        "factory",
+        "theme",
+        "theme-factory"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "threejs-agents-model-optimizer",
+      "family": false,
+      "path": "skills/vendor/threejs-agents-model-optimizer/SKILL.md",
+      "triggers_en": [
+        "agents",
+        "model",
+        "optimizer",
+        "threejs",
+        "threejs-agents-model-optimizer"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "threejs-animation",
       "family": false,
       "path": "skills/vendor/threejs-animation/SKILL.md",
@@ -564,6 +848,17 @@
         "animation",
         "threejs",
         "threejs-animation"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "threejs-webgl",
+      "family": false,
+      "path": "skills/vendor/threejs-webgl/SKILL.md",
+      "triggers_en": [
+        "threejs",
+        "threejs-webgl",
+        "webgl"
       ],
       "triggers_th": []
     },
@@ -673,6 +968,26 @@
       ]
     },
     {
+      "skill": "using-web3d",
+      "family": true,
+      "path": "skills/web3d/using-web3d/SKILL.md",
+      "triggers_en": [
+        "animation",
+        "lottie",
+        "page transition",
+        "parallax",
+        "rive",
+        "scroll effect",
+        "three.js",
+        "using",
+        "using-web3d",
+        "web3d",
+        "webgl",
+        "webxr"
+      ],
+      "triggers_th": []
+    },
+    {
       "skill": "web-design-guidelines",
       "family": false,
       "path": "skills/vendor/web-design-guidelines/SKILL.md",
@@ -681,6 +996,18 @@
         "guidelines",
         "web",
         "web-design-guidelines"
+      ],
+      "triggers_th": []
+    },
+    {
+      "skill": "web3d-integration-patterns",
+      "family": false,
+      "path": "skills/vendor/web3d-integration-patterns/SKILL.md",
+      "triggers_en": [
+        "integration",
+        "patterns",
+        "web3d",
+        "web3d-integration-patterns"
       ],
       "triggers_th": []
     }
