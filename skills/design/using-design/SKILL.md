@@ -12,6 +12,9 @@ triggers:
 
 This skill acts as the master orchestrator and entry point for the **Antigravity Web Design Ecosystem**, bringing together 8 world-class web design research frameworks into 4 specialized modular skills and a central research reference library.
 
+
+> **Anti-slop:** when the page must not look AI-templated, or needs a named style, tokens, or a polish pass, route through **`using-anti-slop`** — it chains back here for the build and to `design-ship-gate` for done. **3D, canvas, motion or scroll effects:** route through **`using-web3d`**.
+
 ---
 
 ## 🏛️ Suite Structure & Modular Sub-Skills
