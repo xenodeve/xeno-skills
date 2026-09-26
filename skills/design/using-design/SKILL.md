@@ -49,7 +49,18 @@ d:\Github\xeno-skills\skills\design\
 | **📐 `design-rules`** | `/design-rules` | **Micro-UI & Engineering Standards:** Headline Pro tracking hack (`-0.025em`), Major Third (`1.25x`) type scale, 60-30-10 color balance, 8pt grid, dark mode elevation, LIFT composition, and Luxury White Space. *(Kole Jain, Ran Segall, Satori Graphics)* |
 | **🔍 `design-audit`** | `/design-audit` | **30-Second First Impression & Conversion Audit:** Audits portfolios/landing pages for speed, Open Graph tags, unhidden work, WCAG contrast, trust signals, and LIFT composition flow. *(Ran Segall - Flux Academy)* |
 | **🧠 `design-psychology`** | `/design-psychology` | **Behavioral Science & Perceived Value:** Aligns UIs with 3 Brain Personas (Survival/Mental Models, Emotional/MAYA Principle, Rational/3-4 Item Chunking) and "Space is Wealth" luxury positioning. *(Chris McCoy, Ran Segall)* |
-| **🚦 `design-ship-gate`** | `/design-ship-gate` | **Done-Gate for a Small Model:** brief-coverage table, then eight executable checks with pass conditions — font count, Open Graph, dark mode and stat visibility, 390 px overflow, hero collisions, number/unit wrapping, tracking. Calibrated on nine Qwen3.8-27B pages (#353). Run before calling a page finished. |
+| **🚦 `design-ship-gate`** | `/design-ship-gate` | **Done-Gate for a Small Model:** brief-coverage table, then nine executable checks with pass conditions — every script parses, font count, Open Graph, dark mode and stat visibility, 390 px overflow, hero collisions, number/unit wrapping, tracking. Calibrated on nine Qwen3.8-27B pages (#353, #375). Run before calling a page finished. |
+
+### Library skills — load the one the page's code uses (vendored, #382)
+
+Load these **by name with the Skill tool** the moment the page's stack includes the library, before writing that part of the code. They carry the library's API and pitfalls; the design sub-skills above carry none of it.
+
+| the page uses | load | for |
+| :--- | :--- | :--- |
+| scroll-linked animation, pinning, parallax (GSAP) | **`gsap-scrolltrigger`** | ScrollTrigger config, `scrub`, `pin`, `batch`, cleanup and refresh |
+| Three.js animation — GLTF clips, skeletal, morph targets, procedural motion | **`threejs-animation`** | `AnimationMixer`, `AnimationAction`, clip blending |
+| React Three Fiber / drei / zustand in the 3D scene | **`r3f-best-practices`** | never `setState` in `useFrame`, delta time, Suspense loading, selectors |
+| driving a real browser — open the page, click, read console, screenshot | **`playwright-cli`** | the `playwright-cli` commands; used by the Ship Gate step to look at the rendered page |
 
 ---
 
@@ -59,9 +70,10 @@ When building or overhauling a web design, the agent automatically executes acro
 
 1. **Setup Phase (`design-setup`):** Checks preflight dependencies, prompts user for inspiration (or recommends Dribbble/Pinterest/TypographicPosters), and initiates 3-phase wide net generation.
 2. **Rule Enforcement (`design-rules`):** Automatically applies `-2%` tracking, 4pt/8pt grid spacing, 4-state buttons, dark mode surface elevation, and 60-30-10 color balance during code generation.
+2b. **Library Phase:** before writing GSAP, Three.js or R3F code, load its library skill from the table above (`gsap-scrolltrigger`, `threejs-animation`, `r3f-best-practices`).
 3. **Psychology Alignment (`design-psychology`):** Ensures macro layout respects Mental Models (Brain #1), incorporates MAYA pattern breaks (Brain #2), and chunks pricing/features into max 3-4 categories (Brain #3).
 4. **Audit & Review (`design-audit`):** Runs the 30-Second First Impression Audit & LIFT Scorecard to verify conversion readiness and visual impact before shipping to production.
-5. **Ship Gate (`design-ship-gate`):** Runs the eight executable checks and pastes their outputs; `GATE: 8/8` with outputs is the only "done".
+5. **Ship Gate (`design-ship-gate`):** Runs the nine executable checks and pastes their outputs; `GATE: 9/9` with outputs is the only "done". To look at the rendered page and its console while fixing what the gate found, load `playwright-cli`.
 
 ---
 

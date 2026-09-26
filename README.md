@@ -104,6 +104,13 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 - **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — gate ปิดงานสำหรับหน้าเว็บที่โมเดลเล็กสร้าง: ตรวจความครอบคลุมของ brief แล้วตามด้วยการตรวจที่รันได้เก้าข้อ ข้อละหนึ่งข้อบกพร่องที่เจอในหน้าเว็บของ Qwen3.8-27B (ฟอนต์, OG tag, dark mode, การล้นที่ 390 px, การตัดบรรทัดของตัวเลข, hero ที่ชนกัน, tracking, ภาษา และตั้งแต่ #375 คือ script ของหน้าเว็บที่ parse ไม่ผ่าน) ผลวัดจากแปดข้อแรก: 8/8 ×3 เมื่อมี gate เทียบ 6/8 ×3 เมื่อไม่มี ส่วน skill ความรู้ด้าน design เดี่ยว ๆ ได้ 4/8 ×3 ซึ่งต่ำกว่าการไม่มี skill เลย เป็นคำสั่งพร้อมเงื่อนไขผ่าน เพราะกฎที่เป็นร้อยแก้วไม่ถ่ายทอด
 
+**skill ของ library ที่นำเข้ามา** (`skills/vendor/` ก๊อปมาแบบไม่แก้จาก commit ของ upstream ที่ pin ไว้ โดยมี `UPSTREAM.md` บันทึกที่มาและ license และ `using-design` ชี้มาที่ชุดนี้, #382):
+
+- **[playwright-cli](./skills/vendor/playwright-cli/SKILL.md)** — สั่ง browser จริงจาก shell — เปิดหน้า คลิก อ่าน console และถ่าย screenshot (Microsoft, Apache-2.0)
+- **[gsap-scrolltrigger](./skills/vendor/gsap-scrolltrigger/SKILL.md)** — GSAP ScrollTrigger — animation ตามการ scroll, pinning, scrub (skill ของ GreenSock เอง, MIT)
+- **[threejs-animation](./skills/vendor/threejs-animation/SKILL.md)** — animation ของ Three.js — AnimationMixer, คลิปจาก GLTF, skeletal และ morph target (cloudai-x/threejs-skills, MIT)
+- **[r3f-best-practices](./skills/vendor/r3f-best-practices/SKILL.md)** — React Three Fiber และ ecosystem ของ Poimandres — กฎด้าน performance และการโหลด (emalorenzo/three-agent-skills, MIT)
+
 ### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 
 ตระกูลสำหรับ session ที่ model คือ Qwen3.8-27B (ผ่าน Claude Code บน server ในเครื่อง) model ตัวนี้ทำได้เกือบทุกอย่างแต่ละเว้นสิ่งที่ไม่ได้ถูกเขียนไว้ skill ในตระกูลนี้จึง "นับให้" และ "ตรวจให้" แทนการให้หลักการ calibrate จากการรัน 2026-09-05 (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354) ใช้กับ Claude หรือ GPT จะรู้สึกจำกัดเกิน — ตั้งใจให้เป็นอย่างนั้น

@@ -104,6 +104,13 @@ A web-design skill family distilled from the video libraries of Chase AI, Flux A
 
 - **[design-ship-gate](./skills/design/design-ship-gate/SKILL.md)** — the done-gate for a page a small model built: brief coverage, then nine executable checks, one per defect seen in Qwen3.8-27B pages (fonts, OG tags, dark mode, 390 px overflow, number wrapping, hero collisions, tracking, language, and — since #375 — a page script that does not parse). Measured on the first eight checks: 8/8 ×3 with the gate against 6/8 ×3 without; the design knowledge skills alone scored 4/8 ×3, below no skill at all. Commands and pass conditions, because prose rules did not transfer.
 
+**Vendored library skills** (`skills/vendor/`, copied verbatim at a pinned upstream commit with `UPSTREAM.md` recording source and license; `using-design` routes to them, #382):
+
+- **[playwright-cli](./skills/vendor/playwright-cli/SKILL.md)** — drive a real browser from the shell — open a page, click, read the console, take a screenshot (Microsoft, Apache-2.0)
+- **[gsap-scrolltrigger](./skills/vendor/gsap-scrolltrigger/SKILL.md)** — GSAP ScrollTrigger — scroll-linked animation, pinning, scrub (GreenSock's own skill, MIT)
+- **[threejs-animation](./skills/vendor/threejs-animation/SKILL.md)** — Three.js animation — AnimationMixer, GLTF clips, skeletal and morph targets (cloudai-x/threejs-skills, MIT)
+- **[r3f-best-practices](./skills/vendor/r3f-best-practices/SKILL.md)** — React Three Fiber and the Poimandres ecosystem — performance and loading rules (emalorenzo/three-agent-skills, MIT)
+
 ### Qwen3.8-27B (skills a small model will actually follow)
 
 A family for sessions where the model is Qwen3.8-27B (through Claude Code against a local server). The model can do most things and omits what is not written, so these skills enumerate and verify instead of stating principles. Calibrated on the 2026-09-05 runs (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354). They would feel restrictive to Claude or GPT — by design.
