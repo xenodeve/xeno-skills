@@ -1,7 +1,7 @@
 ---
 name: qwen38-skill-style
 description: "How to write a skill that Qwen3.8 (27B or Flash-Next) will actually follow. For the author, not the model. Nine rules with the run that produced each: enumerate the unnamed deliverables, a command and a pass condition per rule, a fixed done-report, scripts as files, no sentence that harms when followed literally, measured anchors, a stated boundary, one with/without pair before merge, and one shared report shape across the family."
-target-model: Qwen3.8 (27B, Flash-Next)
+target-model: Qwen3.8
 triggers:
   - /qwen38-skill-style
   - write a skill for qwen
@@ -31,7 +31,7 @@ triggers:
 ## Shape
 
 ```
-skills/qwen38/<name>/SKILL.md      frontmatter: name, description, target-model: Qwen3.8 (27B, Flash-Next), triggers (Thai included)
+skills/qwen38/<name>/SKILL.md      frontmatter: name, description, target-model: Qwen3.8, triggers (Thai included)
 skills/qwen38/<name>/*.js|*.sh     the checks, run by path
 tests/skills/test-<name>.sh        anchors from the runs, the no-skip sentences, the boundary
 ```

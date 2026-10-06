@@ -24,7 +24,7 @@ has() { if [ -f "$1" ] && grep -qiF -- "$2" "$1"; then ok "$3"; else bad "$3"; f
 
 echo "the skill exists, names its model, and is routed:"
 [ -f "$GATE" ] && ok "skills/qwen38/qwen38-code-gate/SKILL.md exists" || bad "the gate is missing"
-has "$GATE" "target-model: Qwen3.8 (27B, Flash-Next)" "declares target-model"
+has "$GATE" "target-model: Qwen3.8" "declares target-model"
 has "$ROUTER" "qwen38-code-gate" "using-qwen38's code row finishes with the code gate"
 hasnt() { if [ -f "$1" ] && ! grep -qiF -- "$2" "$1"; then ok "$3"; else bad "$3"; fi; }
 # the row this gate REPLACED: a sentence-only finish ("run the tests and paste the last line").

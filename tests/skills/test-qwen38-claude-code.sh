@@ -16,7 +16,7 @@ has()   { grep -qF -- "$1" "$F" && ok || bad "missing: $1"; }
 hasnt() { grep -qF -- "$1" "$F" && bad "present: $1" || ok; }
 
 [ -f "$F" ] && ok || bad "SKILL.md missing"
-has "target-model: Qwen3.8 (27B, Flash-Next)"
+has "target-model: Qwen3.8"
 has "| you want | use | not | pass condition |"
 
 echo "  figures from the runs, not adjectives:"
@@ -81,15 +81,14 @@ echo "  2.1.281 (#380): no advice for a tool Claude Code stopped sending:"
 for gone in TaskCreate TaskGet TaskList TaskOutput TaskUpdate; do hasnt "\`$gone\`"; done
 
 echo "  the harness facts no schema states (#380):"
-# #409: the cap and the context differ per profile (Strata 128000, the 27B launchers 12288, the
-# context read from each server), so the skill states the rule and the SessionStart hook the numbers.
-hasnt "One turn is at most 12,288"
-hasnt "The context is 262,144 tokens"
-hasnt "the 12,288-token turn cap"
+# #409: the skill states the rule; the SessionStart hook states this session's numbers.
+hasnt "12,288"
+hasnt "262,144"
+hasnt "128,000"
 has "the \`using-qwen38\` SessionStart hook states this session's turn cap and context"
 has "43,564"                      # the turn that thought a whole page and wrote nothing (#377)
-has "compacts itself at 95 %"
-has "the Strata launcher does not pass it"   # ArtifactData: removed by the llama.cpp/EXL3 launchers only
+has "compacts itself at the percentage in that line"
+hasnt "the local launchers remove \`ArtifactData\`"   # not every launcher does (#409)
 has "thinking included"
 has "shot.js"                     # the screenshot recipe
 [ -f "$(dirname "$F")/shot.js" ] && ok || bad "shot.js does not ship next to the skill"

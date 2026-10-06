@@ -15,20 +15,17 @@
 # a missing router must be visible, not silent (2026-09-06).
 # Matcher: startup|clear|compact, so the map survives a compaction.
 #
-# #409: it also states THIS session's turn cap and context, read from the env the profile and its
-# launcher set -- they differ per profile (Strata 128000, the 27B launchers 12288; the context comes
-# from each server's /props), and a figure written into the skill by hand went stale.
+# #409: it also states THIS session's turn cap, context and compaction point, read as-is from the env
+# the profile and its launcher set. They differ per profile (Strata 128000, the 27B launchers 12288;
+# the context comes from each server's /props), and a figure written into the skill by hand went stale.
 set -uo pipefail
 
 input="$(cat)"
 
-# Claude Code 2.1.290 sends at most 128000 output tokens whatever the env asks (captured request).
-cap="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}"
-case "$cap" in ''|*[!0-9]*) cap="" ;; esac
-[ -n "$cap" ] && [ "$cap" -gt 128000 ] && cap=128000
-ctx="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-}"
-case "$ctx" in ''|*[!0-9]*) ctx="" ;; esac
-pct="${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-}"
+digits() { case "$1" in ''|*[!0-9]*) ;; *) printf '%s' "$1" ;; esac; }   # a value only if all digits
+cap="$(digits "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}")"
+ctx="$(digits "${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-}")"
+pct="$(digits "${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-}")"
 if [ -n "$cap" ]; then turn="a turn is at most $cap output tokens, thinking included"
 else turn="the turn cap is not set in this profile (Claude Code's default applies; thinking counts against it)"; fi
 if [ -n "$ctx" ]; then window="the context is $ctx tokens"; else window="the context is not set in this profile"; fi

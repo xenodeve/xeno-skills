@@ -37,16 +37,12 @@ has 'using-qwen38' "$out2"
 has 'not installed' "$out2"
 hasnt 'THINK:' "$out2"
 
-# #409: the hook serves every Qwen3.8 profile (27B and Flash-Next), so it names no single
-# model, and it states this session's own turn cap and context from the profile's env --
-# the skill used to carry 12,288 and 262,144 by hand and both went stale.
+# #409: no single model named; this session's cap, context and compaction from the env.
 hasnt 'Qwen3.8-27B' "$out"
 hasnt 'Qwen3.8-27B' "$out2"
 has 'You are Qwen3.8 running Claude Code' "$out"
 env_out() { printf '{}' | env -u CLAUDE_CODE_MAX_OUTPUT_TOKENS -u CLAUDE_CODE_MAX_CONTEXT_TOKENS \
-  -u CLAUDE_AUTOCOMPACT_PCT_OVERRIDE "$@" CLAUDE_CONFIG_DIR="$tmp2" bash "$HOOK"; }
-tmp2="$(mktemp -d)"; mkdir -p "$tmp2/skills/using-qwen38"
-cp "$ROOT/skills/qwen38/using-qwen38/SKILL.md" "$tmp2/skills/using-qwen38/SKILL.md"
+  -u CLAUDE_AUTOCOMPACT_PCT_OVERRIDE "$@" CLAUDE_CONFIG_DIR="$tmp" bash "$HOOK"; }
 s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000 CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144 CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=95)"
 has 'at most 128000 output tokens, thinking included' "$s"
 has 'context is 262144 tokens' "$s"
@@ -54,17 +50,15 @@ has 'compacts at 95 %' "$s"
 s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=12288 CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072)"
 has 'at most 12288 output tokens' "$s"
 has 'context is 131072 tokens' "$s"
-s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=262144)"     # Claude Code sends at most 128000 (2.1.290, captured)
-has 'at most 128000 output tokens' "$s"
-hasnt 'at most 262144' "$s"
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=12k CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=x)"   # not digits -> not set
+has 'turn cap is not set in this profile' "$s"
+hasnt 'compacts at' "$s"
 s="$(env_out)"
 has 'turn cap is not set in this profile' "$s"
 has 'context is not set in this profile' "$s"
 python -c 'import json,sys; json.loads(sys.stdin.read())' <<<"$s" && ok || bad "env-less output is not valid JSON"
 s="$(printf '{}' | CLAUDE_CODE_MAX_OUTPUT_TOKENS=12288 CLAUDE_CONFIG_DIR="$empty" bash "$copy/session-start")"
 has 'at most 12288 output tokens' "$s"          # the not-installed fallback carries it too
-rm -rf "$tmp2"
-
 rm -rf "$tmp" "$empty" "$(dirname "$copy")"
 echo "qwen38-session-start: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
