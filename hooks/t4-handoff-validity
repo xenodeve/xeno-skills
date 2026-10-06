@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+# SYNC: this file must stay BYTE-IDENTICAL to
+#       skills/t4/t4-project-bootstrap/references/hooks/t4-handoff-validity
+#       (tests/hooks/test-bootstrap-sync.sh). Edit here, then copy over -- the bootstrap
+#       ships its own copies so a repo installed without the plugin is self-contained.
+# Is THIS session's handoff VALID, not merely present? (#306)
+#
+# Seam: repo-root session-id transcript-path -> "valid" or "invalid: reason" on stdout,
+# exit 0/1. A pure function over the filesystem plus one transcript file -- no hook wiring,
+# no state written. Callable from a hook (#307's PreCompact gate) and from a test.
+#
+# NO VALID HANDOFF, NO COMPACT (docs/plans/2026-08-21-t4-compact.md, section 5). "Valid" is
+# ALL of:
+#
+#   1. SESSION-KEYED PATH. The only path ever consulted is
+#      repo-root/.claude/t4-handoff/session-id.md -- COMPUTED from the session-id argument,
+#      never searched or guessed, so two sessions cannot read each other's state by
+#      construction. A handoff sitting at any other path (another session's, a shared one)
+#      is invisible to this call, which is what makes this check pass or fail.
+#   2. NON-EMPTY, carrying the sections restore depends on (REQUIRED_SECTIONS below).
+#   3. NEWER than the last compaction boundary in the transcript. Boundary detection reads
+#      the SAME two record shapes hooks/t4-segment and hooks/t4-transcript-skills already
+#      read (type/subtype "compact_boundary", or isCompactSummary) -- this is the third
+#      caller of that one definition, not a second reader. A handoff written before the
+#      previous compaction describes a session that no longer exists (parent plan, D3).
+#   4. WRITTEN BY THIS SESSION. The handoff's own "Session: id" line must match the
+#      session-id argument. A file inherited from a checkout, or copied from another
+#      session's handoff onto this session's path, satisfies 1-3 and fails only here.
+#
+# PLUS the addon (docs/plans/2026-08-21-t4-compact-addon-thinking-record.md, section 3):
+# every docs/thinking/*.md record on disk must be indexed in docs/thinking/README.md, and
+# every README entry must name a file that exists. An orphan on either side invalidates
+# the handoff too -- the enforcement point already exists; this is one more predicate.
+#
+# Record shapes read from a real transcript: every record carries "timestamp" (ISO 8601)
+# and "sessionId". The vendor does not promise transcript stability, so a transcript that
+# fails to parse is treated as carrying no boundary, not as an error -- only the four
+# handoff conditions above ever produce "invalid".
+set -o pipefail
+
+REPO_ROOT="${1:-}"
+SESSION_ID="${2:-}"
+TRANSCRIPT="${3:-}"
+
+if [ -z "$REPO_ROOT" ] || [ -z "$SESSION_ID" ]; then
+  echo "invalid: repo-root and session-id are required"
+  exit 1
+fi
+if ! command -v python >/dev/null 2>&1; then
+  echo "invalid: python unavailable to check the handoff"
+  exit 1
+fi
+
+python - "$REPO_ROOT" "$SESSION_ID" "$TRANSCRIPT" <<'INNER_PY'
+import json
+import os
+import re
+import sys
+from datetime import datetime, timezone
+
+repo_root, session_id = sys.argv[1], sys.argv[2]
+transcript = sys.argv[3] if len(sys.argv) > 3 else ""
+
+REQUIRED_SECTIONS = ("## Status", "## Next")
+
+def fail(reason):
+    print("invalid: " + reason)
+    sys.exit(1)
+
+if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", session_id):
+    fail("session-id must be a safe path component")
+
+handoff_path = os.path.join(repo_root, ".claude", "t4-handoff", session_id + ".md")
+
+try:
+    with open(handoff_path, encoding="utf-8") as f:
+        text = f.read()
+except Exception:
+    fail("no handoff at the session-keyed path .claude/t4-handoff/%s.md" % session_id)
+
+if not text.strip():
+    fail("handoff is empty")
+
+missing_sections = [
+    section for section in REQUIRED_SECTIONS
+    if not re.search(r"(?m)^" + re.escape(section) + r"[ \t]*$", text)
+]
+if missing_sections:
+    fail("handoff is missing required section(s): " + ", ".join(missing_sections))
+
+owners = re.findall(r"(?mi)^[ \t]*Session:[ \t]*(\S+)[ \t]*$", text)
+if len(owners) != 1 or owners[0] != session_id:
+    fail("handoff was not written by session %s" % session_id)
+
+def is_boundary(record):
+    """Match the compaction boundary shapes used by hooks/t4-segment."""
+    return (record.get("type") == "compact_boundary"
+            or record.get("subtype") == "compact_boundary"
+            or bool(record.get("isCompactSummary")))
+
+def parse_timestamp(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return stamp.timestamp()
+
+last_boundary = None
+if transcript:
+    try:
+        with open(transcript, encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                try:
+                    record = json.loads(line)
+                except (TypeError, ValueError):
+                    continue
+                if isinstance(record, dict) and is_boundary(record):
+                    timestamp = parse_timestamp(record.get("timestamp"))
+                    if timestamp is not None:
+                        last_boundary = timestamp
+    except OSError:
+        pass
+
+if last_boundary is not None and os.stat(handoff_path).st_mtime <= last_boundary:
+    fail("handoff is stale: it predates the last compaction boundary")
+
+thinking_dir = os.path.join(repo_root, "docs", "thinking")
+record_files = set()
+if os.path.isdir(thinking_dir):
+    record_files = {
+        name for name in os.listdir(thinking_dir)
+        if name.endswith(".md") and name != "README.md"
+        and os.path.isfile(os.path.join(thinking_dir, name))
+    }
+
+indexed_files = set()
+index_path = os.path.join(thinking_dir, "README.md")
+if os.path.isfile(index_path):
+    try:
+        with open(index_path, encoding="utf-8", errors="replace") as index:
+            for line in index:
+                for target in re.findall(r"\]\(([^)#\s]+\.md)(?:#[^)]*)?\)", line):
+                    indexed_files.add(os.path.basename(target))
+    except OSError:
+        fail("thinking-record index is unreadable")
+
+missing_records = sorted(record_files - indexed_files)
+orphan_entries = sorted(indexed_files - record_files)
+if missing_records:
+    fail("thinking record is not indexed: " + ", ".join(missing_records))
+if orphan_entries:
+    fail("thinking index entry has no file: " + ", ".join(orphan_entries))
+
+print("valid")
+INNER_PY
