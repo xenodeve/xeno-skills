@@ -161,7 +161,7 @@ A web-design skill family distilled from the video libraries of Chase AI, Flux A
 - **[spline-interactive](./skills/vendor/spline-interactive/SKILL.md)** — Browser-based 3D design tool with visual editor, animation, and web export (freshtechbro/claudedesignskills, MIT)
 - **[threejs-agents-model-optimizer](./skills/vendor/threejs-agents-model-optimizer/SKILL.md)** —  (Impertio-Studio/Three.js-Claude-Skill-Package, MIT)
 
-### Qwen3.8-27B (skills a small model will actually follow)
+### Qwen3.8 — 27B and Flash-Next (skills a small model will actually follow)
 
 A family for sessions where the model is Qwen3.8-27B (through Claude Code against a local server). The model can do most things and omits what is not written, so these skills enumerate and verify instead of stating principles. Calibrated on the 2026-09-05 runs (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354). They would feel restrictive to Claude or GPT — by design.
 

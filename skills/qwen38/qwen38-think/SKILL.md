@@ -1,7 +1,7 @@
 ---
 name: qwen38-think
 description: "The thinking a small model skips, as steps it must write down: before the first edit, an assumptions table and a three-flaw check on the brief (contradiction, missing fact, impossible ask), each flaw checked by a command; when stuck, one observation, one hypothesis, one falsifying command; and a THINK report line. Pushback is a written line in the report, never a question that stops the work. Slice 2 of xeno-skills #355."
-target-model: Qwen3.8-27B
+target-model: Qwen3.8 (27B, Flash-Next)
 triggers:
   - /qwen38-think
   - think first

@@ -25,7 +25,7 @@ hasnt() { if [ -f "$1" ] && ! grep -qiF -- "$2" "$1"; then ok "$3"; else bad "$3
 
 echo "the skill exists, names its model, and is routed:"
 [ -f "$THINK" ] && ok "skills/qwen38/qwen38-think/SKILL.md exists" || bad "the skill is missing"
-has "$THINK" "target-model: Qwen3.8-27B" "declares target-model"
+has "$THINK" "target-model: Qwen3.8 (27B, Flash-Next)" "declares target-model"
 has "$ROUTER" "qwen38-think" "using-qwen38 loads qwen38-think"
 
 echo "the tables come first, and after is a fail:"
