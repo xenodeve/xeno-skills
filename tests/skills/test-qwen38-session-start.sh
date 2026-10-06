@@ -37,6 +37,38 @@ has 'using-qwen38' "$out2"
 has 'not installed' "$out2"
 hasnt 'THINK:' "$out2"
 
+# #409: no single model named; this session's cap, context and compaction from the env.
+hasnt "You are Qwen3.8-27B running Claude Code" "$out"    # the sentence this replaced
+hasnt "You are Qwen3.8-27B running Claude Code" "$out2"
+has 'You are Qwen3.8 running Claude Code' "$out"
+env_out() { printf '{}' | env -u CLAUDE_CODE_MAX_OUTPUT_TOKENS -u CLAUDE_CODE_MAX_CONTEXT_TOKENS \
+  -u CLAUDE_AUTOCOMPACT_PCT_OVERRIDE -u CLAUDE_CODE_AUTO_COMPACT_WINDOW "$@" CLAUDE_CONFIG_DIR="$tmp" bash "$HOOK"; }
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=128000 CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144 CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=95)"
+has 'at most 128000 output tokens, thinking included' "$s"
+has 'context is 262144 tokens' "$s"
+has 'compacts at 95 %' "$s"
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=12288 CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072)"
+has 'at most 12288 output tokens' "$s"
+has 'context is 131072 tokens' "$s"
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=12k CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=x)"   # not digits -> not set
+has 'turn cap is not set in this profile' "$s"
+hasnt 'compacts at x' "$s"          # a non-digit percentage never reaches the line
+# .claude-xeno.json / .claude-9arm.json set only the compaction window (code review of #409)
+s="$(env_out CLAUDE_CODE_AUTO_COMPACT_WINDOW=200700 CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=95)"
+has 'context is 200700 tokens and compacts at 95 %' "$s"
+# Claude Code 2.1.290 sends at most 128000 whatever the profile asks (captured request, #409)
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=262144)"
+has 'at most 128000 output tokens' "$s"
+hasnt '262144' "$s"
+s="$(env_out CLAUDE_CODE_MAX_OUTPUT_TOKENS=99999999999999999999999)"   # too long for bash arithmetic
+has 'at most 128000 output tokens' "$s"
+s="$(env_out)"
+has "compacts at Claude Code's default point" "$s"
+has 'turn cap is not set in this profile' "$s"
+has 'context is not set in this profile' "$s"
+python -c 'import json,sys; json.loads(sys.stdin.read())' <<<"$s" && ok || bad "env-less output is not valid JSON"
+s="$(printf '{}' | CLAUDE_CODE_MAX_OUTPUT_TOKENS=12288 CLAUDE_CONFIG_DIR="$empty" bash "$copy/session-start")"
+has 'at most 12288 output tokens' "$s"          # the not-installed fallback carries it too
 rm -rf "$tmp" "$empty" "$(dirname "$copy")"
 echo "qwen38-session-start: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

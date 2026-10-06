@@ -27,7 +27,7 @@ hasnt() { if [ -f "$1" ] && ! grep -qiF -- "$2" "$1"; then ok "$3"; else bad "$3
 echo "both files exist and name their target model:"
 for f in "$ROUTER" "$STYLE"; do
   [ -f "$f" ] && ok "$(basename "$(dirname "$f")")/SKILL.md exists" || bad "$f is missing"
-  has "$f" "target-model: Qwen3.8-27B" "$(basename "$(dirname "$f")") declares target-model"
+  has "$f" "target-model: Qwen3.8" "$(basename "$(dirname "$f")") declares target-model"
 done
 
 echo "the router maps tasks to a skill and a gate, and admits where no gate exists:"
@@ -76,6 +76,17 @@ hasnt "$ROUTER" "60-30-10" "the router restates no design rule"
 
 echo "size: the model reads the router on every task"
 r=$(wc -c < "$ROUTER"); [ "$r" -lt 6144 ] && ok "router is $r bytes (< 6 KB)" || bad "router is $r bytes (>= 6 KB)"
+
+echo "the entry points name the family for both models it serves (#409):"
+for f in "$REPO_ROOT"/skills/qwen38/*/SKILL.md; do   # derived: a new skill is covered the day it lands
+  grep -qx "target-model: Qwen3.8" "$f" && ok "$(basename "$(dirname "$f")") targets the family (Qwen3.8)"     || bad "$(basename "$(dirname "$f")") does not say exactly 'target-model: Qwen3.8'"
+done
+ASK="$REPO_ROOT/skills/ask-xeno/SKILL.md"
+hasnt "$ASK" "Running as Qwen3.8-27B" "ask-xeno does not route only a 27B session to using-qwen38"
+has "$ASK" "Running as Qwen3.8" "ask-xeno routes a Qwen3.8 session (27B or Flash-Next) to using-qwen38"
+for readme in README.md README.en.md; do
+  hasnt "$REPO_ROOT/$readme" "### Qwen3.8-27B" "$readme heads the family Qwen3.8, not 27B only"
+done
 
 echo
 echo "qwen38-family: $pass passed, $fail failed"

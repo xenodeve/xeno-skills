@@ -161,7 +161,7 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 - **[spline-interactive](./skills/vendor/spline-interactive/SKILL.md)** — Browser-based 3D design tool with visual editor, animation, and web export (freshtechbro/claudedesignskills, MIT)
 - **[threejs-agents-model-optimizer](./skills/vendor/threejs-agents-model-optimizer/SKILL.md)** —  (Impertio-Studio/Three.js-Claude-Skill-Package, MIT)
 
-### Qwen3.8-27B (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
+### Qwen3.8 — 27B และ Flash-Next (skill ที่เขียนให้ model ขนาดเล็กทำตามได้)
 
 ตระกูลสำหรับ session ที่ model คือ Qwen3.8-27B (ผ่าน Claude Code บน server ในเครื่อง) model ตัวนี้ทำได้เกือบทุกอย่างแต่ละเว้นสิ่งที่ไม่ได้ถูกเขียนไว้ skill ในตระกูลนี้จึง "นับให้" และ "ตรวจให้" แทนการให้หลักการ calibrate จากการรัน 2026-09-05 (Qwen-3.8-27B-Tuning `docs/results/11-quality-bench-2026-09-05.md`, #353, #354) ใช้กับ Claude หรือ GPT จะรู้สึกจำกัดเกิน — ตั้งใจให้เป็นอย่างนั้น
 

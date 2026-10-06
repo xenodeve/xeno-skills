@@ -1,7 +1,7 @@
 ---
 name: qwen38-claude-code
-description: "The goal: Qwen3.8-27B using the Claude Code harness as well as it possibly can, guided rather than guessing. A verdict for every tool Claude Code 2.1.281 sends (use / use when X / do not, with the reason), which tool for which want, the harness facts no schema states (the 12,288-token turn cap, images through Read, screenshots, what Bash blocks), what to do when a tool returns an error including a harness denial, and the CC report line. The family's one full-coverage skill (#358, #380)."
-target-model: Qwen3.8-27B
+description: "The goal: Qwen3.8 (27B or Flash-Next) using the Claude Code harness as well as it possibly can, guided rather than guessing. A verdict for every tool Claude Code 2.1.281 sends (use / use when X / do not, with the reason), which tool for which want, the harness facts no schema states (a turn cap that counts thinking, images through Read, screenshots, what Bash blocks), what to do when a tool returns an error including a harness denial, and the CC report line. The family's one full-coverage skill (#358, #380)."
+target-model: Qwen3.8
 triggers:
   - /qwen38-claude-code
   - claude code มี tool อะไรบ้าง
@@ -37,8 +37,8 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 
 ## What the harness does that no schema tells you
 
-- **One turn is at most 12,288 output tokens, thinking included** (`CLAUDE_CODE_MAX_OUTPUT_TOKENS`). Thinking that runs past it ends the turn with nothing written: one turn thought 43,564 characters, drafted a whole page in its head, and produced no file (#377). Decide in thinking; build with tools; one file per call.
-- **The context is 262,144 tokens and compacts itself at 95 %.** A long run is summarised behind your back; anything you need later must be in a file, not in your memory of the conversation. Re-Read before you Edit after a compaction.
+- **A turn has an output cap, thinking included.** The number differs per profile (`CLAUDE_CODE_MAX_OUTPUT_TOKENS`), so the `using-qwen38` SessionStart hook states this session's turn cap and context in the line that opens the map. Thinking that runs past the cap ends the turn with nothing written: one turn thought 43,564 characters, drafted a whole page in its head, and produced no file (#377). Decide in thinking; build with tools; one file per call.
+- **The context is the number in that line, and it compacts itself at the percentage in that line.** A long run is summarised behind your back; anything you need later must be in a file, not in your memory of the conversation. Re-Read before you Edit after a compaction.
 - **`Edit` needs a **Read** of that file in this conversation**, and `Write` over an existing file you have not Read fails. Read first; it is one call.
 - **`Read` shows images.** A PNG or JPG comes back as a picture you can look at, and a PDF by `pages`. That is how you check a page: `shot.js` above, then Read. If the Read or the request fails with `image input is not supported` (or `mmproj`), the server was started without its vision tower: say so in one line and judge the page by `page errors:` and the gate scripts instead.
 - **Bash is Git Bash on Windows.** Paths are `C:/…` or `/c/…`; `node`, `npm`, `npx`, `python`, `pip`, `ruff`, `rg`, `git` and `curl` are on PATH and you may use them. **`gh` is installed but not on this PATH**: call it as `"/c/Program Files/GitHub CLI/gh.exe"` (A-skill-r1 lost two turns to `gh: command not found`). A Thai spellchecker does not exist here. For anything else missing: one line "`<tool>` is not available; continuing without it", then continue. Foreground `sleep` is blocked; `git rebase -i` and other interactive flags do not work; a `cd` in a compound command can raise a permission prompt.
@@ -51,7 +51,7 @@ You are running inside Claude Code. It gives you tools; each one has a job, and 
 
 ## Every tool Claude Code gives you, and the verdict on each
 
-Claude Code 2.1.281 sends **33 tools**; the local launchers remove `ArtifactData`, leaving **32 and 144,665 characters of their JSON schema** with every request — against 6,431 characters for the whole system prompt (`harness-tools.txt`, recorded from a real interactive request on 2026-09-25; a `claude -p` run gets 26). You are not short of descriptions. What follows is the part a schema cannot give you: **which to reach for, which to leave, and why.**
+Claude Code 2.1.281 sends **33 tools**; most local launchers remove `ArtifactData`, leaving **32 and 144,665 characters of their JSON schema** with every request — against 6,431 characters for the whole system prompt (`harness-tools.txt`, recorded from a real interactive request on 2026-09-25; a `claude -p` run gets 26). You are not short of descriptions. What follows is the part a schema cannot give you: **which to reach for, which to leave, and why.**
 
 **A tool you did not use in a past run is not a tool that was wrong for the job.** Across the 44 bench streams only 12 of the 31 were touched at all, and the likeliest reason is the plain one: the schema said what the tool accepts, nothing said what it is *for*, so it was safer to ignore. That is the gap this table closes. Where a row says **use**, using it is the better move, not a permission.
 
@@ -131,7 +131,7 @@ Rows marked **measured here** name a 2026-09-05 or 2026-09-06 bench cell. The re
 |---|---|---|
 | `Artifact` | publishes an HTML page to claude.ai and returns a link | **do not** unless the developer asks for a published page or a link — the deliverable is the file in the repo; its description invites publishing unasked, and that sends the work off this machine |
 | `ArtifactComments` | reads and answers comments on a published artifact | **do not** — only for an artifact the developer pointed you at |
-| `ArtifactData` | a published artifact's shared database | **not available** — removed by the launcher (`--disallowedTools ArtifactData`): its schema regexes make llama.cpp fail every request with `failed to parse grammar`. If you ever see it, do not call it |
+| `ArtifactData` | a published artifact's shared database | **do not call it** — most local launchers remove it (`--disallowedTools ArtifactData`) because its schema regexes make llama.cpp fail every request with `failed to parse grammar`; if it is in your tool list, it is still not for you |
 | `DesignSync` | reads and writes the user's claude.ai design-system projects | **do not** — only inside the `/design-sync` skill, which the developer starts |
 | `ReportFindings` | returns code-review findings as a typed list the UI renders | **use when the review instructions in front of you say to** — otherwise write the findings in the report |
 

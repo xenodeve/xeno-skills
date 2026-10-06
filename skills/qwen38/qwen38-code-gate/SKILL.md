@@ -1,7 +1,7 @@
 ---
 name: qwen38-code-gate
 description: "Done-gate for any code change by a small model. Run it before saying a change is finished: the brief table for code (the test that goes red then green, the error path, the doc line, no new dependency), then six commands with pass conditions — scope of the diff, placeholders, secrets, the repo's tests with the last line pasted, lint/typecheck if configured, and the RED line before the GREEN one. Slice 1 of xeno-skills #355."
-target-model: Qwen3.8-27B
+target-model: Qwen3.8
 triggers:
   - /qwen38-code-gate
   - code gate

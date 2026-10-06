@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# qwen38 SessionStart hook -- inject the `using-qwen38` router into a Qwen3.8-27B session.
+# qwen38 SessionStart hook -- inject the `using-qwen38` router into a Qwen3.8 session (27B or Flash-Next).
 #
 # Lives inside the skill (skills/qwen38/using-qwen38/hooks/) so the installed copy under
 # ~/.claude/skills/using-qwen38/hooks/session-start travels with the SKILL.md it injects.
@@ -14,9 +14,27 @@
 # this checkout's copy. When neither exists the session still gets one line saying so --
 # a missing router must be visible, not silent (2026-09-06).
 # Matcher: startup|clear|compact, so the map survives a compaction.
+#
+# #409: it also states THIS session's turn cap, context and compaction point, read from the env the
+# profile and its launcher set. They differ per profile (Strata 128000, others 12288; the context from
+# each server's /props, or only the compaction window), and a figure written into a skill by hand went stale.
 set -uo pipefail
 
 input="$(cat)"
+
+digits() { case "$1" in ''|*[!0-9]*) ;; *) printf '%s' "$1" ;; esac; }   # a value only if all digits
+cap="$(digits "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-}")"
+# Claude Code 2.1.290 sends at most 128000 whatever the profile asks (captured request, #409); compare
+# the length first so a value too long for bash arithmetic cannot overflow the test.
+if [ -n "$cap" ] && { [ "${#cap}" -gt 6 ] || [ "$cap" -gt 128000 ]; }; then cap=128000; fi
+ctx="$(digits "${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-}")"
+[ -n "$ctx" ] || ctx="$(digits "${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}")"   # the 27B profiles set only this
+pct="$(digits "${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-}")"
+if [ -n "$cap" ]; then turn="a turn is at most $cap output tokens, thinking included"
+else turn="the turn cap is not set in this profile (Claude Code's default applies; thinking counts against it)"; fi
+if [ -n "$ctx" ]; then window="the context is $ctx tokens"; else window="the context is not set in this profile"; fi
+if [ -n "$pct" ]; then window="$window and compacts at $pct %"; else window="$window and compacts at Claude Code's default point"; fi
+session_line="This session: $turn; $window."
 
 skill=""
 for f in "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/using-qwen38/SKILL.md" \
@@ -28,13 +46,13 @@ if [ -n "$skill" ]; then
   # drop the frontmatter (first --- ... --- block)
   body="$(awk 'BEGIN{fm=0} NR==1 && $0=="---"{fm=1; next} fm==1 && $0=="---"{fm=2; next} fm!=1{print}' "$skill")"
   content="<EXTREMELY_IMPORTANT>
-You are Qwen3.8-27B running Claude Code. Below is your \`using-qwen38\` map. Every task starts with \`qwen38-think\` and the brief table, loads the skill the map names, and ends with the gate line. The report shape is fixed: \`THINK:\` first.
+You are Qwen3.8 running Claude Code. $session_line Below is your \`using-qwen38\` map. Every task starts with \`qwen38-think\` and the brief table, loads the skill the map names, and ends with the gate line. The report shape is fixed: \`THINK:\` first.
 
 $body
 </EXTREMELY_IMPORTANT>"
 else
   content="<EXTREMELY_IMPORTANT>
-You are Qwen3.8-27B running Claude Code, but the \`using-qwen38\` skill is not installed under ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills. Say so in your first reply, then: write the brief table before the first file, run every check and paste its output, never install or search for tools, stop at the report.
+You are Qwen3.8 running Claude Code. $session_line But the \`using-qwen38\` skill is not installed under ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills. Say so in your first reply, then: write the brief table before the first file, run every check and paste its output, never install or search for tools, stop at the report.
 </EXTREMELY_IMPORTANT>"
 fi
 

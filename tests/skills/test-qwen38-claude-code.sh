@@ -16,7 +16,7 @@ has()   { grep -qF -- "$1" "$F" && ok || bad "missing: $1"; }
 hasnt() { grep -qF -- "$1" "$F" && bad "present: $1" || ok; }
 
 [ -f "$F" ] && ok || bad "SKILL.md missing"
-has "target-model: Qwen3.8-27B"
+grep -qx "target-model: Qwen3.8" "$F" && ok || bad "target-model is not exactly Qwen3.8"
 has "| you want | use | not | pass condition |"
 
 echo "  figures from the runs, not adjectives:"
@@ -81,7 +81,16 @@ echo "  2.1.281 (#380): no advice for a tool Claude Code stopped sending:"
 for gone in TaskCreate TaskGet TaskList TaskOutput TaskUpdate; do hasnt "\`$gone\`"; done
 
 echo "  the harness facts no schema states (#380):"
-has "12,288"                      # the output cap, thinking included -- the 43,564-char turn (#377)
+# #409: the skill states the rule; the SessionStart hook states this session's numbers.
+hasnt "12,288"
+hasnt "262,144"
+hasnt "128,000"
+has "the \`using-qwen38\` SessionStart hook states this session's turn cap and context in the line that opens the map"
+hasnt "in its first line"          # the first line is <EXTREMELY_IMPORTANT> (code review of #409)
+has "if it is in your tool list, it is still not for you"   # ArtifactData, whichever launcher
+has "43,564"                      # the turn that thought a whole page and wrote nothing (#377)
+has "compacts itself at the percentage in that line"
+hasnt "the local launchers remove \`ArtifactData\`"   # not every launcher does (#409)
 has "thinking included"
 has "shot.js"                     # the screenshot recipe
 [ -f "$(dirname "$F")/shot.js" ] && ok || bad "shot.js does not ship next to the skill"
