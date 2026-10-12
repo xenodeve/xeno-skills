@@ -174,6 +174,10 @@ A family for sessions where the model is Qwen3.8-27B (through Claude Code agains
 
 - **[qwen38-claude-code](./skills/qwen38/qwen38-claude-code/SKILL.md)** — the harness guide, and the family's one full-coverage exception. Claude Code sends 31 tools and 87,799 characters of their schema on every request against 6,186 for the whole system prompt, and a schema says what a tool accepts, never what it is for — so the model touched 12 of the 31 across 44 recorded runs. Not a decision, a gap. This gives a verdict for every one of them (use / use when X / do not, each with its reason), which tool for which want, what to do when a tool returns an error including a harness denial, and how a session actually works. `harness-tools.txt` records the names from a captured request so a tool a future version adds fails the suite instead of going uncovered.
 
+**Security-audit family** (a pointer only — upstream is not copied into this repo because it changes continuously, #420):
+
+- **[using-security-audit](./skills/security-audit/using-security-audit/SKILL.md)** — tells an agent how to install Cloudflare's `security-audit` skill (cloudflare/security-audit-skill, MIT), from outside this repo, what it needs to run, and what to use instead when those are missing
+
 ## Related
 
 **Companion skill ecosystems** — the `t4-*` family is a thin team-specific layer on top of these; `using-t4` routes to them and they're meant to be installed alongside:

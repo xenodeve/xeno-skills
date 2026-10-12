@@ -53,6 +53,7 @@ THAI_TRIGGERS = {
     "design-psychology":     ["จิตวิทยาการออกแบบ"],
     "design-rules":          ["กฎการออกแบบ", "typography", "สี"],
     "design-setup":          ["เริ่มโปรเจกต์ดีไซน์", "ตั้งค่าดีไซน์"],
+    "using-security-audit":  ["ตรวจความปลอดภัย", "หาช่องโหว่", "เจาะระบบ"],
 }
 
 # Phase words and the route each IMPLIES (#191). A prompt can match one skill
