@@ -13,12 +13,13 @@ pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL: $1"; fail=$((fail+1)); }
 has() { [ -f "$S" ] && grep -qF -- "$1" "$S"; }
+hasline() { [ -f "$S" ] && grep -qxF -- "$1" "$S"; }   # whole line: a suffix like "-X" must not pass
 
 cd "$REPO_ROOT" || exit 1
 [ -f "$S" ] && ok "SKILL.md exists" || bad "$S is missing"
 
 echo "the exact install command (checked 2026-10-12: --list names only security-audit):"
-has 'npx skills add https://github.com/cloudflare/security-audit-skill --skill security-audit' \
+hasline 'npx skills add https://github.com/cloudflare/security-audit-skill --skill security-audit' \
   && ok "install command names the upstream URL and --skill" || bad "install command missing or altered"
 
 echo "where it runs, and why (npx skills add inside this repo destroyed it on 2026-08-12):"
