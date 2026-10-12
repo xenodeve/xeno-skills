@@ -20,11 +20,11 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ROUTER="$REPO_ROOT/skills/ask-xeno/SKILL.md"
-BUDGET=1800
+BUDGET=1960   # was 1800; raised for the using-security-audit row (#420)
 
 # The family entries ask-xeno delegates to. Renaming one without updating this
 # list is itself a defect, so the list is spelled out rather than derived.
-ENTRIES="using-t4 using-clink using-design using-anti-slop using-web3d karpathy-guidelines"
+ENTRIES="using-t4 using-clink using-design using-anti-slop using-web3d using-security-audit karpathy-guidelines"
 
 pass=0 fail=0
 ok()  { echo "  PASS: $1"; pass=$((pass+1)); }

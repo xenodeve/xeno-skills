@@ -72,6 +72,7 @@
     "using-clink",
     "using-design",
     "using-qwen38",
+    "using-security-audit",
     "using-t4",
     "using-web3d",
     "web-design-guidelines",
@@ -949,6 +950,27 @@
         "using-qwen38"
       ],
       "triggers_th": []
+    },
+    {
+      "skill": "using-security-audit",
+      "family": true,
+      "path": "skills/security-audit/using-security-audit/SKILL.md",
+      "triggers_en": [
+        "audit",
+        "audit this repo for security",
+        "find vulnerabilities",
+        "pen test",
+        "security",
+        "security audit",
+        "using",
+        "using-security-audit",
+        "vulnerability harness"
+      ],
+      "triggers_th": [
+        "ตรวจความปลอดภัย",
+        "หาช่องโหว่",
+        "เจาะระบบ"
+      ]
     },
     {
       "skill": "using-t4",

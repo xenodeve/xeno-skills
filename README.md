@@ -174,6 +174,10 @@ hook แบบ inject = "เตือน" (model ยังเลือกไม�
 
 - **[qwen38-claude-code](./skills/qwen38/qwen38-claude-code/SKILL.md)** — คู่มือ harness และเป็นข้อยกเว้นเดียวของตระกูลที่ครอบทุกอย่าง Claude Code ส่ง tool 31 ตัวและ schema ของมัน 87,799 ตัวอักษรทุก request เทียบกับ 6,186 ของ system prompt ทั้งก้อน และ schema บอกว่า tool รับอะไร ไม่เคยบอกว่ามีไว้ทำอะไร โมเดลจึงแตะ 12 จาก 31 ตัวใน 44 รอบที่บันทึกไว้ นั่นไม่ใช่การตัดสินใจ แต่เป็นช่อง ไฟล์นี้ให้คำตัดสินของทุกตัว (ใช้ / ใช้เมื่อ X / ห้าม พร้อมเหตุผล), อยากได้อะไรใช้ tool ไหน, ทำอะไรต่อเมื่อ tool คืน error รวมถึงการถูก harness ปฏิเสธ และ session ทำงานอย่างไรจริง ๆ ไฟล์ `harness-tools.txt` บันทึกชื่อจาก request ที่ดักไว้ เพื่อให้ tool ที่เวอร์ชันหน้าเพิ่มมาทำให้ suite แดงแทนที่จะหลุดไป
 
+**ตระกูล security-audit** (pointer เท่านั้น — ไม่ก๊อป upstream มาใน repo เพราะ upstream อัปเดตต่อเนื่อง, #420):
+
+- **[using-security-audit](./skills/security-audit/using-security-audit/SKILL.md)** — บอก agent ว่า skill `security-audit` ของ Cloudflare (cloudflare/security-audit-skill, MIT) ติดตั้งอย่างไร รันจากนอก repo นี้ ต้องมีอะไรบ้าง และใช้อะไรแทนเมื่อไม่ครบ
+
 ## ที่เกี่ยวข้อง
 
 **Companion skill ecosystems** — ตระกูล `t4-*` เป็นชั้นบางๆ เฉพาะทีมที่วางทับสิ่งเหล่านี้; `using-t4` route ไปหาพวกมัน และตั้งใจให้ติดตั้งควบคู่กัน:
